@@ -1,0 +1,40 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.plo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake build directories (假设你习惯在 build 目录下编译)
+build/
+cmake-build-debug/
+cmake-build-release/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
