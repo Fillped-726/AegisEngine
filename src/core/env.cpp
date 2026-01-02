@@ -4,14 +4,6 @@
 namespace aegis::core
 {
 
-    // 定义一个基类 Awaiter 用于找回协程句柄
-    // 这部分 trick 是为了让 Env::run 能通用处理 Accept/Read/Write
-    struct BaseAwaiter
-    {
-        int result = 0;
-        std::coroutine_handle<> handle;
-    };
-
     Env &Env::instance()
     {
         static Env instance;

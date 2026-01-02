@@ -1,0 +1,23 @@
+syntax = "proto3";
+package aegis.proto;
+
+// 消息 ID 定义
+enum MsgID {
+    UNKNOWN = 0;
+    CS_LOGIN_REQ = 1001; // Client -> Server 登录请求
+    SC_LOGIN_RES = 1002; // Server -> Client 登录响应
+    CS_PING      = 1003; 
+    SC_PONG      = 1004;
+}
+
+// 登录请求
+message LoginReq {
+    int32 uid = 1;
+    string token = 2;
+}
+
+// 登录响应
+message LoginRes {
+    int32 ret_code = 1; // 0 = 成功
+    string msg = 2;
+}

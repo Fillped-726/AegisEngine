@@ -34,7 +34,6 @@ core::Task handle_client(int client_fd)
     {
         std::cerr << "Client error: " << e.what() << std::endl;
     }
-    close(client_fd);
 }
 
 // 服务器监听循环
@@ -44,21 +43,21 @@ core::Task server(int port)
     if (listen_fd < 0)
         throw std::runtime_error("socket error");
 
+    net::Socket listener(listen_fd);
     int val = 1;
-    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+    setsockopt(listener.native_handle(), SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(listen_fd, (sockaddr *)&addr, sizeof(addr)) < 0)
+    if (bind(listener.native_handle(), (sockaddr *)&addr, sizeof(addr)) < 0)
         throw std::runtime_error("bind error");
 
-    if (listen(listen_fd, 128) < 0)
+    if (listen(listener.native_handle(), 128) < 0)
         throw std::runtime_error("listen error");
 
-    net::Socket listener(listen_fd);
     std::cout << "Gate Server listening on " << port << "..." << std::endl;
 
     while (true)

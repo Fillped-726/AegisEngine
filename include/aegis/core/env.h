@@ -2,6 +2,7 @@
 #include <liburing.h>
 #include <stdexcept>
 #include <memory>
+#include "aegis/core/awaiter.h"
 
 namespace aegis::core
 {
