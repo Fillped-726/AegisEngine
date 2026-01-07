@@ -3,7 +3,7 @@
 A High-Performance C++20 Game Server Framework based on **Linux io_uring** and **Actor Model**.
 
 ## Status
-- **Current Version:** v0.0.1 (MVP Demo)
+- **Current Version:** v0.1.1 (MVP Demo)
 - **Features:** Async Echo Server based on liburing.
 
 ## Build
@@ -12,3 +12,4 @@ mkdir build && cd build
 cmake ..
 make
 ./bin/gate_server
+```

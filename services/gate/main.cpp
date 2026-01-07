@@ -7,27 +7,45 @@
 #include "aegis/core/env.h"
 #include "aegis/core/task.h"
 #include "aegis/net/socket.h"
+#include "aegis/net/connection.h"
+#include "common.pb.h"
 
 using namespace aegis;
 
 // 处理单个客户端连接
-core::Task handle_client(int client_fd)
+core::DetachedTask handle_client(int client_fd)
 {
-    net::Socket conn(client_fd);
-    std::vector<char> buffer(1024);
+    // 1. 创建 Connection (接管 socket)
+    net::Connection conn{net::Socket(client_fd)};
+
+    std::cout << "[Gate] New connection established." << std::endl;
 
     try
     {
         while (true)
         {
-            // 1. 异步读取
-            int n = co_await conn.recv(buffer.data(), buffer.size());
-            if (n <= 0)
-                break; // 断开连接
+            auto packet = co_await conn.read_packet();
+            if (!packet)
+                break;
 
-            // 2. 异步回显
-            co_await conn.send(buffer.data(), n);
-            std::cout << "[Echo] " << n << " bytes" << std::endl;
+            // 1. 直接获取 ID (无需手动移位)
+            uint32_t msg_id = packet->msg_id();
+
+            std::cout << "[Recv] MsgID: " << msg_id << std::endl;
+
+            if (msg_id == aegis::proto::CS_LOGIN_REQ)
+            {
+                aegis::proto::LoginReq req;
+                // 2. 优雅解析 (无需传 size 和 data指针)
+                if (packet->parse(req))
+                {
+                    std::cout << "  Login UID: " << req.uid() << std::endl;
+                }
+            }
+            // 回显包
+            co_await conn.send_packet(*packet);
+
+            std::cout << "[Send] Echo packet back." << std::endl;
         }
     }
     catch (const std::exception &e)
@@ -37,7 +55,7 @@ core::Task handle_client(int client_fd)
 }
 
 // 服务器监听循环
-core::Task server(int port)
+core::DetachedTask server(int port)
 {
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0)
