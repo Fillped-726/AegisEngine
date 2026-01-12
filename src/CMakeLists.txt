@@ -1,11 +1,13 @@
 # 收集源文件
 file(GLOB_RECURSE SRC_CORE "core/*.cpp")
 file(GLOB_RECURSE SRC_NET "net/*.cpp")
+file(GLOB_RECURSE SRC_COMMON "common/*.cpp")
 
 # 创建核心库 (AegisEngine)
 add_library(AegisEngine SHARED 
     ${SRC_CORE} 
     ${SRC_NET}
+    ${SRC_COMMON}
 )
 
 # 设置头文件搜索路径
@@ -18,6 +20,7 @@ target_link_libraries(AegisEngine PUBLIC
     spdlog::spdlog
     ${LIBURING_LIBRARIES}
     AegisProto # 链接上面定义的协议库
+    moodycamel::ConcurrentQueue # 链接上面定义的 ConcurrentQueue
 )
 
 # 链接 liburing 的头文件路径 (如果是 pkg-config 找出来的)

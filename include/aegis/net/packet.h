@@ -1,18 +1,20 @@
 #pragma once
+
 #include <vector>
 #include <cstdint>
 #include <string>
-#include <cstring>     // [Fix] 必须包含，否则 memcpy 报错
+#include <cstring>     // for memcpy
 #include <arpa/inet.h> // for ntohl, htonl
 #include <stdexcept>
+
+// 必须包含你的日志封装，而不是直接用 spdlog
+#include "aegis/common/aegisLog.h"
 
 namespace aegis::net
 {
 
     // 协议常量定义
-    // 1. 网络包长度头 (4字节): 也就是 Connection 第一次读取的长度
-    constexpr size_t kPacketLenHeader = 4;
-    // 2. 业务消息头 (4字节): 也就是 MsgID
+    // 1. 业务消息头 (4字节): 也就是 MsgID
     constexpr size_t kPacketMsgHeader = 4;
 
     class Packet
@@ -60,10 +62,35 @@ namespace aegis::net
         {
             const void *ptr = body_ptr();
             size_t len = body_len();
+
+            // 调试日志 (建议仅在 LogLevel::Debug 下开启)
+            /*
+            if (len > 0 && ptr != nullptr)
+            {
+                const uint8_t *byte_ptr = static_cast<const uint8_t *>(ptr);
+                aegis::Log::instance().debug("[Packet] Parse: Len={}, HeaderBytes=[{:02x} {:02x} {:02x} {:02x}]",
+                                             len,
+                                             byte_ptr[0],
+                                             (len > 1 ? byte_ptr[1] : 0),
+                                             (len > 2 ? byte_ptr[2] : 0),
+                                             (len > 3 ? byte_ptr[3] : 0));
+            }
+            else
+            {
+                aegis::Log::instance().debug("[Packet] Parse: Len is 0 or ptr is null");
+            }
+            */
+
             // Protobuf 允许解析空 Body (len=0)，只要 ptr 有效即可
-            // 但如果 ptr 是 nullptr (包太短)，则返回 false
-            if (!ptr && len > 0)
+            // 但如果 payload 还没 MsgID 长 (ptr=nullptr)，则肯定失败
+            if (!ptr && payload_.size() < kPacketMsgHeader)
                 return false;
+
+            // 特殊情况：有 MsgID 但 Body 为空 (len=0) -> 这是一个合法的空消息
+            if (len == 0)
+            {
+                return true; // 或者是 msg.Clear() ? 视业务而定
+            }
 
             // 这里的 int len 转换是安全的，因为限制了包大小
             return msg.ParseFromArray(ptr, static_cast<int>(len));
@@ -92,6 +119,7 @@ namespace aegis::net
             size_t body_size = msg.ByteSizeLong();
 
             // 2. 分配总空间 (MsgID + Body)
+            // vector resize 会进行 zero-initialization，略有开销但安全
             pkt.payload_.resize(kPacketMsgHeader + body_size);
 
             // 3. 写入 MsgID (Host -> Network)
@@ -100,7 +128,10 @@ namespace aegis::net
 
             // 4. 写入 Protobuf 数据
             // SerializeToArray 直接写到 vector 的偏移位置
-            msg.SerializeToArray(pkt.payload_.data() + kPacketMsgHeader, static_cast<int>(body_size));
+            if (body_size > 0)
+            {
+                msg.SerializeToArray(pkt.payload_.data() + kPacketMsgHeader, static_cast<int>(body_size));
+            }
 
             return pkt;
         }

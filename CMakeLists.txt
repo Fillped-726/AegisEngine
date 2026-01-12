@@ -32,6 +32,7 @@ include(FetchContent)
 
 message(STATUS "Downloading Dependencies... This may take a while.")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # 2.1 spdlog (高性能日志)
 FetchContent_Declare(
     spdlog
@@ -66,4 +67,6 @@ endif()
 add_subdirectory(protocols) # 先生成协议代码
 add_subdirectory(src)       # 再编译核心库
 add_subdirectory(services)  # 最后编译业务服务
-# add_subdirectory(tests)   # 稍后开启
+add_subdirectory(tests/benchmark)   # 压力测试
+add_subdirectory(tests/integration) # 集成测试
+add_subdirectory(third_party)  # 第三方工具

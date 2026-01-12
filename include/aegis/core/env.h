@@ -2,28 +2,24 @@
 #include <liburing.h>
 #include <stdexcept>
 #include <memory>
+#include <mutex> // [Required]
 #include "aegis/core/awaiter.h"
 
 namespace aegis::core
 {
-
     class Env
     {
     public:
-        // 获取单例
         static Env &instance();
-
         Env(const Env &) = delete;
         Env &operator=(const Env &) = delete;
 
-        // 初始化 io_uring
         void init(int ring_depth = 4096);
-
-        // 启动事件循环
         void run();
 
-        // 获取原始 ring 指针 (给 Socket 用)
-        io_uring *get_ring() { return &ring_; }
+        // [Fix] 恢复这两个接口供 Socket 使用
+        io_uring *native_handle() { return &ring_; }
+        std::mutex &get_submission_mutex() { return sq_mutex_; }
 
     private:
         Env() = default;
@@ -31,6 +27,6 @@ namespace aegis::core
 
         struct io_uring ring_;
         bool is_initialized_ = false;
+        std::mutex sq_mutex_; // [Required] 保护 SQ
     };
-
-} // namespace aegis::core
+}
