@@ -74,21 +74,23 @@ namespace aegis::net
             {
                 handle = h;
                 auto &env = core::Env::instance();
-                auto *ring = env.native_handle(); // 使用 native_handle
+                auto *ring = env.native_handle();
 
-                // [Fix] 加锁保护 SQ
                 std::lock_guard<std::mutex> lock(env.get_submission_mutex());
 
                 struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
                 if (!sqe)
                 {
-                    io_uring_submit(ring); // 尝试刷出空间
+                    io_uring_submit(ring);
                     sqe = io_uring_get_sqe(ring);
                     if (!sqe)
                         throw std::runtime_error("SQ full");
                 }
 
-                io_uring_prep_recv(sqe, fd_, buf_, len_, 0);
+                // [Fix] 将 io_uring_prep_recv 改为 io_uring_prep_read
+                // read 是通用的，支持 timerfd 和 socket
+                io_uring_prep_read(sqe, fd_, buf_, len_, 0);
+
                 io_uring_sqe_set_data(sqe, static_cast<core::BaseAwaiter *>(this));
                 io_uring_submit(ring);
             }

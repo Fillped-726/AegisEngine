@@ -8,6 +8,7 @@
 #include "aegis/net/socket.h"
 #include "aegis/net/packet.h"
 #include "aegis/common/spinLock.h"
+#include "aegis/net/packetPool.h"
 
 namespace aegis::net
 {
@@ -44,8 +45,9 @@ namespace aegis::net
         int fd() const { return socket_.native_handle(); }
 
         // --- 读取逻辑 ---
-        core::Task<std::unique_ptr<Packet>> read_packet()
+        core::Task<PooledPacket> read_packet()
         {
+            auto packet = PacketPool::instance().acquire();
             // [A] Ensure Header
             while (rx_len_ < 4)
             {
@@ -86,7 +88,6 @@ namespace aegis::net
             }
 
             // [E] Extract Packet
-            auto packet = std::make_unique<Packet>();
             packet->alloc(body_len);
 
             if (body_len > 0)
@@ -106,7 +107,7 @@ namespace aegis::net
         }
 
         // --- 发送逻辑 ---
-        void send(Packet packet)
+        virtual void send(Packet packet)
         {
             size_t payload_size = packet.payload_.size();
             bool need_start_loop = false;

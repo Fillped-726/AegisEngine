@@ -10740,3 +10740,1650 @@
 [2026-01-11 18:59:17.805] [t:26115] [info] [main.cpp:94] [Gate] Session Lifecycle Ended | FD: 459
 [2026-01-11 18:59:17.805] [t:26117] [info] [playerActor.h:57] [Actor] Session Closed | FD: 459 | Reason: 0
 [2026-01-11 18:59:17.805] [t:26117] [debug] [playerActor.h:30] PlayerActor Destroyed | FD: 459
+[2026-01-12 23:43:03.409] [t:21816] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-12 23:43:03.409] [t:21816] [info] [main.cpp:206] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-12 23:43:03.409] [t:21816] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-12 23:43:03.409] [t:21816] [info] [main.cpp:211] [Init] Initializing IO Environment...
+[2026-01-12 23:43:03.409] [t:21819] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-12 23:43:03.409] [t:21820] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-12 23:43:03.409] [t:21818] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-12 23:43:03.409] [t:21816] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:138] ==========================================
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:139]  Aegis Gate Server Started
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:140]  Port: 8888
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:141]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:142] ==========================================
+[2026-01-12 23:43:03.410] [t:21816] [info] [main.cpp:218] [Init] Entering Main IO Loop.
+[2026-01-12 23:43:03.410] [t:21816] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-12 23:43:07.317] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 6
+[2026-01-12 23:43:07.317] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 6
+[2026-01-12 23:43:07.317] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10000
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 7
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 7
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 8
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10005
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 8
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10007
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 9
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 9
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10004
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 10
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 10
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10006
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 11
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 11
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10008
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 12
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 12
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10002
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 13
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 13
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 14
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 14
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 15
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 15
+[2026-01-12 23:43:07.327] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10003
+[2026-01-12 23:43:07.327] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10001
+[2026-01-12 23:43:07.327] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 16
+[2026-01-12 23:43:07.327] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 16
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 17
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 17
+[2026-01-12 23:43:07.328] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10010
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 18
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 18
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10009
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10012
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10019
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 19
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 19
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10011
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 20
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 20
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10013
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 21
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 21
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 25
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 25
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 26
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 26
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10020
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 27
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 27
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 28
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 28
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 29
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 29
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 30
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 30
+[2026-01-12 23:43:07.328] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 31
+[2026-01-12 23:43:07.328] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 31
+[2026-01-12 23:43:07.328] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10026
+[2026-01-12 23:43:07.329] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10021
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 32
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 32
+[2026-01-12 23:43:07.329] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10027
+[2026-01-12 23:43:07.329] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10028
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 33
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 33
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 34
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 34
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10035
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10017
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 35
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 35
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10016
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10029
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 36
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 36
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10024
+[2026-01-12 23:43:07.329] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10015
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 37
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 37
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 38
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 38
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10023
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10025
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10031
+[2026-01-12 23:43:07.329] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10018
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 39
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 39
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10038
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 40
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 40
+[2026-01-12 23:43:07.329] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10022
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 41
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 41
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10030
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 42
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 42
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10034
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 43
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 43
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 44
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 44
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10039
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 45
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 45
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10043
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 46
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 46
+[2026-01-12 23:43:07.329] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10048
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 47
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 47
+[2026-01-12 23:43:07.329] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 48
+[2026-01-12 23:43:07.329] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 48
+[2026-01-12 23:43:07.329] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10032
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 49
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 49
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10040
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10037
+[2026-01-12 23:43:07.330] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10033
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 50
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 50
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10014
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 51
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 51
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 52
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 52
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10044
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 53
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 53
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 54
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 54
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10042
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 55
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 55
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 56
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 56
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10046
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10041
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 57
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 57
+[2026-01-12 23:43:07.330] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10036
+[2026-01-12 23:43:07.330] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10047
+[2026-01-12 23:43:07.330] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10049
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 58
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 58
+[2026-01-12 23:43:07.330] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 59
+[2026-01-12 23:43:07.330] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 59
+[2026-01-12 23:43:07.330] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10050
+[2026-01-12 23:43:07.330] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10045
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 60
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 60
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10052
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 61
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 61
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10051
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 62
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 62
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10054
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 63
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 63
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 64
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 64
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10068
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 65
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 65
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10062
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 66
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 66
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 67
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 67
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 68
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 68
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 69
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 69
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 70
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 70
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10074
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 71
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 71
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10053
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 72
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 72
+[2026-01-12 23:43:07.340] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10064
+[2026-01-12 23:43:07.340] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 73
+[2026-01-12 23:43:07.340] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 73
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10059
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10066
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10082
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10060
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10057
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 74
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 74
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10076
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10056
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 75
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 75
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10069
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 76
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 76
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10088
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 77
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 77
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10083
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 78
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 78
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 79
+[2026-01-12 23:43:07.341] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 79
+[2026-01-12 23:43:07.341] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 80
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10084
+[2026-01-12 23:43:07.341] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10071
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 80
+[2026-01-12 23:43:07.342] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10073
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 81
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 81
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 82
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 82
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10070
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 83
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10058
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 83
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10055
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 84
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 84
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10097
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 85
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 85
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10065
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 86
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 86
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10075
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 87
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 87
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10061
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 88
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 88
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10079
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 89
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 89
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10078
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 90
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 90
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10063
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 91
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 91
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10093
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 92
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 92
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10067
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 93
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 93
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10087
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 94
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 94
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10072
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 95
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 95
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10092
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 96
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 96
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10098
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 97
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 97
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10085
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 98
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 98
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10080
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 99
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 99
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10100
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 100
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 100
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10081
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 101
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 101
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10089
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 102
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 102
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10095
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 103
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 103
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10086
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 104
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 104
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10099
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 105
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 105
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10090
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 106
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 106
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10077
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 107
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 107
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10096
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 108
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 108
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10094
+[2026-01-12 23:43:07.342] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 109
+[2026-01-12 23:43:07.342] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 109
+[2026-01-12 23:43:07.342] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10091
+[2026-01-12 23:43:07.352] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 110
+[2026-01-12 23:43:07.352] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 110
+[2026-01-12 23:43:07.352] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10102
+[2026-01-12 23:43:07.352] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 111
+[2026-01-12 23:43:07.352] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 111
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 112
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 112
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 113
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 113
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10101
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10103
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10105
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 114
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 114
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 115
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 115
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 116
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 116
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 117
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 117
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 118
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 118
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 119
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 119
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 120
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 120
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 121
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 121
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 122
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 122
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 123
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 123
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 124
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 124
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 125
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 125
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 126
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 126
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 127
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 127
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 128
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 128
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 129
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 129
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 130
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 130
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 131
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 131
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 132
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 132
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10106
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10121
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10115
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10119
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10118
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 133
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10113
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 133
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10114
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10116
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10117
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10112
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10107
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10104
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10111
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10110
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10109
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10108
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10120
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10124
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10125
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10127
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 134
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 134
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 135
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 135
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10126
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 136
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 136
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10122
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 137
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 137
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 138
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 138
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 139
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 139
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10128
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10132
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 140
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 140
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10123
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10130
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 141
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 141
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 142
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 142
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 143
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 143
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 144
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 144
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 145
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 145
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 146
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 146
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10142
+[2026-01-12 23:43:07.353] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 147
+[2026-01-12 23:43:07.353] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 147
+[2026-01-12 23:43:07.353] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10133
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 148
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 148
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 149
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 149
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 150
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 150
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 151
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 151
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10134
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 152
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10139
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10145
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10138
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10148
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 152
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10129
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10136
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10131
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10135
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 153
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10137
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 153
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10140
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10149
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 154
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 154
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10146
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 155
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 155
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10143
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 156
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 156
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10150
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 157
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 157
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10141
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 158
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 158
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10144
+[2026-01-12 23:43:07.354] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 159
+[2026-01-12 23:43:07.354] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 159
+[2026-01-12 23:43:07.354] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10147
+[2026-01-12 23:43:07.364] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 160
+[2026-01-12 23:43:07.364] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 160
+[2026-01-12 23:43:07.364] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 161
+[2026-01-12 23:43:07.364] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 161
+[2026-01-12 23:43:07.364] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10183
+[2026-01-12 23:43:07.364] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10161
+[2026-01-12 23:43:07.364] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 162
+[2026-01-12 23:43:07.364] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 162
+[2026-01-12 23:43:07.364] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10188
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 163
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 163
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 164
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 164
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10159
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 165
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 165
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10190
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10194
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 166
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 166
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10166
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 167
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 167
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10173
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 168
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 168
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10156
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 169
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 169
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10158
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 170
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 170
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10157
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 171
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 171
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10168
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 172
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 172
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 173
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 173
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10160
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10165
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 174
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 174
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10170
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 175
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 175
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10155
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 176
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 176
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 177
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 177
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10151
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10152
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 178
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 178
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10180
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 179
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 179
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10199
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 180
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 180
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10154
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 181
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 181
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10164
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 182
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 182
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10153
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 183
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 183
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10176
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 184
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 184
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10197
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 185
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 185
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 186
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 186
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10175
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 187
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 187
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10179
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 188
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 188
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10191
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 189
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 189
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10189
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 190
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 190
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10162
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 191
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 191
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 192
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 192
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10163
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 193
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 193
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 194
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 194
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 195
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 195
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 196
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 196
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10172
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 197
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 197
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 198
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 198
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10174
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 199
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 199
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10167
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 200
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 200
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10177
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 201
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 201
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10185
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 202
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 202
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10169
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 203
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 203
+[2026-01-12 23:43:07.365] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10181
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 204
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 204
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10171
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10195
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10186
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 205
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 205
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10198
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 206
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 206
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10196
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10187
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10184
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 207
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 207
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10182
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10193
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 208
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 208
+[2026-01-12 23:43:07.365] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 209
+[2026-01-12 23:43:07.365] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 209
+[2026-01-12 23:43:07.365] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10200
+[2026-01-12 23:43:07.365] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10178
+[2026-01-12 23:43:07.365] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10192
+[2026-01-12 23:43:07.375] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 210
+[2026-01-12 23:43:07.375] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 210
+[2026-01-12 23:43:07.375] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 211
+[2026-01-12 23:43:07.375] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 211
+[2026-01-12 23:43:07.375] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 212
+[2026-01-12 23:43:07.375] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 212
+[2026-01-12 23:43:07.375] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 213
+[2026-01-12 23:43:07.375] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 213
+[2026-01-12 23:43:07.375] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 214
+[2026-01-12 23:43:07.375] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 214
+[2026-01-12 23:43:07.375] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10205
+[2026-01-12 23:43:07.375] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10216
+[2026-01-12 23:43:07.375] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10208
+[2026-01-12 23:43:07.375] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10202
+[2026-01-12 23:43:07.375] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10210
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 215
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 215
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10214
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 216
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 216
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10212
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 217
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 217
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10204
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 218
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 218
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10220
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 219
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 219
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10223
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 220
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 220
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 221
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 221
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 222
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 222
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10207
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10221
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10211
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 223
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 223
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10201
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 224
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 224
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10209
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 225
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 225
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10226
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 226
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 226
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10218
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 227
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 227
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10217
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 228
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 228
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10228
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 229
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 229
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10215
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 230
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 230
+[2026-01-12 23:43:07.376] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10231
+[2026-01-12 23:43:07.376] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 231
+[2026-01-12 23:43:07.376] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 231
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 232
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 232
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10206
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10203
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 233
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 233
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10213
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 234
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 234
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10233
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 235
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 235
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10235
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 236
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 236
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10236
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 237
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 237
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10229
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 238
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 238
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10219
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 239
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 239
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10237
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 240
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 240
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10240
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 241
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 241
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10244
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 242
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 242
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10239
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 243
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 243
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10247
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 244
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 244
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10248
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 245
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 245
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10250
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 246
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 246
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10234
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 247
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 247
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10241
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 248
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 248
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10246
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 249
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 249
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10224
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 250
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 250
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10222
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 251
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 251
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 252
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 252
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 253
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 253
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10242
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 254
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 254
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10245
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10227
+[2026-01-12 23:43:07.377] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10225
+[2026-01-12 23:43:07.377] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 255
+[2026-01-12 23:43:07.377] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 255
+[2026-01-12 23:43:07.395] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 256
+[2026-01-12 23:43:07.395] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 256
+[2026-01-12 23:43:07.395] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 257
+[2026-01-12 23:43:07.395] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 257
+[2026-01-12 23:43:07.395] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10232
+[2026-01-12 23:43:07.395] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10243
+[2026-01-12 23:43:07.395] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10230
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 258
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 258
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 259
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 259
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 260
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 260
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 261
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 261
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 262
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 262
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 263
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 263
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 264
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 264
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 265
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 265
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 266
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 266
+[2026-01-12 23:43:07.396] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 267
+[2026-01-12 23:43:07.396] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 267
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10297
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10265
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10273
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10289
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10298
+[2026-01-12 23:43:07.396] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10300
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10296
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10291
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 268
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 268
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10287
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10262
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 269
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 269
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10249
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 270
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 270
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10293
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 271
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 271
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10282
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 272
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 272
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10258
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 273
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 273
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 274
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 274
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10260
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 275
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 275
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10269
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 276
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 276
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10277
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 277
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 277
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10238
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10275
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 278
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 278
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 279
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 279
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 280
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 280
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 281
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 281
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10253
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 282
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 282
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 283
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 283
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 284
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 284
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10288
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 285
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 285
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10266
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10274
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10251
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 286
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 286
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10261
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10267
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 287
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 287
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10276
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 288
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 288
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10259
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 289
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 289
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10272
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 290
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 290
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10285
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 291
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 291
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10256
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10254
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10280
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10271
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 292
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 292
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10286
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 293
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 293
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10252
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 294
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 294
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10264
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 295
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 295
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10281
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 296
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 296
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10290
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 297
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 297
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10279
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 298
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 298
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10295
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 299
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 299
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10263
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 300
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 300
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10257
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 301
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 301
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10284
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 302
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 302
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10278
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 303
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 303
+[2026-01-12 23:43:07.397] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10283
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 304
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 304
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10299
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 305
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 305
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10255
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 306
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 306
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10294
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 307
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 307
+[2026-01-12 23:43:07.397] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10292
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 308
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 308
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10270
+[2026-01-12 23:43:07.397] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 309
+[2026-01-12 23:43:07.397] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 309
+[2026-01-12 23:43:07.397] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10268
+[2026-01-12 23:43:07.398] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 310
+[2026-01-12 23:43:07.398] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 310
+[2026-01-12 23:43:07.398] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 311
+[2026-01-12 23:43:07.398] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 311
+[2026-01-12 23:43:07.398] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 312
+[2026-01-12 23:43:07.398] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 312
+[2026-01-12 23:43:07.398] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10329
+[2026-01-12 23:43:07.398] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 313
+[2026-01-12 23:43:07.398] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10315
+[2026-01-12 23:43:07.398] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 313
+[2026-01-12 23:43:07.398] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10326
+[2026-01-12 23:43:07.398] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 314
+[2026-01-12 23:43:07.398] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 314
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10330
+[2026-01-12 23:43:07.399] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 315
+[2026-01-12 23:43:07.399] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 315
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10322
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10317
+[2026-01-12 23:43:07.399] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 316
+[2026-01-12 23:43:07.399] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 316
+[2026-01-12 23:43:07.399] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 317
+[2026-01-12 23:43:07.399] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 317
+[2026-01-12 23:43:07.399] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 318
+[2026-01-12 23:43:07.399] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 318
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10337
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10333
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10303
+[2026-01-12 23:43:07.399] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 319
+[2026-01-12 23:43:07.399] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 319
+[2026-01-12 23:43:07.399] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10302
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 320
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 320
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 321
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 321
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10319
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10309
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 322
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 322
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 323
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 323
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 324
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 324
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 325
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 325
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 326
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 326
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 327
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 327
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 328
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 328
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10334
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 329
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 329
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10321
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10308
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10327
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10316
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10301
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10341
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10332
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 330
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 330
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10311
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 331
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 331
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10336
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 332
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 332
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10312
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 333
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 333
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10328
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 334
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 334
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10340
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 335
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 335
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10324
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 336
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 336
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10305
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 337
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 337
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10307
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 338
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 338
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10306
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 339
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 339
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10335
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 340
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 340
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10348
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 341
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 341
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10331
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 342
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 342
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10349
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 343
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 343
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10320
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 344
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 344
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10310
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 345
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 345
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10318
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 346
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 346
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10323
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 347
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 347
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10304
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 348
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 348
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10339
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 349
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 349
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10313
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 350
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 350
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10325
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 351
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 351
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10342
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 352
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 352
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10314
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 353
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 353
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10338
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 354
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 354
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10346
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 355
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 355
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10350
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 356
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 356
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10344
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 357
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 357
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10347
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 358
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 358
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10343
+[2026-01-12 23:43:07.400] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 359
+[2026-01-12 23:43:07.400] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 359
+[2026-01-12 23:43:07.400] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10345
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 360
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 360
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 361
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 361
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 362
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 362
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 363
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 363
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 364
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 364
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 365
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 365
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 366
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 366
+[2026-01-12 23:43:07.409] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10354
+[2026-01-12 23:43:07.409] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10352
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 367
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 367
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 368
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 368
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 369
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 369
+[2026-01-12 23:43:07.409] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 370
+[2026-01-12 23:43:07.409] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 370
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10351
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10364
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10362
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10355
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10356
+[2026-01-12 23:43:07.410] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10357
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10363
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 371
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 371
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10353
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10358
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10373
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 372
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 372
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10372
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 373
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 373
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 374
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 374
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 375
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 375
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10378
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 376
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 376
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 377
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 377
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10386
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 378
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 378
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 379
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 379
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10376
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10379
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 380
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 380
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10381
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 381
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 381
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 382
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 382
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10360
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 383
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 383
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 384
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 384
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 385
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 385
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10365
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 386
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 386
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 387
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 387
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 388
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 388
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 389
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 389
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 390
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 390
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10366
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 391
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 391
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 392
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 392
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10367
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 393
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 393
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10400
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10361
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 394
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 394
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10393
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10383
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 395
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 395
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10370
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 396
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 396
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 397
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 397
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 398
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 398
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10371
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 399
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 399
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10387
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10389
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 400
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 400
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 401
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 401
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10375
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 402
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 402
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 403
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 403
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10390
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 404
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 404
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 405
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 405
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10398
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 406
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 406
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10392
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10377
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10385
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10369
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10380
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10384
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10399
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10382
+[2026-01-12 23:43:07.411] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10359
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 407
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 407
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10394
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10374
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10395
+[2026-01-12 23:43:07.411] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 408
+[2026-01-12 23:43:07.411] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 408
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10396
+[2026-01-12 23:43:07.411] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10368
+[2026-01-12 23:43:07.412] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 409
+[2026-01-12 23:43:07.412] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 409
+[2026-01-12 23:43:07.412] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10397
+[2026-01-12 23:43:07.412] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10388
+[2026-01-12 23:43:07.412] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10391
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 410
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 410
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 411
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 411
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10401
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10411
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 412
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 412
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10406
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 413
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 413
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10402
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 414
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 414
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 415
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 415
+[2026-01-12 23:43:07.421] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10407
+[2026-01-12 23:43:07.421] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10405
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 416
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 416
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10404
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 417
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 417
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10410
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 418
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 418
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 419
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 419
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10403
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 420
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 420
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 421
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 421
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 422
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 422
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10421
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10412
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 423
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 423
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 424
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 424
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 425
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 425
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 426
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 426
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 427
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 427
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10416
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 428
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 428
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10408
+[2026-01-12 23:43:07.421] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10415
+[2026-01-12 23:43:07.421] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10422
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10423
+[2026-01-12 23:43:07.421] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10414
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 429
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 429
+[2026-01-12 23:43:07.421] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10425
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 430
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 430
+[2026-01-12 23:43:07.421] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10418
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 431
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 431
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 432
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 432
+[2026-01-12 23:43:07.421] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10417
+[2026-01-12 23:43:07.421] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 433
+[2026-01-12 23:43:07.421] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 433
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10409
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10424
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 434
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 434
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10419
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 435
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 435
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 436
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 436
+[2026-01-12 23:43:07.422] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10426
+[2026-01-12 23:43:07.422] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10427
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 437
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 437
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 438
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 438
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 439
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 439
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 440
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 440
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 441
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 441
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 442
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 442
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 443
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 443
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 444
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 444
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 445
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 445
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10433
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10429
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10428
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10438
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10432
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10430
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10437
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10431
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 446
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 446
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10434
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 447
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 447
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10435
+[2026-01-12 23:43:07.422] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10413
+[2026-01-12 23:43:07.422] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10420
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 448
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 448
+[2026-01-12 23:43:07.422] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10436
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10439
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 449
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 449
+[2026-01-12 23:43:07.422] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10445
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 450
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 450
+[2026-01-12 23:43:07.422] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10446
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 451
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 451
+[2026-01-12 23:43:07.422] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 452
+[2026-01-12 23:43:07.422] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 452
+[2026-01-12 23:43:07.422] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10448
+[2026-01-12 23:43:07.422] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10447
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 453
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 453
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 454
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 454
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10449
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 455
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 455
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 456
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 456
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10441
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 457
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 457
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10442
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10440
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 458
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 458
+[2026-01-12 23:43:07.423] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 459
+[2026-01-12 23:43:07.423] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 459
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10443
+[2026-01-12 23:43:07.423] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10444
+[2026-01-12 23:43:07.423] [t:21820] [info] [main.cpp:177] [Handler] Login UID: 10450
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 460
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 460
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 461
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 461
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 462
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10454
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 462
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10452
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10460
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 463
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 463
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10465
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 464
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 464
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10473
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 465
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 465
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 466
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 466
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10458
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 467
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 467
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10455
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 468
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 468
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 469
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 469
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10462
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 470
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 470
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10472
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10456
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 471
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 471
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10469
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 472
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 472
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 473
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 473
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10467
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 474
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 474
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10453
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 475
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 475
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10470
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 476
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 476
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10468
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10461
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 477
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 477
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 478
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10476
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 478
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10466
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 479
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 479
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10471
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 480
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 480
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10451
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 481
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 481
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10457
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 482
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 482
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 483
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 483
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10479
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 484
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 484
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10464
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10477
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 485
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 485
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10459
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 486
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 486
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10474
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 487
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 487
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 488
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 488
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10478
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 489
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 489
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10463
+[2026-01-12 23:43:07.433] [t:21819] [info] [main.cpp:177] [Handler] Login UID: 10488
+[2026-01-12 23:43:07.433] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 490
+[2026-01-12 23:43:07.433] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 490
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 491
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 491
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 492
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 492
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 493
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 493
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 494
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 494
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 495
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 495
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10480
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10485
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10484
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10475
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10487
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10481
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 496
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 496
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10482
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10489
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 497
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 497
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10483
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 498
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 498
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10491
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 499
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 499
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10490
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 500
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 500
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10492
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 501
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 501
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10493
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 502
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 502
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10494
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 503
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 503
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10496
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 504
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 504
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10497
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 505
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 505
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10495
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 506
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 506
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10498
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 507
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 507
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10486
+[2026-01-12 23:43:07.434] [t:21816] [info] [main.cpp:42] [Gate] New Session Accepted | FD: 508
+[2026-01-12 23:43:07.434] [t:21816] [debug] [playerActor.h:24] PlayerActor Created | FD: 508
+[2026-01-12 23:43:07.434] [t:21818] [info] [main.cpp:177] [Handler] Login UID: 10499
+[2026-01-13 15:32:52.632] [t:29978] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:32:52.632] [t:29978] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:32:52.632] [t:29978] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:32:52.632] [t:29978] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 4
+[2026-01-13 15:32:52.632] [t:29978] [info] [main.cpp:181] [Timer] Driver started. FD: 4
+[2026-01-13 15:32:52.632] [t:29980] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 15:32:52.632] [t:29981] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 15:32:52.632] [t:29982] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 15:35:08.138] [t:30616] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:35:08.138] [t:30616] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:35:08.138] [t:30616] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:36:44.607] [t:31152] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:36:44.607] [t:31152] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:36:44.607] [t:31152] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:37:00.259] [t:31269] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:37:00.259] [t:31269] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:37:00.259] [t:31269] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:37:00.260] [t:31269] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 4
+[2026-01-13 15:37:00.260] [t:31269] [info] [main.cpp:181] [Timer] Driver started. FD: 4
+[2026-01-13 15:37:13.665] [t:31513] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:37:13.666] [t:31513] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:37:13.666] [t:31513] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:37:13.666] [t:31513] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 4
+[2026-01-13 15:37:13.666] [t:31513] [info] [main.cpp:181] [Timer] Driver started. FD: 4
+[2026-01-13 15:39:34.322] [t:32189] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:39:34.322] [t:32189] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:39:34.322] [t:32189] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:39:34.322] [t:32191] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 15:39:34.322] [t:32189] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 4
+[2026-01-13 15:39:34.322] [t:32189] [info] [main.cpp:181] [Timer] Driver started. FD: 4
+[2026-01-13 15:42:46.146] [t:33005] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 15:42:46.146] [t:33005] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 15:42:46.146] [t:33005] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 15:42:46.146] [t:33005] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 4
+[2026-01-13 15:42:46.146] [t:33005] [info] [main.cpp:180] [Timer] Driver started. FD: 4
+[2026-01-13 16:06:08.137] [t:38068] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 16:06:08.137] [t:38068] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 16:06:08.137] [t:38068] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 16:06:08.137] [t:38068] [info] [main.cpp:260] [Init] Initializing IO Environment...
+[2026-01-13 16:06:08.137] [t:38070] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 16:06:08.138] [t:38071] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 16:06:08.138] [t:38068] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-13 16:06:08.138] [t:38068] [info] [hierarchy_timer.hpp:81] TimerWheel Initialized. FD: 5
+[2026-01-13 16:06:08.138] [t:38068] [info] [main.cpp:180] [Timer] Driver started. FD: 5
+[2026-01-13 16:06:08.138] [t:38072] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 16:06:08.140] [t:38068] [info] [main.cpp:267] Adding test timer (1s)...
+[2026-01-13 16:06:08.161] [t:38068] [info] [main.cpp:140] ==========================================
+[2026-01-13 16:06:08.161] [t:38068] [info] [main.cpp:141]  Aegis Gate Server Started
+[2026-01-13 16:06:08.161] [t:38068] [info] [main.cpp:142]  Port: 8888
+[2026-01-13 16:06:08.161] [t:38068] [info] [main.cpp:143]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-13 16:06:08.161] [t:38068] [info] [main.cpp:144] ==========================================
+[2026-01-13 16:06:08.162] [t:38068] [info] [main.cpp:275] [Init] Entering Main IO Loop.
+[2026-01-13 16:06:08.162] [t:38068] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-13 16:06:09.148] [t:38068] [info] [main.cpp:269] >>> TIMER TRIGGERED: 1 SECOND PASSED! <<<
+[2026-01-13 16:20:38.751] [t:41350] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 16:20:38.751] [t:41350] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 16:20:38.751] [t:41350] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 16:20:38.751] [t:41350] [info] [main.cpp:260] [Init] Initializing IO Environment...
+[2026-01-13 16:20:38.751] [t:41352] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 16:20:38.751] [t:41354] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 16:20:38.752] [t:41350] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-13 16:20:38.752] [t:41350] [info] [hierarchy_timer.hpp:83] TimerWheel Initialized. FD: 5
+[2026-01-13 16:20:38.752] [t:41350] [info] [main.cpp:180] [Timer] Driver started. FD: 5
+[2026-01-13 16:20:38.752] [t:41350] [info] [main.cpp:267] Adding test timer (1s)...
+[2026-01-13 16:20:38.752] [t:41353] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:140] ==========================================
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:141]  Aegis Gate Server Started
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:142]  Port: 8888
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:143]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:144] ==========================================
+[2026-01-13 16:20:38.756] [t:41350] [info] [main.cpp:277] [Init] Entering Main IO Loop.
+[2026-01-13 16:20:38.756] [t:41350] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-13 16:20:39.762] [t:41350] [info] [main.cpp:271] >>> TIMER TRIGGERED: 1 SECOND PASSED! <<<
+[2026-01-13 16:22:36.790] [t:41966] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 16:22:36.790] [t:41966] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 16:22:36.790] [t:41966] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 16:22:36.791] [t:41966] [info] [main.cpp:260] [Init] Initializing IO Environment...
+[2026-01-13 16:22:36.791] [t:41968] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 16:22:36.791] [t:41969] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 16:22:36.791] [t:41970] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 16:22:36.791] [t:41966] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-13 16:22:36.791] [t:41966] [info] [hierarchy_timer.hpp:83] TimerWheel Initialized. FD: 5
+[2026-01-13 16:22:36.791] [t:41966] [info] [main.cpp:180] [Timer] Driver started. FD: 5
+[2026-01-13 16:22:36.791] [t:41966] [info] [main.cpp:267] Adding test timer (1s)...
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:140] ==========================================
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:141]  Aegis Gate Server Started
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:142]  Port: 8888
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:143]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:144] ==========================================
+[2026-01-13 16:22:36.795] [t:41966] [info] [main.cpp:277] [Init] Entering Main IO Loop.
+[2026-01-13 16:22:36.795] [t:41966] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-13 16:22:37.801] [t:41966] [debug] [hierarchy_timer.hpp:169] Exec Timer: ID=1, Tick=100
+[2026-01-13 16:22:37.801] [t:41966] [info] [main.cpp:271] >>> TIMER TRIGGERED: 1 SECOND PASSED! <<<
+[2026-01-13 16:30:39.119] [t:44665] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 16:30:39.119] [t:44665] [info] [main.cpp:255] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 16:30:39.119] [t:44665] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 16:30:39.119] [t:44665] [info] [main.cpp:260] [Init] Initializing IO Environment...
+[2026-01-13 16:30:39.119] [t:44667] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 16:30:39.119] [t:44669] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 16:30:39.120] [t:44668] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 16:30:39.120] [t:44665] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-13 16:30:39.120] [t:44665] [info] [hierarchy_timer.hpp:83] TimerWheel Initialized. FD: 5
+[2026-01-13 16:30:39.120] [t:44665] [info] [main.cpp:180] [Timer] Driver started. FD: 5
+[2026-01-13 16:30:39.120] [t:44665] [info] [main.cpp:267] Adding test timer (1s)...
+[2026-01-13 16:30:39.120] [t:44665] [info] [main.cpp:273] Timer scheduled with ID: 1
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:140] ==========================================
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:141]  Aegis Gate Server Started
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:142]  Port: 8888
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:143]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:144] ==========================================
+[2026-01-13 16:30:39.124] [t:44665] [info] [main.cpp:278] [Init] Entering Main IO Loop.
+[2026-01-13 16:30:39.124] [t:44665] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-13 16:30:40.130] [t:44665] [info] [main.cpp:271] >>> TIMER TRIGGERED: 1 SECOND PASSED! <<<
+[2026-01-13 16:35:01.358] [t:46068] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-01-13 16:35:01.358] [t:46068] [info] [main.cpp:273] [Init] Starting Scheduler with 3 worker threads...
+[2026-01-13 16:35:01.359] [t:46068] [info] [scheduler.cpp:49] Scheduler engine starting with 3 workers (Work-Stealing)...
+[2026-01-13 16:35:01.359] [t:46070] [debug] [scheduler.cpp:138] Worker [0] initialized.
+[2026-01-13 16:35:01.359] [t:46068] [info] [main.cpp:278] [Init] Initializing IO Environment...
+[2026-01-13 16:35:01.359] [t:46071] [debug] [scheduler.cpp:138] Worker [1] initialized.
+[2026-01-13 16:35:01.359] [t:46068] [info] [env.cpp:27] Env (IO_Uring) initialized. Depth: 4096
+[2026-01-13 16:35:01.359] [t:46068] [info] [hierarchy_timer.h:83] TimerWheel Initialized. FD: 5
+[2026-01-13 16:35:01.359] [t:46068] [info] [main.cpp:181] [Timer] Driver started. FD: 5
+[2026-01-13 16:35:01.359] [t:46068] [info] [main.cpp:244] [SleepTest] Start sleeping for 2 seconds...
+[2026-01-13 16:35:01.359] [t:46072] [debug] [scheduler.cpp:138] Worker [2] initialized.
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:141] ==========================================
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:142]  Aegis Gate Server Started
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:143]  Port: 8888
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:144]  Mode: MVP (Single IO Thread + Worker Pool)
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:145] ==========================================
+[2026-01-13 16:35:01.363] [t:46068] [info] [main.cpp:289] [Init] Entering Main IO Loop.
+[2026-01-13 16:35:01.363] [t:46068] [info] [env.cpp:41] Env EventLoop started running (Pure Wait Mode).
+[2026-01-13 16:35:03.369] [t:46068] [info] [main.cpp:255] [SleepTest] Woke up! Actual sleep: 2010 ms

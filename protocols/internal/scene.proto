@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+// 定义包名，防止命名冲突
+package aegis.protocol;
+
+// 1. 基础数据结构 (复用性设计)
+// ---------------------------------------------------------
+
+// 简单的 3D 向量，虽然 AOI 是 2D 的，但传输通常带高度
+message PBVector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+// 完整的玩家快照信息
+// 用于 EnterView 时告诉客户端"这个人长什么样"
+message PBPlayerInfo {
+  uint64 entity_id = 1;     // 实体唯一 ID
+  PBVector3 pos = 2;        // 当前位置
+  float direction = 3;      // 朝向 (0-360)
+  
+  // 业务数据 (展示用)
+  string name = 4;          // 玩家名字
+  int32 skin_id = 5;        // 模型/皮肤 ID
+  int32 hp = 6;             // 当前血量
+}
+
+// 2. 核心通信消息 (CS/SC)
+// ---------------------------------------------------------
+
+// [CS] 请求移动
+// 客户端告诉服务器："我想要走到这里" (或者"我走到了这里"，取决于同步策略)
+message CSMoveReq {
+  PBVector3 target_pos = 1;
+  float direction = 2;
+  int64 timestamp = 3;      // 用于防作弊和延迟补偿 (Lag Compensation)
+}
+
+// [SC] 移动通知 (广播)
+// 服务器告诉周围的人："Entity X 移动到了 Y"
+// 极致优化：通常只需广播 ID 和 Pos，不需要由整个 PlayerInfo
+message SCMoveNtf {
+  uint64 entity_id = 1;
+  PBVector3 pos = 2;
+  float direction = 3;
+}
+
+// [SC] 进入视野通知 (AOI 核心)
+// 包含"所有的"新进入视野的实体数据
+// 使用 repeated 进行批处理，避免发 N 个包
+message SCEnterViewNtf {
+  repeated PBPlayerInfo entities = 1;
+}
+
+// [SC] 离开视野通知 (AOI 核心)
+// 只需要 ID 即可，客户端负责销毁对象
+message SCLeaveViewNtf {
+  repeated uint64 entity_ids = 1;
+}

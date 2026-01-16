@@ -1,8 +1,8 @@
 #pragma once
 
 #include <atomic>
-#include <new>    // for std::hardware_destructive_interference_size
-#include <thread> // for yield context if needed (optional)
+#include <thread>
+#include <new>
 
 #if defined(__x86_64__) || defined(_M_X64)
 #include <immintrin.h>
@@ -10,12 +10,13 @@
 
 namespace aegis::common
 {
+    // 获取硬件造成的破坏性干扰大小（通常即 Cache Line 大小），如果编译器不支持则回退到 64
+#ifdef __cpp_lib_hardware_interference_size
+    constexpr std::size_t kCacheLineSize = std::hardware_destructive_interference_size;
+#else
     constexpr std::size_t kCacheLineSize = 64;
+#endif
 
-    /**
-     * @brief CPU 弛豫指令封装
-     * 在自旋等待期间提示 CPU 流水线，避免过度发热并优化超线程性能
-     */
     inline void cpu_relax() noexcept
     {
 #if defined(__x86_64__) || defined(_M_X64)
@@ -23,72 +24,71 @@ namespace aegis::common
 #elif defined(__aarch64__)
         __asm__ __volatile__("yield");
 #else
-        // Fallback for other archs
+        // fallback
 #endif
     }
 
-    /**
-     * @brief 高性能自旋锁 (SpinLock) - TTAS + Cache Aligned
-     * * @note [MVP Status]
-     * 1. 强制 Cache Line 对齐，彻底解决 False Sharing。
-     * 2. 采用 TTAS (Test-Test-And-Set) 策略，配合 C++20 atomic_flag::test()。
-     * 3. 适用于锁持有时间极短（纳秒/微秒级）的场景。
-     */
     struct alignas(kCacheLineSize) SpinLock
     {
-        // C++20 保证默认构造为 clear 状态
+    private:
         std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
-        SpinLock() noexcept = default;
+        static constexpr int kMaxSpinsBeforeYield = 4000;
 
-        // 严格禁止拷贝和移动（锁的语义决定了它必须锚定在内存地址）
+    public:
+        SpinLock() noexcept = default;
         SpinLock(const SpinLock &) = delete;
         SpinLock &operator=(const SpinLock &) = delete;
-        SpinLock(SpinLock &&) = delete;
-        SpinLock &operator=(SpinLock &&) = delete;
 
-        /**
-         * @brief 获取锁 (TTAS 策略)
-         * * 优化原理：
-         * 1. 先进行 relaxed load (test)，此时 cache line 处于 Shared (S) 状态。
-         * 2. 只有当发现锁空闲时，才尝试 RMW (Read-Modify-Write)，请求 Exclusive (E/M) 状态。
-         * 3. 避免了在锁被占用时，多个 CPU 核心频繁争抢总线写权限导致的 "Bus Storm"。
-         */
         void lock() noexcept
         {
+            // 快速路径：如果运气好，一次就拿到了，完全不用进循环
+            if (!flag.test_and_set(std::memory_order_acquire))
+            {
+                return;
+            }
+
+            // 慢速路径：开始自旋
+            int spin_count = 0;
             while (true)
             {
-                // 阶段 1: 乐观尝试获取锁 (Test-And-Set)
-                // memory_order_acquire 保证临界区内存读写不会重排到加锁前
-                if (!flag.test_and_set(std::memory_order_acquire))
-                {
-                    return;
-                }
-
-                // 阶段 2: 自旋等待 (Test Loop)
-                // 使用 memory_order_relaxed，仅观察值，不产生同步副作用，减少开销
+                // Inner Loop: 只读自旋 (TTAS 的第一个 T)
+                // 在这个循环里，cache line 处于 Shared 状态，不产生总线流量
                 while (flag.test(std::memory_order_relaxed))
                 {
-                    cpu_relax();
+                    if (spin_count < kMaxSpinsBeforeYield)
+                    {
+                        cpu_relax();
+                        spin_count++;
+                    }
+                    else
+                    {
+                        // 惩罚机制：自旋太久了，说明锁竞争激烈或持有者被切走了
+                        // 主动让出 CPU，防止活锁 (Livelock)
+                        std::this_thread::yield();
+                        spin_count = 0; // 归零，回来后继续尝试自旋
+                    }
                 }
+
+                // 尝试获取锁 (TTAS 的 TAS)
+                // 只有上面的循环检测到锁释放了，这里才会执行原子写
+                if (!flag.test_and_set(std::memory_order_acquire))
+                {
+                    return; // 成功拿到锁
+                }
+
+                // 如果 CAS 失败（被别人抢了），回到大循环继续 read-spin
             }
         }
 
         void unlock() noexcept
         {
-            // memory_order_release 保证临界区内存读写全部完成
             flag.clear(std::memory_order_release);
         }
 
-        /**
-         * @brief 尝试获取锁 (Non-blocking)
-         * 适用于 Work-Stealing 场景
-         * @return true 获取成功, false 获取失败
-         */
         [[nodiscard]] bool try_lock() noexcept
         {
-            // 对于 try_lock，直接 TAS 即可，不需要自旋等待
             return !flag.test_and_set(std::memory_order_acquire);
         }
     };
-} // namespace aegis::common
+}

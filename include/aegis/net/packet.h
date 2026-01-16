@@ -105,6 +105,15 @@ namespace aegis::net
             payload_.resize(size);
         }
 
+        // SSP 优化：重置对象状态，但保留内存 Capacity
+        // 供 ObjectPool 调用
+        void reset()
+        {
+            // 关键点：std::vector::clear() 不会释放 capacity()
+            // 下次 resize 时只要不超过 capacity 就不需要 malloc
+            payload_.clear();
+        }
+
         char *mutable_data() { return payload_.data(); }
 
         // --- 发送侧接口 (Factory) ---

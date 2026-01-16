@@ -9,6 +9,7 @@
 
 #include "aegis/net/packet.h"
 #include "aegis/common/aegisLog.h" // 引入日志以记录异常
+#include "aegis/core/message.h"
 
 // 适配不同编译器的缓存行大小获取
 #ifdef __cpp_lib_hardware_interference_size
@@ -19,34 +20,6 @@ constexpr std::size_t hardware_constructive_interference_size = 64;
 
 namespace aegis::core
 {
-
-    // --- 1. 基础信封 (无虚函数的 POD 类型，极致内存紧凑) ---
-    struct ActorMessage
-    {
-        // 侵入式链表指针：指向下一个消息
-        std::atomic<ActorMessage *> next{nullptr};
-
-        // 简单的 RTTI: 0=System, 1=Network, ...
-        // [TODO] 随着消息类型增加，建议改为 enum class 以提高可读性
-        uint8_t type_id = 0;
-
-        // 禁止虚析构函数以节省 vptr 空间 (8 bytes)，生命周期由 Actor 手动管理
-        // virtual ~ActorMessage() = default;
-    };
-
-    // --- 2. 网络信封 ---
-    struct NetworkMessage : public ActorMessage
-    {
-        aegis::net::Packet pkt;
-        int session_id;
-
-        NetworkMessage(aegis::net::Packet &&p, int sid)
-            : pkt(std::move(p)), session_id(sid)
-        {
-            type_id = 1; // 标记为网络消息
-        }
-    };
-
     // --- 3. 核心 Actor 引擎 (MPSC Lock-Free) ---
     /**
      * @brief 基于 Intrusive MPSC Queue 的 Actor 基类
@@ -58,7 +31,7 @@ namespace aegis::core
      * - 处理完 Head->next 后，原来的 Head (旧 Stub) 被回收，
      * Head->next 变成新的 Stub (即它里面的数据被消费了，壳留着用作 Stub)。
      */
-    class Actor
+    class Actor : public std::enable_shared_from_this<Actor>
     {
     public:
         Actor()
@@ -160,15 +133,30 @@ namespace aegis::core
                 // --- 业务执行区 (Exception Safe) ---
                 try
                 {
-                    handle_message(next);
+                    // [New] 拦截系统消息 (协程唤醒)
+                    if (next->type_id == MSG_ID_CORO_WAKEUP)
+                    {
+                        auto *wake_msg = static_cast<CoroutineWakeupMsg *>(next);
+                        if (wake_msg->handle)
+                        {
+                            // 在 Worker 线程恢复协程
+                            // 此时上下文 (Actor::current) 已经在 Worker 中被设置好了
+                            wake_msg->handle.resume();
+                        }
+                    }
+                    else
+                    {
+                        // 普通业务消息，交给子类处理
+                        handle_message(next);
+                    }
                 }
                 catch (const std::exception &e)
                 {
-                    aegis::Log::instance().error("Actor handle_message exception: {}", e.what());
+                    aegis::Log::instance().error("Actor exception: {}", e.what());
                 }
                 catch (...)
                 {
-                    aegis::Log::instance().error("Actor handle_message unknown exception");
+                    aegis::Log::instance().error("Actor unknown exception");
                 }
 
                 // --- 资源回收区 ---
@@ -182,6 +170,11 @@ namespace aegis::core
             return true;
         }
 
+        // --- 上下文管理 (Thread Local Context) ---
+        // 允许 sleep() 知道自己属于哪个 Actor
+        static Actor *current();
+        static void set_current(Actor *actor);
+
     protected:
         // 子类实现具体的业务逻辑
         virtual void handle_message(ActorMessage *msg) = 0;
@@ -193,13 +186,17 @@ namespace aegis::core
                 return;
 
             // [MVP TODO] 建议未来改为 switch 或虚函数表（如果内存允许）
-            if (msg->type_id == 1)
+            if (msg->type_id == 1) // NetworkMessage
             {
                 delete static_cast<NetworkMessage *>(msg);
             }
+            else if (msg->type_id == MSG_ID_CORO_WAKEUP) // [New] CoroutineWakeupMsg
+            {
+                delete static_cast<CoroutineWakeupMsg *>(msg);
+            }
             else
             {
-                delete msg; // 默认 (System message etc)
+                delete msg; // System message (base)
             }
         }
 

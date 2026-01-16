@@ -18,9 +18,15 @@ namespace aegis::core
         if (is_initialized_)
             return;
 
-        if (io_uring_queue_init(ring_depth, &ring_, 0) < 0)
+        struct io_uring_params params;
+        memset(&params, 0, sizeof(params));
+        params.flags = IORING_SETUP_SQPOLL;
+        params.sq_thread_idle = 2000;
+
+        if (io_uring_queue_init_params(ring_depth, &ring_, &params) < 0)
         {
-            aegis::Log::instance().critical("Failed to init io_uring.");
+            int err = errno;
+            aegis::Log::instance().critical("Failed to init io_uring with SQPOLL. Errno: {}", err);
             throw std::runtime_error("Failed to init io_uring");
         }
         is_initialized_ = true;
@@ -44,16 +50,12 @@ namespace aegis::core
         {
             struct io_uring_cqe *cqe;
 
-            // [Critical Fix] 使用 io_uring_wait_cqe 替代 io_uring_submit_and_wait
-            // 原因：submit_and_wait 会尝试访问 Submission Queue (SQ) 来提交挂起的请求，
-            // 但此时 Worker 线程可能正持有锁在操作 SQ，导致无锁竞争和 Segfault。
-            // 既然 Workers 已经显式调用了 io_uring_submit，这里只需要傻等结果 (CQ) 即可。
             int ret = io_uring_wait_cqe(&ring_, &cqe);
 
             if (ret < 0)
             {
                 if (ret == -EINTR)
-                    continue; // 信号中断
+                    continue;
                 aegis::Log::instance().error("io_uring_wait_cqe error: {}", -ret);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;

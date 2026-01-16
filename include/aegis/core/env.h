@@ -17,7 +17,6 @@ namespace aegis::core
         void init(int ring_depth = 4096);
         void run();
 
-        // [Fix] 恢复这两个接口供 Socket 使用
         io_uring *native_handle() { return &ring_; }
         std::mutex &get_submission_mutex() { return sq_mutex_; }
 
@@ -27,6 +26,6 @@ namespace aegis::core
 
         struct io_uring ring_;
         bool is_initialized_ = false;
-        std::mutex sq_mutex_; // [Required] 保护 SQ
+        std::mutex sq_mutex_;
     };
 }

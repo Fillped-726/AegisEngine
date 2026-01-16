@@ -14,25 +14,89 @@ namespace aegis::core
     template <typename T>
     struct Promise;
 
-    /**
-     * @brief 标准异步任务 (Lazy)
-     * @details
-     * 1. Lazy Execution: 创建时挂起，直到被 co_await 时才执行。
-     * 2. Symmetric Transfer: 利用 await_suspend 返回 handle 进行尾调用优化。
-     * 3. Single Ownership: 只能被 move，不能 copy。
-     */
+    // 前置声明 Task
     template <typename T = void>
-    struct Task
+    struct Task;
+
+    // ==========================================
+    // 1. PromiseBase (提取公共逻辑)
+    // ==========================================
+    struct PromiseBase
+    {
+        std::exception_ptr exception_;
+        std::coroutine_handle<> continuation_; // 等待者
+
+        // 1. Initial Suspend: 总是挂起，等待 co_await
+        std::suspend_always initial_suspend() noexcept { return {}; }
+
+        // 2. Unhandled Exception: 统一捕获
+        void unhandled_exception() { exception_ = std::current_exception(); }
+
+        // 3. Final Awaiter: 统一处理对称转移
+        struct FinalAwaiter
+        {
+            bool await_ready() const noexcept { return false; }
+
+            // 关键点：使用模板适配 Promise<T> 和 Promise<void>
+            // 当协程结束时，h 是当前协程的 handle
+            template <typename PromiseType>
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseType> h) noexcept
+            {
+                // 通过 h.promise() 访问继承自 PromiseBase 的 continuation_
+                auto &promise = h.promise();
+
+                // 如果有等待者，跳转执行等待者；否则执行 noop (销毁或结束)
+                return promise.continuation_ ? promise.continuation_ : std::noop_coroutine();
+            }
+
+            void await_resume() noexcept {}
+        };
+
+        FinalAwaiter final_suspend() noexcept { return {}; }
+    };
+
+    // ==========================================
+    // 2. Promise<T> (继承 Base)
+    // ==========================================
+    template <typename T>
+    struct Promise : public PromiseBase
+    {
+        T value_;
+
+        Task<T> get_return_object() noexcept;
+
+        // 特有逻辑：处理返回值
+        template <typename U>
+        void return_value(U &&v)
+        {
+            value_ = std::forward<U>(v);
+        }
+    };
+
+    // ==========================================
+    // 3. Promise<void> (继承 Base)
+    // ==========================================
+    template <>
+    struct Promise<void> : public PromiseBase
+    {
+        Task<void> get_return_object() noexcept;
+
+        // 特有逻辑：void 返回
+        void return_void() {}
+    };
+
+    // ==========================================
+    // 4. Task<T> 实现
+    // ==========================================
+    template <typename T>
+    struct [[nodiscard("Task must be co_awaited")]] Task
     {
         using promise_type = Promise<T>;
         using handle_type = std::coroutine_handle<promise_type>;
 
         handle_type handle_;
 
-        explicit Task(handle_type h) : handle_(h) {}
-
-        Task(const Task &) = delete;
-        Task &operator=(const Task &) = delete;
+        explicit Task(handle_type h) noexcept : handle_(h) {}
 
         Task(Task &&other) noexcept : handle_(std::exchange(other.handle_, nullptr)) {}
 
@@ -53,27 +117,26 @@ namespace aegis::core
                 handle_.destroy();
         }
 
-        // --- Awaitable Interface ---
+        // 禁用拷贝
+        Task(const Task &) = delete;
+        Task &operator=(const Task &) = delete;
 
-        // 返回 false 表示"不立即就绪"，强制调用 await_suspend
+        // --- Awaiter 接口 ---
         bool await_ready() const noexcept { return false; }
 
-        // 对称转移核心：
-        // 1. 保存当前调用者 (caller) 到 promise 中。
-        // 2. 返回自己的 handle，告诉编译器"暂停 caller，立即跳转执行我"。
         std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller) noexcept
         {
+            // 访问 Base 中的 continuation_
             handle_.promise().continuation_ = caller;
             return handle_;
         }
 
         T await_resume()
         {
-            // 异常传播：如果在协程中抛出了异常，在这里重新抛出给等待者
+            // 访问 Base 中的 exception_
             if (handle_.promise().exception_)
                 std::rethrow_exception(handle_.promise().exception_);
 
-            // 使用 if constexpr 编译期分支，处理 void 和非 void 的统一接口
             if constexpr (!std::is_void_v<T>)
             {
                 return std::move(handle_.promise().value_);
@@ -81,75 +144,20 @@ namespace aegis::core
         }
     };
 
-    // --- Promise<T> (通用版) ---
+    // ==========================================
+    // 5. 延迟实现的 get_return_object
+    // ==========================================
+    // 必须在 Task 定义完整后实现，因为 Promise 需要构造 Task
     template <typename T>
-    struct Promise
+    Task<T> Promise<T>::get_return_object() noexcept
     {
-        T value_;
-        std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_; // 等待我的协程
+        return Task<T>{std::coroutine_handle<Promise<T>>::from_promise(*this)};
+    }
 
-        Task<T> get_return_object()
-        {
-            return Task<T>{std::coroutine_handle<Promise<T>>::from_promise(*this)};
-        }
-
-        // Initial Suspend: Always
-        // 确保任务创建后不立即跑，而是等待 co_await 或手动 resume
-        std::suspend_always initial_suspend() noexcept { return {}; }
-
-        struct FinalAwaiter
-        {
-            bool await_ready() const noexcept { return false; }
-
-            // 协程结束时的对称转移：
-            // 如果有 continuation (等待者)，跳转过去；否则(根协程)执行 noop。
-            std::coroutine_handle<> await_suspend(std::coroutine_handle<Promise<T>> h) noexcept
-            {
-                auto continuation = h.promise().continuation_;
-                return continuation ? continuation : std::noop_coroutine();
-            }
-
-            void await_resume() noexcept {}
-        };
-
-        FinalAwaiter final_suspend() noexcept { return {}; }
-
-        void return_value(T &&v) { value_ = std::move(v); }
-        void return_value(const T &v) { value_ = v; }
-        void unhandled_exception() { exception_ = std::current_exception(); }
-    };
-
-    // --- Promise<void> (特化版) ---
-    template <>
-    struct Promise<void>
+    inline Task<void> Promise<void>::get_return_object() noexcept
     {
-        std::exception_ptr exception_;
-        std::coroutine_handle<> continuation_;
-
-        Task<void> get_return_object()
-        {
-            return Task<void>{std::coroutine_handle<Promise<void>>::from_promise(*this)};
-        }
-
-        std::suspend_always initial_suspend() noexcept { return {}; }
-
-        struct FinalAwaiter
-        {
-            bool await_ready() const noexcept { return false; }
-            std::coroutine_handle<> await_suspend(std::coroutine_handle<Promise<void>> h) noexcept
-            {
-                auto continuation = h.promise().continuation_;
-                return continuation ? continuation : std::noop_coroutine();
-            }
-            void await_resume() noexcept {}
-        };
-
-        FinalAwaiter final_suspend() noexcept { return {}; }
-
-        void return_void() {}
-        void unhandled_exception() { exception_ = std::current_exception(); }
-    };
+        return Task<void>{std::coroutine_handle<Promise<void>>::from_promise(*this)};
+    }
 
     /**
      * @brief "Fire-and-Forget" 任务

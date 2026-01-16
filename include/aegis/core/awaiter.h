@@ -10,7 +10,7 @@ namespace aegis::core
         int result = 0;
         std::coroutine_handle<> handle;
 
-        virtual ~BaseAwaiter() = default;
+        ~BaseAwaiter() = default;
     };
 
 } // namespace aegis::core

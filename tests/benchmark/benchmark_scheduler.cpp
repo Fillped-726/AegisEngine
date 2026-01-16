@@ -132,7 +132,7 @@ void bench_flood(int num_workers, int num_actors, int total_msgs)
 
 // --- 场景 2: 链式反应 (测试 Local Queue + LIFO) ---
 // Actor 处理完消息后，立刻给自己发一条新消息，触发 Worker 本地队列优化
-class ChainActor : public Actor, public std::enable_shared_from_this<ChainActor>
+class ChainActor : public Actor
 {
 public:
     ChainActor(std::atomic<size_t> &counter, int limit)

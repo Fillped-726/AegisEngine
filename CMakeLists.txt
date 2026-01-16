@@ -67,6 +67,12 @@ endif()
 add_subdirectory(protocols) # 先生成协议代码
 add_subdirectory(src)       # 再编译核心库
 add_subdirectory(services)  # 最后编译业务服务
+add_subdirectory(third_party)  # 第三方工具
+# 3.2 测试模块 (修改输出路径到 tests/)
+# 保存当前的 bin 路径，以便后续恢复 (是一个好习惯，虽然在文件末尾可能不用)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_ORIG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+# --- [关键修改] 将后续的可执行文件输出路径改为 build/tests ---
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 add_subdirectory(tests/benchmark)   # 压力测试
 add_subdirectory(tests/integration) # 集成测试
-add_subdirectory(third_party)  # 第三方工具
