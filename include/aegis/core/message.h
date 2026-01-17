@@ -1,99 +1,169 @@
 #pragma once
 #include <atomic>
-#include <memory>
 #include <coroutine>
+#include <concepts> // C++20
 #include "aegis/net/packetPool.h"
 #include "aegis/common/objectPool.h"
 
 namespace aegis::core
 {
-    class NetworkMessage;
-    // 对象池定义
-    // 使用 ObjectPool 管理 NetworkMessage，最大容量 10万
-    using NetworkMessagePool = aegis::core::ObjectPool<NetworkMessage, 100000>;
-    enum : uint8_t
+    class PlayerActor; // 前置声明
+    // 消息类型枚举
+    enum MessageType : uint8_t
     {
-        MSG_ID_CORO_WAKEUP = 255 // 协程唤醒消息 ID
+        MSG_TYPE_BASE = 0,
+        MSG_TYPE_NETWORK = 1,
+        MSG_TYPE_CORO_WAKEUP = 2,
+        MSG_TYPE_SESSION_CLOSED = 3,
+        MSG_TYPE_SCENE_ENTER = 10,
+        MSG_TYPE_SCENE_LEAVE = 11,
+        MSG_TYPE_SCENE_MOVE = 12,
+        MSG_TYPE_DESTROY = 20
     };
-    // --- 1. 消息基类 (带虚函数) ---
+
+    // --- 1. 瘦基类 (无虚函数，无 vptr) ---
+    // 仅用于侵入式链表的链接和类型识别
     struct ActorMessage
     {
         std::atomic<ActorMessage *> next{nullptr};
+        uint8_t type_id = MSG_TYPE_BASE;
 
-        uint8_t type_id = 0;
+        // 禁止通过基类指针 delete，防止未定义行为 (UB)
+        // 因为我们没有虚析构函数
+    protected:
+        ~ActorMessage() = default;
 
-        // 虚析构函数：保证 delete 基类指针时，子类析构函数被调用
-        // 这样 unique_ptr<Packet> 就能自动释放了
-        virtual ~ActorMessage() = default;
-
-        // 【核心设计】虚函数：自我销毁
-        // 让对象自己决定：是 delete 掉，还是还给对象池
-        virtual void finalize()
+    public:
+        void finalize()
         {
-            delete this; // 默认行为：直接删除
+            delete this;
         }
     };
 
-    // --- 2. 网络消息 (走对象池) ---
+    // --- C++20 Concept: 约束消息必须实现 finalize ---
+    template <typename T>
+    concept FinalizableMessage = std::derived_from<T, ActorMessage> && requires(T m) {
+        { m.finalize() } -> std::same_as<void>;
+    };
+
+    class NetworkMessage;
+    using NetworkMessagePool = aegis::core::ObjectPool<NetworkMessage, 100000>;
+
+    // --- 2. 具体消息类型 ---
+
+    // 网络消息
     struct NetworkMessage : public ActorMessage
     {
-        aegis::net::PooledPacket pkt; // unique_ptr，自动管理生命周期
+        aegis::net::PooledPacket pkt;
         int session_id = 0;
 
-        // 默认构造函数 (供对象池预分配使用)
-        NetworkMessage()
-        {
-            type_id = 1; // 假设 MSG_NETWORK = 1
-        }
-
-        // 【新增】匹配 reset 参数的构造函数
-        // 当对象池为空需要 new 新对象时，acquire 会调用此构造函数
         NetworkMessage(aegis::net::PooledPacket &&p, int sid)
         {
-            type_id = 1;
+            type_id = MSG_TYPE_NETWORK;
             pkt = std::move(p);
             session_id = sid;
         }
 
-        // 覆盖 finalize：将自己归还给池子
-        void finalize() override
+        // [非虚函数] 甚至可以标记为 inline
+        void finalize()
         {
-            // 注意：这里需要先把 pkt 等资源 reset 或者是 pool 的 release 内部处理
-            // 通常 Pool 的 release 只是把指针放回去，不会析构对象
-            // 所以对象的状态会在下一次 acquire 时的 reset 中被覆盖
-
-            // 归还给自己所属的池子
+            // 归还给对象池
+            // Pool 内部会处理 reset，这里不需要手动析构
             NetworkMessagePool::instance().release(this);
         }
 
-        // 对象池复用接口 (当从池中取出旧对象时调用)
+        // 对象池 reset 接口
         void reset(aegis::net::PooledPacket &&p, int sid)
         {
             next.store(nullptr, std::memory_order_relaxed);
-            // type_id 理论上不会变，但为了保险可以重置
-            // type_id = 1;
             pkt = std::move(p);
             session_id = sid;
         }
     };
 
-    // [New] 协程唤醒消息
+    // 协程唤醒消息
     struct CoroutineWakeupMsg : public ActorMessage
     {
         std::coroutine_handle<> handle;
 
-        explicit CoroutineWakeupMsg(std::coroutine_handle<> h)
-            : handle(h)
+        explicit CoroutineWakeupMsg(std::coroutine_handle<> h) : handle(h)
         {
-            type_id = MSG_ID_CORO_WAKEUP; // 使用特殊 ID 区分
+            type_id = MSG_TYPE_CORO_WAKEUP;
+        }
+
+        void finalize()
+        {
+            // 对于非池化对象，必须显式 delete 自身
+            // 这里 delete this 是安全的，因为我们在派生类上下文中
+            delete this;
         }
     };
 
-    // [Definition] 定义会话关闭消息
+    // 会话关闭消息
     struct SessionClosedMsg : public ActorMessage
     {
-        int session_id = 0;
-        SessionClosedMsg(int sid = 0) : session_id(sid) { type_id = 0; }
+        int session_id;
+        SessionClosedMsg(int sid) : session_id(sid)
+        {
+            type_id = MSG_TYPE_SESSION_CLOSED;
+        }
+
+        void finalize()
+        {
+            delete this;
+        }
+    };
+
+    struct SceneEnterMsg : public ActorMessage
+    {
+        PlayerActor *player;
+        float x, y;
+
+        SceneEnterMsg(PlayerActor *p, float px, float py)
+            : player(p), x(px), y(py)
+        {
+            type_id = MSG_TYPE_SCENE_ENTER;
+        }
+        void finalize()
+        {
+            delete this;
+        }
+    };
+
+    struct SceneLeaveMsg : public ActorMessage
+    {
+        uint64_t entityId;
+        SceneLeaveMsg(uint64_t id) : entityId(id)
+        {
+            type_id = MSG_TYPE_SCENE_LEAVE;
+        }
+        void finalize()
+        {
+            delete this;
+        }
+    };
+
+    struct SceneMoveMsg : public ActorMessage
+    {
+        uint64_t entityId;
+        float oldX, oldY;
+        float newX, newY;
+
+        SceneMoveMsg(uint64_t id, float ox, float oy, float nx, float ny)
+            : entityId(id), oldX(ox), oldY(oy), newX(nx), newY(ny)
+        {
+            type_id = MSG_TYPE_SCENE_MOVE;
+        }
+        void finalize()
+        {
+            delete this;
+        }
+    };
+
+    struct ActorDestroyMsg : public ActorMessage
+    {
+        ActorDestroyMsg() { type_id = MSG_TYPE_DESTROY; } // 需要在常量定义里加一个
+        void finalize() { delete this; }
     };
 
 } // namespace aegis::core

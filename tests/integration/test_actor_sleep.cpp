@@ -39,7 +39,7 @@ class TestActor : public Actor
 public:
     void push_message(std::shared_ptr<ActorMessage> msg)
     {
-        if (msg->type_id == MSG_ID_CORO_WAKEUP)
+        if (msg->type_id == MSG_TYPE_CORO_WAKEUP)
         {
             auto *casted = static_cast<CoroutineWakeupMsg *>(msg.get());
             // 注意：这里 new 出来的对象，必须确保 Actor 内部处理完后会 delete
@@ -146,7 +146,7 @@ int main()
     // 启动 Timer 驱动 (IO 线程)
     timer_driver();
 
-    auto actor = std::make_shared<TestActor>();
+    auto actor = new TestActor();
 
     // 逻辑优化：先把消息放进去，再 Dispatch，防止多线程下 Actor 被调度两次导致竞争（取决于你的 Scheduler 实现）
     actor->push_raw(new StartTestMsg());

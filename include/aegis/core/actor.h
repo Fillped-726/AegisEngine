@@ -20,6 +20,12 @@ constexpr std::size_t hardware_constructive_interference_size = 64;
 
 namespace aegis::core
 {
+    enum class ActorState
+    {
+        Active, // 还有任务，继续入队 (Reschedule)
+        Idle,   // 没任务了，暂时移出队列 (Suspend)
+        Dead    // 【关键】我已经自杀，请立即释放内存 (Deallocate)
+    };
     // --- 3. 核心 Actor 引擎 (MPSC Lock-Free) ---
     /**
      * @brief 基于 Intrusive MPSC Queue 的 Actor 基类
@@ -31,7 +37,7 @@ namespace aegis::core
      * - 处理完 Head->next 后，原来的 Head (旧 Stub) 被回收，
      * Head->next 变成新的 Stub (即它里面的数据被消费了，壳留着用作 Stub)。
      */
-    class Actor : public std::enable_shared_from_this<Actor>
+    class Actor
     {
     public:
         Actor()
@@ -87,67 +93,77 @@ namespace aegis::core
         // --- Consumer API (Worker Thread Only) ---
         // 执行一批消息
         // budget: 时间片预算，防止单个 Actor 饿死其他 Actor
-        bool process_batch(int budget = 100)
+        // --- Consumer API (Worker Thread Only) ---
+        ActorState process_batch(int budget = 100)
         {
             // head_ 始终指向"上一个已处理完的节点" (即当前的 Stub)
             // 真正的有效数据在 head_->next 中
 
             for (int i = 0; i < budget; ++i)
             {
-                ActorMessage *head = head_;
+                ActorMessage *head = head_; // 保存旧 Stub，稍后回收
                 ActorMessage *next = head->next.load(std::memory_order_acquire);
 
-                // 如果 next 为空，说明队列可能空了
+                // --- 1. 队列判空逻辑 (完全保持原有无锁算法的精髓) ---
                 if (next == nullptr)
                 {
-                    // 标记为非活跃状态
                     in_global_queue_.store(false, std::memory_order_release);
 
-                    // Double Check: 再次检查 Tail
-                    // 这是为了处理"判空后瞬间又有数据推入"的 Race Condition
+                    // Double Check: 处理 Race Condition
                     ActorMessage *tail = tail_.load(std::memory_order_acquire);
-
                     if (head != tail)
                     {
-                        // 确实有新数据进来了 (tail 变了)，但 next 还是 null。
-                        // 说明 Producer 刚刚执行完 exchange，还没来得及执行 prev->next = msg。
-                        // 此时我们处于"中间态"。
-
-                        // 尝试重新获取调度权
                         bool expected = false;
                         if (in_global_queue_.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
                         {
-                            // 抢回调度权，继续自旋等待 Producer 完成链接
-                            continue;
+                            continue; // 抢救回来，继续处理
                         }
                     }
-                    return false; // 真的空了，且已标记为 inactive，退出
+                    return ActorState::Idle; // 真的空了
                 }
 
-                // --- 核心逻辑：节点步进 ---
-                // 'next' 是包含数据的节点。
-                // 我们将 'head_' 移动到 'next'，使其成为新的 Stub。
-                // 此时，原来的 'head' (即上一个 Stub) 可以安全删除了。
+                // --- 2. 节点步进 ---
+                // next 成为新的 Stub
                 head_ = next;
 
-                // --- 业务执行区 (Exception Safe) ---
+                // --- 3. 消息分发 (Switch-Case 架构层拦截) ---
+                // 使用 switch 替代 if-else，利用跳转表优化，O(1) 复杂度
+                bool should_continue = true;
+
                 try
                 {
-                    // [New] 拦截系统消息 (协程唤醒)
-                    if (next->type_id == MSG_ID_CORO_WAKEUP)
+                    switch (next->type_id)
+                    {
+                    // [Case A] 毒丸消息：立即终止
+                    case MSG_TYPE_DESTROY:
+                    {
+                        // 1. 回收旧 Stub (head)
+                        free_message(head);
+
+                        // 2. 注意：当前的 next (即 Destroy 消息本身) 现在变成了 head_ (新 Stub)
+                        // 当调度器执行 delete actor 时，~Actor() 会遍历并清理链表，
+                        // 所以这里不用手动 free(next)，交给析构函数处理剩余链表即可。
+
+                        return ActorState::Dead; // <--- 唯一出口：通知 Scheduler 销毁我
+                    }
+
+                    // [Case B] 协程唤醒：基础设施
+                    case MSG_TYPE_CORO_WAKEUP:
                     {
                         auto *wake_msg = static_cast<CoroutineWakeupMsg *>(next);
                         if (wake_msg->handle)
                         {
-                            // 在 Worker 线程恢复协程
-                            // 此时上下文 (Actor::current) 已经在 Worker 中被设置好了
                             wake_msg->handle.resume();
                         }
+                        break;
                     }
-                    else
+
+                    // [Case C] 普通业务消息：多态分发
+                    default:
                     {
-                        // 普通业务消息，交给子类处理
                         handle_message(next);
+                        break;
+                    }
                     }
                 }
                 catch (const std::exception &e)
@@ -159,15 +175,15 @@ namespace aegis::core
                     aegis::Log::instance().error("Actor unknown exception");
                 }
 
-                // --- 资源回收区 ---
+                // --- 4. 资源回收 ---
                 // 回收旧的 Stub (head)
-                // 注意：我们绝不回收 next！因为 next 现在是 head_，是下一个节点的 Stub！
-                // 这就是"延迟回收"的精髓
+                // 此时 next 已经安全地变成了新的 head_
                 free_message(head);
             }
 
-            // Budget 用完了还有数据，保持 in_global_queue_ 为 true
-            return true;
+            // Budget 用完了还有数据 (next != nullptr)，或者刚好处理完 budget 个
+            // 保持 in_global_queue_ 为 true，让调度器重新入队
+            return ActorState::Active;
         }
 
         // --- 上下文管理 (Thread Local Context) ---
@@ -179,24 +195,49 @@ namespace aegis::core
         // 子类实现具体的业务逻辑
         virtual void handle_message(ActorMessage *msg) = 0;
 
-        // 封装删除逻辑，方便后续接入 Object Pool
+        // [C++20 优化版] 高性能消息回收器
+        // 无虚函数调用，无 vptr 开销，完全静态分发
         void free_message(ActorMessage *msg)
         {
             if (!msg)
                 return;
 
-            // [MVP TODO] 建议未来改为 switch 或虚函数表（如果内存允许）
-            if (msg->type_id == 1) // NetworkMessage
+            // 这里利用 Switch 跳转表 + 静态转换
+            // 编译器会生成极其高效的汇编代码，通常只有几条指令
+            switch (msg->type_id)
             {
-                delete static_cast<NetworkMessage *>(msg);
-            }
-            else if (msg->type_id == MSG_ID_CORO_WAKEUP) // [New] CoroutineWakeupMsg
-            {
-                delete static_cast<CoroutineWakeupMsg *>(msg);
-            }
-            else
-            {
-                delete msg; // System message (base)
+            case MSG_TYPE_BASE:
+                msg->finalize(); // 直接调用基类的 finalize
+                break;
+            case MSG_TYPE_NETWORK:
+                // static_cast 是编译期动作，零运行时开销
+                // finalize() 是非虚函数，直接 inline 展开
+                static_cast<NetworkMessage *>(msg)->finalize();
+                break;
+            case MSG_TYPE_CORO_WAKEUP:
+                static_cast<CoroutineWakeupMsg *>(msg)->finalize();
+                break;
+
+            case MSG_TYPE_SESSION_CLOSED:
+                static_cast<SessionClosedMsg *>(msg)->finalize();
+                break;
+
+            case MSG_TYPE_SCENE_ENTER:
+                static_cast<SceneEnterMsg *>(msg)->finalize();
+                break;
+            case MSG_TYPE_SCENE_MOVE:
+                static_cast<SceneMoveMsg *>(msg)->finalize();
+                break;
+            case MSG_TYPE_SCENE_LEAVE:
+                static_cast<SceneLeaveMsg *>(msg)->finalize();
+                break;
+            case MSG_TYPE_DESTROY:
+                // 特殊情况：毒丸消息交给析构函数处理
+                // 不在这里 finalize
+                break;
+            default:
+                aegis::Log::instance().error("Unknown message type in free_message: {}", msg->type_id);
+                break;
             }
         }
 

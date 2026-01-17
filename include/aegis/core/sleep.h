@@ -4,7 +4,7 @@
 #include <memory>
 #include "aegis/core/actor.h"
 #include "aegis/core/hierarchy_timer.h"
-#include "aegis/core/scheduler.h" // 需要引用 Scheduler 来重新调度 Actor
+#include "aegis/core/scheduler.h"
 
 namespace aegis::core
 {
@@ -30,10 +30,6 @@ namespace aegis::core
             // 3. 尝试获取强引用 (Shared Ptr)
             // 这是一个保护措施，防止定时器触发时 Actor 已经被销毁
             std::shared_ptr<Actor> owner;
-            if (owner_ptr)
-            {
-                owner = owner_ptr->shared_from_this();
-            }
 
             // 4. 注册定时器
             // 注意：这个 Lambda 会被拷贝到堆上，作为 TimerNode 的一部分
@@ -55,7 +51,7 @@ namespace aegis::core
                     
                     // 3. 告诉 Scheduler 这个 Actor 有新消息了，需要被调度执行
                     // 这样 Worker 线程稍后会取出这个 Actor，处理 WakeupMsg，并在那里 resume
-                    Scheduler::instance().dispatch(owner);
+                    Scheduler::instance().dispatch(owner.get());
                 }
                 else
                 {

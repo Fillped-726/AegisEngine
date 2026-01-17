@@ -1,5 +1,5 @@
 syntax = "proto3";
-package aegis.proto;
+package aegis.protocol;
 
 // 消息 ID 定义
 enum MsgID {

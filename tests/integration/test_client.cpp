@@ -10,7 +10,7 @@
 // 确保 CMake 包含了生成的目录，通常是 build/proto 或类似路径
 #include "common.pb.h"
 
-using aegis::proto::LoginReq;
+using aegis::protocol::LoginReq;
 
 // 简单的字节序转换辅助 (Big Endian)
 void write_uint32_be(char *buf, uint32_t val)

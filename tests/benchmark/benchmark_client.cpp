@@ -50,7 +50,7 @@ void client_thread_func(int id, ThreadStats &stats)
     }
 
     // 构造包 (提前构造好，不要把序列化时间算进网络延迟里)
-    aegis::proto::LoginReq req;
+    aegis::protocol::LoginReq req;
     req.set_uid(10000 + id);
     std::string body;
     req.SerializeToString(&body);

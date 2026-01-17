@@ -6,51 +6,39 @@
 #include <source_location>
 
 // 引入核心业务头文件
-#include "aegis/core/scene.h"
+// 注意：现在使用的是 SceneActor
+#include "aegis/core/scene_actor.h"
 #include "aegis/core/playerActor.h"
-#include "scene.pb.h" // 引入 Proto
+#include "aegis/core/message.h" // for ActorMessage
+#include "scene.pb.h"           // 引入 Proto
 
 // ========================================================
 // 1. Mock Infrastructure (测试基础设施)
 // ========================================================
 
-// 假设 Connection 的 send 是 virtual 的，或者是通过模板/回调机制。
-// 在这里为了简单，我们假设 aegis::net::Connection 允许继承或我们能通过友元访问。
-// 如果 Connection::send 不是 virtual，实际项目中通常会给 PlayerActor 传入一个 ConnectionInterface。
-
-// 为了本测试能跑，我们定义一个能够"捕获"包的 FakeConnection
-// 注意：这需要你的 Connection 类析构函数是 virtual 的，或者允许子类化
+// Mock Connection: 拦截发包，用于验证
 class MockConnection : public aegis::net::Connection
 {
 public:
     // 构造一个无效的 FD (-1)
     MockConnection() : aegis::net::Connection(aegis::net::Socket()) {}
 
-    // 拦截发送
-    // 注意：需要在 include/aegis/net/connection.h 中把 send 声明为 virtual
-    // 或者，如果没有 virtual，我们可以验证 PlayerActor::send_buffer 里的逻辑。
-    // 这里假设我们能拦截。
+    // Mock send 方法
+    // 实际项目中 Connection::send 最好是 virtual 的，或者 PlayerActor 依赖 IConnection 接口
+    // 这里假设我们已经把 Connection::send 改为了 virtual，或者我们 hack 了 PlayerActor::send_packet
+    // 简单起见，我们假设通过继承覆盖了 send 逻辑 (需要 Connection 类支持)
     void send(aegis::net::Packet pkt) override
     {
-        // 深拷贝一份 Packet 数据或者直接移动所有权，方便后续断言
+        // 捕获发出的包
         captured_packets.push_back(std::move(pkt));
     }
 
-    // 辅助：获取最近收到的包
-    aegis::net::Packet *last_packet()
-    {
-        if (captured_packets.empty())
-            return nullptr;
-        return &captured_packets.back();
-    }
-
-    // 辅助：清空
     void clear() { captured_packets.clear(); }
 
     std::vector<aegis::net::Packet> captured_packets;
 };
 
-// 简单的测试断言宏
+// 测试断言宏
 void LogFail(const char *expr, std::source_location loc = std::source_location::current())
 {
     std::cerr << "[FAIL] " << expr << " at " << loc.file_name() << ":" << loc.line() << std::endl;
@@ -69,16 +57,17 @@ void LogFail(const char *expr, std::source_location loc = std::source_location::
 
 void Test_Move_EnterView()
 {
-    std::cout << "[Test] Starting A moves near B..." << std::endl;
+    std::cout << "[Test] Starting SceneActor Logic Verification..." << std::endl;
 
-    // 1. 初始化场景 (100x100, 格子大小 10)
-    aegis::core::Scene scene(100.0f, 100.0f, 10.0f);
+    // 1. 初始化 SceneActor (替代原来的 Scene)
+    // 100x100, 格子大小 10
+    auto sceneActor = std::make_shared<aegis::core::SceneActor>(100.0f, 100.0f, 10.0f);
 
     // 2. 创建 Mock 连接
     auto connA = std::make_shared<MockConnection>();
     auto connB = std::make_shared<MockConnection>();
 
-    // 3. 创建 Actor (A 和 B)
+    // 3. 创建 PlayerActor (必须用 shared_ptr，因为 SceneActor 会持有)
     // A 在 (0,0), ID 10
     auto actorA = new aegis::core::PlayerActor(connA, 10);
     actorA->SetPos(0.0f, 0.0f);
@@ -87,39 +76,77 @@ void Test_Move_EnterView()
     auto actorB = new aegis::core::PlayerActor(connB, 20);
     actorB->SetPos(50.0f, 50.0f);
 
-    // 4. 加入场景
-    scene.AddPlayer(actorA);
-    scene.AddPlayer(actorB);
+    // 4. 发送 [Enter Msg] 模拟玩家进入场景
+    // 在真实服务器中，这是由 Scheduler 调度的。
+    // 在单元测试中，我们直接调用 handle_message 来模拟 Worker 线程执行。
 
-    // 此时清空一下 MockConnection 之前可能产生的包（如果有）
+    // Player A 进入
+    {
+        aegis::core::SceneEnterMsg msg(actorA, 0.0f, 0.0f);
+        sceneActor->handle_message(&msg);
+    }
+
+    // Player B 进入
+    {
+        aegis::core::SceneEnterMsg msg(actorB, 50.0f, 50.0f);
+        sceneActor->handle_message(&msg);
+    }
+
+    std::cout << ">> Setup: Players entered scene." << std::endl;
+
+    // 清空之前的包 (比如 Enter 产生的包，我们这次只测 Move 触发的 EnterView)
     connA->clear();
     connB->clear();
 
     // 5. 执行核心操作：A 移动到 B 附近 (50, 45)
-    // Grid(50,50) 是 [Row 5, Col 5]
-    // Grid(50,45) 是 [Row 4, Col 5]
-    // Row 4 和 Row 5 是相邻的，所以应该互相看见
+    // 触发 AOI 变化：A 应该看见 B，B 应该看见 A
+
     std::cout << ">> Action: Player A moves to (50, 45)" << std::endl;
-    scene.OnPlayerMove(actorA, 50.0f, 45.0f);
+
+    // 构造 Move 消息
+    // oldX=0,0, newX=50,45
+    // 注意：在发消息前，PlayerActor 的坐标可能还没变，也可能变了，取决于架构。
+    // 这里我们显式传入 old 和 new 给 SceneActor
+    aegis::core::SceneMoveMsg moveMsg(10, 0.0f, 0.0f, 50.0f, 45.0f);
+
+    // 模拟 Scheduler 调度 SceneActor 处理该消息
+    sceneActor->handle_message(&moveMsg);
+
+    // 更新 A 的本地坐标 (模拟 PlayerActor 处理完业务后的状态同步)
+    actorA->SetPos(50.0f, 45.0f);
 
     // ========================================================
     // 6. 验证结果 (Verification)
     // ========================================================
 
     // --- 验证 A (Mover) 收到的包 ---
-    // 预期：A 应该收到 SCEnterViewNtf，里面包含 B (ID 20) 的信息
+    // 预期：A 应该收到 SCEnterViewNtf (1003)，里面包含 B (ID 20)
     {
         std::cout << ">> Verifying A received B's info..." << std::endl;
-        EXPECT_TRUE(connA->captured_packets.size() >= 1);
 
         bool foundB = false;
+        // 遍历 A 收到的所有包
         for (const auto &pkt : connA->captured_packets)
         {
-            // SCEnterViewNtf MsgID = 1003
-            if (pkt.msg_id() == 1003)
+            // 解析包头获取 MsgID (前 4 字节是长度，不属于 Packet body 的一部分，Packet 类应该处理好了)
+            // 假设 Packet::msg_id() 能正确返回 ID (MockConnection 只是存了 Packet 对象)
+            // 我们的 Packet 结构是: Header(4 byte len + 4 byte id) + Body
+            // 这里的 pkt.msg_id() 是我们为了测试方便假设存在的 helper，
+            // 或者我们需要手动解析:
+            uint32_t msg_id = 0;
+            if (pkt.payload_.size() >= 4)
+            {
+                // 网络字节序转主机字节序
+                uint32_t net_id;
+                std::memcpy(&net_id, pkt.payload_.data(), 4);
+                msg_id = ntohl(net_id);
+            }
+
+            if (msg_id == 1003) // SC_ENTER_VIEW_NTF
             {
                 aegis::protocol::SCEnterViewNtf ntf;
-                if (pkt.parse(ntf))
+                // 跳过 4 字节 MsgID 解析 Body
+                if (ntf.ParseFromArray(pkt.payload_.data() + 4, pkt.payload_.size() - 4))
                 {
                     for (const auto &entity : ntf.entities())
                     {
@@ -136,20 +163,25 @@ void Test_Move_EnterView()
     }
 
     // --- 验证 B (Observer) 收到的包 ---
-    // 预期：B 应该收到 SCEnterViewNtf，里面包含 A (ID 10) 的信息
+    // 预期：B 应该收到 SCEnterViewNtf (1003)，里面包含 A (ID 10)
     {
         std::cout << ">> Verifying B received A's info..." << std::endl;
-        EXPECT_TRUE(connB->captured_packets.size() >= 1);
 
         bool foundA = false;
         for (const auto &pkt : connB->captured_packets)
         {
-            // SCEnterViewNtf MsgID = 1003
-            if (pkt.msg_id() == 1003)
+            uint32_t msg_id = 0;
+            if (pkt.payload_.size() >= 4)
             {
-                // 注意：这里可能收到的是 Raw Buffer 拼出来的包，MockConnection 应该能照常处理
+                uint32_t net_id;
+                std::memcpy(&net_id, pkt.payload_.data(), 4);
+                msg_id = ntohl(net_id);
+            }
+
+            if (msg_id == 1003)
+            {
                 aegis::protocol::SCEnterViewNtf ntf;
-                if (pkt.parse(ntf))
+                if (ntf.ParseFromArray(pkt.payload_.data() + 4, pkt.payload_.size() - 4))
                 {
                     for (const auto &entity : ntf.entities())
                     {
@@ -166,11 +198,6 @@ void Test_Move_EnterView()
     }
 
     std::cout << "[SUCCESS] Test_Move_EnterView Passed." << std::endl;
-
-    // 清理 (实际项目中建议使用智能指针管理 Actor 生命周期)
-    // scene.RemovePlayer 并不负责 delete Actor，这里简单手动 delete
-    delete actorA;
-    delete actorB;
 }
 
 int main()

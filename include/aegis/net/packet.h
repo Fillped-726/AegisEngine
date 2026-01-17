@@ -63,24 +63,6 @@ namespace aegis::net
             const void *ptr = body_ptr();
             size_t len = body_len();
 
-            // 调试日志 (建议仅在 LogLevel::Debug 下开启)
-            /*
-            if (len > 0 && ptr != nullptr)
-            {
-                const uint8_t *byte_ptr = static_cast<const uint8_t *>(ptr);
-                aegis::Log::instance().debug("[Packet] Parse: Len={}, HeaderBytes=[{:02x} {:02x} {:02x} {:02x}]",
-                                             len,
-                                             byte_ptr[0],
-                                             (len > 1 ? byte_ptr[1] : 0),
-                                             (len > 2 ? byte_ptr[2] : 0),
-                                             (len > 3 ? byte_ptr[3] : 0));
-            }
-            else
-            {
-                aegis::Log::instance().debug("[Packet] Parse: Len is 0 or ptr is null");
-            }
-            */
-
             // Protobuf 允许解析空 Body (len=0)，只要 ptr 有效即可
             // 但如果 payload 还没 MsgID 长 (ptr=nullptr)，则肯定失败
             if (!ptr && payload_.size() < kPacketMsgHeader)

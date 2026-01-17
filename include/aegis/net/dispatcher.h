@@ -26,7 +26,7 @@ namespace aegis::net
     public:
         // 通用处理器签名 (Type Erased Handler)
         // 接受 Actor 指针和原始二进制数据
-        using GenericHandler = std::function<core::Task<void>(std::shared_ptr<core::Actor>, const char *, size_t)>;
+        using GenericHandler = std::function<core::Task<void>(core::Actor *, const char *, size_t)>;
 
         static Dispatcher &instance()
         {
@@ -48,7 +48,7 @@ namespace aegis::net
         {
             // 创建一个 Lambda 包装器，负责 "反序列化 -> 调用业务逻辑"
             // 这个 Lambda 本身也是一个协程
-            GenericHandler wrapper = [func = std::forward<Func>(func), msg_id](std::shared_ptr<core::Actor> actor, const char *data, size_t len) -> core::Task<void>
+            GenericHandler wrapper = [func = std::forward<Func>(func), msg_id](core::Actor *actor, const char *data, size_t len) -> core::Task<void>
             {
                 ProtoMsg msg;
                 // 1. 反序列化
@@ -73,7 +73,7 @@ namespace aegis::net
          * @brief 根据 Packet 查找并执行处理器
          * @note 如果找不到处理器或解析失败，会打印警告但不会崩溃
          */
-        core::Task<void> dispatch(std::shared_ptr<core::Actor> actor, const Packet &pkt)
+        core::Task<void> dispatch(core::Actor *actor, const Packet &pkt)
         {
             uint32_t msg_id = pkt.msg_id();
 

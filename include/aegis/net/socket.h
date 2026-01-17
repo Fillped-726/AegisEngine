@@ -11,45 +11,11 @@
 #include "aegis/core/env.h"
 #include "aegis/core/awaiter.h"
 #include "aegis/common/aegisLog.h"
+#include "aegis/common/unique_fd.h"
 
 namespace aegis::net
 {
-    // ... (UniqueFd 类保持不变) ...
-    class UniqueFd
-    {
-    public:
-        UniqueFd(int fd = -1) : fd_(fd) {}
-        ~UniqueFd()
-        {
-            if (fd_ >= 0)
-                ::close(fd_);
-        }
-        UniqueFd(const UniqueFd &) = delete;
-        UniqueFd &operator=(const UniqueFd &) = delete;
-        UniqueFd(UniqueFd &&other) noexcept : fd_(std::exchange(other.fd_, -1)) {}
-        UniqueFd &operator=(UniqueFd &&other) noexcept
-        {
-            if (this != &other)
-            {
-                if (fd_ >= 0)
-                    ::close(fd_);
-                fd_ = std::exchange(other.fd_, -1);
-            }
-            return *this;
-        }
-        int get() const { return fd_; }
-        int release() { return std::exchange(fd_, -1); }
-        explicit operator bool() const { return fd_ >= 0; }
-        void reset(int fd = -1)
-        {
-            if (fd_ >= 0)
-                ::close(fd_);
-            fd_ = fd;
-        }
-
-    private:
-        int fd_;
-    };
+    using UniqueFd = aegis::common::UniqueFd;
 
     class Socket
     {
@@ -160,7 +126,6 @@ namespace aegis::net
                 auto &env = core::Env::instance();
                 auto *ring = env.native_handle();
 
-                // [Fix] 加锁保护 SQ
                 std::lock_guard<std::mutex> lock(env.get_submission_mutex());
 
                 struct io_uring_sqe *sqe = io_uring_get_sqe(ring);

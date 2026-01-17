@@ -11,6 +11,7 @@ project(AegisEngine
 # ==========================================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # 确保只使用标准 C++，不依赖 GCC 特性
 
 # 输出目录设置 (bin/ 放可执行, lib/ 放库)
