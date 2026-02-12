@@ -35,6 +35,11 @@ namespace aegis::core
         // 旧 Cell 的锁（other.lock）会被留在那儿，随 other 析构消亡。
         {
         }
+
+        void clear()
+        {
+            entities.clear();
+        }
     };
 
     /**
@@ -50,21 +55,7 @@ namespace aegis::core
         AOIGrid(float width, float height, float cellSize)
             : width_(width), height_(height), cellSize_(cellSize)
         {
-            if (cellSize_ <= 0.0f)
-            {
-                // 实际项目中应抛出异常或 Panic
-                return;
-            }
-
-            // 预计算倒数，将除法转换为乘法，提升 GetIndex 性能
-            invCellSize_ = 1.0f / cellSize_;
-
-            // 计算行列数 (向上取整)
-            colCount_ = static_cast<uint32_t>(std::ceil(width_ / cellSize_));
-            rowCount_ = static_cast<uint32_t>(std::ceil(height_ / cellSize_));
-
-            // 初始化扁平化网格
-            cells_.resize(colCount_ * rowCount_);
+            init_internal();
         }
 
         ~AOIGrid() = default;
@@ -74,6 +65,30 @@ namespace aegis::core
         AOIGrid &operator=(const AOIGrid &) = delete;
         AOIGrid(AOIGrid &&) = default;
         AOIGrid &operator=(AOIGrid &&) = default;
+
+        void reset(float width, float height, float cellSize)
+        {
+            // 1. 检查结构是否变化 (浮点数比较用 epsilon 或者直接判不等)
+            // 在游戏配置中，通常 width/height 是固定的数值，直接判不等通常没问题
+            bool dimChanged = (width_ != width) || (height_ != height) || (cellSize_ != cellSize);
+
+            if (dimChanged)
+            {
+                width_ = width;
+                height_ = height;
+                cellSize_ = cellSize;
+
+                // 重新计算参数 & resize
+                init_internal();
+            }
+
+            // 2. 清理所有格子内容 (保留内存)
+            // 这是复用的关键：只清数据，不还内存
+            for (auto &cell : cells_)
+            {
+                cell.clear();
+            }
+        }
 
         /**
          * @brief 向指定坐标所在的格子添加实体
@@ -339,6 +354,22 @@ namespace aegis::core
         }
 
     private:
+        void init_internal()
+        {
+            if (cellSize_ <= 0.0f)
+                return;
+
+            invCellSize_ = 1.0f / cellSize_;
+            colCount_ = static_cast<uint32_t>(std::ceil(width_ / cellSize_));
+            rowCount_ = static_cast<uint32_t>(std::ceil(height_ / cellSize_));
+
+            size_t newSize = colCount_ * rowCount_;
+
+            // vector::resize 智能策略：
+            // 如果 newSize < capacity，它不会释放内存，只是修改 size。
+            // 如果 newSize > capacity，它才会 malloc。
+            cells_.resize(newSize);
+        }
         float width_;
         float height_;
         float cellSize_;

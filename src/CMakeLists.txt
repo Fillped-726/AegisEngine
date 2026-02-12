@@ -18,9 +18,10 @@ target_include_directories(AegisEngine PUBLIC
 # 链接依赖
 target_link_libraries(AegisEngine PUBLIC 
     spdlog::spdlog
-    ${LIBURING_LIBRARIES}
+    PkgConfig::liburing
     AegisProto # 链接上面定义的协议库
-    moodycamel::ConcurrentQueue # 链接上面定义的 ConcurrentQueue
+    moodycamel::ConcurrentQueue
+    common_jemalloc # 链接上面定义的 jemalloc 接口库
 )
 
 # 链接 liburing 的头文件路径 (如果是 pkg-config 找出来的)

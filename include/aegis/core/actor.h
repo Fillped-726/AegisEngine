@@ -40,7 +40,8 @@ namespace aegis::core
     class Actor
     {
     public:
-        Actor()
+        Actor(uint64_t parent_id = 0)
+            : parent_id_(parent_id)
         {
             // 初始状态：创建一个哑节点 (Stub)
             // 此时 Head 和 Tail 都指向它
@@ -62,6 +63,18 @@ namespace aegis::core
                 free_message(curr); // 自定义回收
                 curr = next;
             }
+        }
+
+        virtual void finalize() = 0;
+
+        ActorID id() const { return id_; }
+        ActorID parent_id() const { return parent_id_; }
+        void set_id(ActorID id) { id_ = id; }
+        void set_parent_id(ActorID parent_id) { parent_id_ = parent_id; }
+        void base_reset(ActorID new_id, ActorID new_parent)
+        {
+            id_ = new_id;
+            parent_id_ = new_parent;
         }
 
         // --- Producer API (Thread-Safe, Lock-Free) ---
@@ -126,10 +139,6 @@ namespace aegis::core
                 // next 成为新的 Stub
                 head_ = next;
 
-                // --- 3. 消息分发 (Switch-Case 架构层拦截) ---
-                // 使用 switch 替代 if-else，利用跳转表优化，O(1) 复杂度
-                bool should_continue = true;
-
                 try
                 {
                     switch (next->type_id)
@@ -178,7 +187,7 @@ namespace aegis::core
                 // --- 4. 资源回收 ---
                 // 回收旧的 Stub (head)
                 // 此时 next 已经安全地变成了新的 head_
-                free_message(head);
+                Actor::free_message(head);
             }
 
             // Budget 用完了还有数据 (next != nullptr)，或者刚好处理完 budget 个
@@ -191,55 +200,69 @@ namespace aegis::core
         static Actor *current();
         static void set_current(Actor *actor);
 
-    protected:
-        // 子类实现具体的业务逻辑
-        virtual void handle_message(ActorMessage *msg) = 0;
-
-        // [C++20 优化版] 高性能消息回收器
-        // 无虚函数调用，无 vptr 开销，完全静态分发
-        void free_message(ActorMessage *msg)
+        static void free_message(ActorMessage *msg)
         {
             if (!msg)
                 return;
 
-            // 这里利用 Switch 跳转表 + 静态转换
-            // 编译器会生成极其高效的汇编代码，通常只有几条指令
+            // 编译器会将这个 Switch 优化为 Jump Table (O(1) 跳转)
+            // 性能极高，不要为了"代码好看"换成函数指针 Map，那样会有 Cache Miss 风险
             switch (msg->type_id)
             {
-            case MSG_TYPE_BASE:
-                msg->finalize(); // 直接调用基类的 finalize
-                break;
+            // --- 基础消息 ---
             case MSG_TYPE_NETWORK:
-                // static_cast 是编译期动作，零运行时开销
-                // finalize() 是非虚函数，直接 inline 展开
+                // NetworkMessage 是池化的，处理特殊
                 static_cast<NetworkMessage *>(msg)->finalize();
                 break;
+
+            // --- 模板化消息 ---
+            // 下面这些生成的汇编指令几乎一模一样，但必须写出来以便编译器生成对应的析构调用
             case MSG_TYPE_CORO_WAKEUP:
                 static_cast<CoroutineWakeupMsg *>(msg)->finalize();
                 break;
-
             case MSG_TYPE_SESSION_CLOSED:
                 static_cast<SessionClosedMsg *>(msg)->finalize();
                 break;
-
             case MSG_TYPE_SCENE_ENTER:
                 static_cast<SceneEnterMsg *>(msg)->finalize();
-                break;
-            case MSG_TYPE_SCENE_MOVE:
-                static_cast<SceneMoveMsg *>(msg)->finalize();
                 break;
             case MSG_TYPE_SCENE_LEAVE:
                 static_cast<SceneLeaveMsg *>(msg)->finalize();
                 break;
-            case MSG_TYPE_DESTROY:
-                // 特殊情况：毒丸消息交给析构函数处理
-                // 不在这里 finalize
+            case MSG_TYPE_SCENE_MOVE:
+                static_cast<SceneMoveMsg *>(msg)->finalize();
                 break;
+
+            // --- RPC 消息 ---
+            // 这里必须 Cast 成对应的模板实例化类型
+            case MSG_TYPE_RPC_CREATE_ROOM:
+                static_cast<RPCCreateRoomMsg *>(msg)->finalize();
+                break;
+            case MSG_TYPE_RPC_TERMINATE_ROOM:
+                static_cast<RPCTerminateRoomMsg *>(msg)->finalize();
+                break;
+
+            case MSG_TYPE_BASE:
+
+                aegis::Log::instance().error("Leak warning: MSG_TYPE_BASE message type in free_message: {}", msg->type_id);
+                break;
+            case MSG_TYPE_DESTROY:
+                // 毒丸通常由 Actor 内部逻辑处理，如果流转到了 free_message，说明是被丢弃的
+                delete static_cast<ActorDestroyMsg *>(msg);
+                break;
+
             default:
-                aegis::Log::instance().error("Unknown message type in free_message: {}", msg->type_id);
+                aegis::Log::instance().error("Leak warning: Unknown message type in free_message: {}", msg->type_id);
+                // 为了防止彻底内存泄漏，这里可以尝试直接 delete msg
+                // 虽然会 leak 派生类资源，但至少回收了基类内存。
+                // 但在这个架构下，应该视作 Fatal Error。
                 break;
             }
         }
+
+    protected:
+        // 子类实现具体的业务逻辑
+        virtual void handle_message(ActorMessage *msg) = 0;
 
     private:
         static constexpr size_t kCacheLine = hardware_constructive_interference_size;
@@ -252,5 +275,9 @@ namespace aegis::core
 
         // 调度状态
         alignas(kCacheLine) std::atomic<bool> in_global_queue_{false};
+
+        // 父子关系
+        ActorID id_;
+        ActorID parent_id_;
     };
 } // namespace aegis::core

@@ -1,0 +1,21 @@
+syntax = "proto3";
+package aegis.common; // 修改包名，更清晰
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/common"; 
+
+// 基础 3D 向量 (复用性设计)
+message PBVector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+// 完整的玩家快照信息
+message PBPlayerInfo {
+  uint64 entity_id = 1;
+  PBVector3 pos = 2;
+  float direction = 3;
+  string name = 4;
+  int32 skin_id = 5;
+  int32 hp = 6;
+}

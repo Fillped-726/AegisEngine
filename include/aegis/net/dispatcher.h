@@ -14,8 +14,7 @@
 
 namespace aegis::net
 {
-
-    // 概念约束：确保 T 是一个 Protobuf Message
+    // 概念约束：确保 T 是一个 Protobuf Message (用于网络包)
     template <typename T>
     concept ProtobufMessage = requires(T t, const void *data, int len) {
         { t.ParseFromArray(data, len) } -> std::convertible_to<bool>;
@@ -24,9 +23,16 @@ namespace aegis::net
     class Dispatcher
     {
     public:
-        // 通用处理器签名 (Type Erased Handler)
-        // 接受 Actor 指针和原始二进制数据
-        using GenericHandler = std::function<core::Task<void>(core::Actor *, const char *, size_t)>;
+        // ---------------------------------------------------------------------
+        // 模式 1: 网络消息处理器 (处理二进制 Packet)
+        // ---------------------------------------------------------------------
+        using NetHandler = std::function<core::Task<void>(core::Actor *, const char *, size_t)>;
+
+        // ---------------------------------------------------------------------
+        // 模式 2: RPC/内部消息处理器 (处理内存对象指针)
+        // [新增] 接受 void* 指针，因为我们在分发前不知道具体的 struct 类型
+        // ---------------------------------------------------------------------
+        using RpcHandler = std::function<core::Task<void>(core::Actor *, const void *)>;
 
         static Dispatcher &instance()
         {
@@ -34,69 +40,92 @@ namespace aegis::net
             return inst;
         }
 
-        // --- 注册接口 (Template Magic) ---
-
-        /**
-         * @brief 注册消息处理器
-         * @tparam ProtoMsg 具体的 Protobuf 消息类型 (e.g. LoginReq)
-         * @param msg_id 消息 ID
-         * @param func 回调函数，签名应为: Task<void>(std::shared_ptr<Actor>, const ProtoMsg&)
-         */
+        // =====================================================================
+        // 注册接口 A: 网络消息 (Protobuf 反序列化)
+        // =====================================================================
         template <typename ProtoMsg, typename Func>
             requires ProtobufMessage<ProtoMsg>
         void register_handler(uint32_t msg_id, Func &&func)
         {
-            // 创建一个 Lambda 包装器，负责 "反序列化 -> 调用业务逻辑"
-            // 这个 Lambda 本身也是一个协程
-            GenericHandler wrapper = [func = std::forward<Func>(func), msg_id](core::Actor *actor, const char *data, size_t len) -> core::Task<void>
+            NetHandler wrapper = [func = std::forward<Func>(func), msg_id](core::Actor *actor, const char *data, size_t len) -> core::Task<void>
             {
                 ProtoMsg msg;
-                // 1. 反序列化
-                // 注意：Protobuf ParseFromArray 接受 int，这里强转是安全的 (包大小有限制)
                 if (!msg.ParseFromArray(data, static_cast<int>(len)))
                 {
                     aegis::Log::instance().warn("Dispatcher: Parse failed. MsgID: {}", msg_id);
                     co_return;
                 }
-
-                // 2. 调用用户的强类型回调
-                // 这是一个尾调用，我们 co_await 用户逻辑完成
                 co_await func(actor, msg);
             };
 
-            handlers_[msg_id] = std::move(wrapper);
+            net_handlers_[msg_id] = std::move(wrapper);
         }
 
-        // --- 分发接口 (Dispatch) ---
-
+        // =====================================================================
+        // 注册接口 B: RPC 消息 (直接指针转换) -> [这是你缺少的]
+        // =====================================================================
         /**
-         * @brief 根据 Packet 查找并执行处理器
-         * @note 如果找不到处理器或解析失败，会打印警告但不会崩溃
+         * @brief 注册 RPC 处理器
+         * @tparam RpcMsgType 我们定义的 RpcMessage<...> 包装类型
+         * @param msg_id 业务 ID (如 SS_CREATE_ROOM_REQ)
          */
+        template <typename RpcMsgType, typename Func>
+        void register_rpc(uint32_t msg_id, Func &&func)
+        {
+            // 创建 Lambda 包装器
+            // 这里不需要反序列化，只需要安全的 static_cast
+            RpcHandler wrapper = [func = std::forward<Func>(func)](core::Actor *actor, const void *msg_ptr) -> core::Task<void>
+            {
+                // 安全转换：我们信任 Dispatcher 的路由表是正确的
+                const auto *msg = static_cast<const RpcMsgType *>(msg_ptr);
+
+                // 直接调用业务逻辑
+                co_await func(actor, *msg);
+            };
+
+            rpc_handlers_[msg_id] = std::move(wrapper);
+        }
+
+        // =====================================================================
+        // 分发接口
+        // =====================================================================
+
+        // 1. 网络分发 (处理 Packet)
         core::Task<void> dispatch(core::Actor *actor, const Packet &pkt)
         {
             uint32_t msg_id = pkt.msg_id();
-
-            auto it = handlers_.find(msg_id);
-            if (it != handlers_.end())
+            auto it = net_handlers_.find(msg_id);
+            if (it != net_handlers_.end())
             {
-                const char *body = static_cast<const char *>(pkt.body_ptr());
-                size_t len = pkt.body_len();
-
-                // 执行包装好的 GenericHandler
-                co_await it->second(actor, body, len);
+                co_await it->second(actor, static_cast<const char *>(pkt.data() + kPacketMsgHeader), pkt.size() - kPacketMsgHeader);
             }
             else
             {
-                // [Optional] 可以增加一个 default_handler 处理未注册消息
-                aegis::Log::instance().warn("Dispatcher: No handler found for MsgID: {}", msg_id);
+                aegis::Log::instance().warn("Dispatcher: No NetHandler for MsgID: {}", msg_id);
+            }
+        }
+
+        // 2. RPC 分发 (处理 RPC Message 对象) -> [这是你需要调用的]
+        // 注意：这里需要传入具体的业务 MsgID (比如 3001)，因为 ActorMessage 只有 TypeID (比如 50)
+        core::Task<void> dispatch_rpc(core::Actor *actor, uint32_t msg_id, const void *msg_ptr)
+        {
+            auto it = rpc_handlers_.find(msg_id);
+            if (it != rpc_handlers_.end())
+            {
+                // 直接传递指针，零拷贝
+                co_await it->second(actor, msg_ptr);
+            }
+            else
+            {
+                aegis::Log::instance().error("Dispatcher: No RpcHandler for MsgID: {}", msg_id);
             }
         }
 
     private:
         Dispatcher() = default;
 
-        std::unordered_map<uint32_t, GenericHandler> handlers_;
+        std::unordered_map<uint32_t, NetHandler> net_handlers_; // 存储网络回调
+        std::unordered_map<uint32_t, RpcHandler> rpc_handlers_; // 存储 RPC 回调
     };
 
 } // namespace aegis::net

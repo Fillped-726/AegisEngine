@@ -1,0 +1,30 @@
+syntax = "proto3";
+package aegis.cs.battle;
+
+import "common.proto"; // 引用 common
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/cs_battle";
+
+// [CS] 请求移动
+message CSMoveReq {
+  aegis.common.PBVector3 target_pos = 1;
+  float direction = 2;
+  int64 timestamp = 3;
+}
+
+// [SC] 移动通知
+message SCMoveNtf {
+  uint64 entity_id = 1;
+  aegis.common.PBVector3 pos = 2;
+  float direction = 3;
+}
+
+// [SC] 进入视野
+message SCEnterViewNtf {
+  repeated aegis.common.PBPlayerInfo entities = 1;
+}
+
+// [SC] 离开视野
+message SCLeaveViewNtf {
+  repeated uint64 entity_ids = 1;
+}

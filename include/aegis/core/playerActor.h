@@ -1,32 +1,54 @@
 #pragma once
 #include <atomic>
-#include "aegis/core/actor.h"
+#include "aegis/core/actor_traits.h"
 #include "aegis/net/connection.h"
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/task.h"
 #include "aegis/net/dispatcher.h"
+#include "cs_battle.pb.h"
 #include "common.pb.h"
-#include "scene.pb.h"
 
-namespace aegis::protocol
+namespace aegis::common
 {
     class PBPlayerInfo; // 前置声明
 }
 
 namespace aegis::core
 {
-    class PlayerActor : public Actor
+    class PlayerActor : public PooledActor<PlayerActor>
     {
     public:
-        explicit PlayerActor(std::shared_ptr<net::Connection> conn, uint64_t playerId = 0)
-            : conn_(std::move(conn)), fd_(conn_->fd()), playerId_(playerId)
+        PlayerActor(ActorID id, std::shared_ptr<net::Connection> conn)
+            : PooledActor()
         {
-            aegis::Log::instance().debug("PlayerActor Created | ID: {} | FD: {}", playerId_, fd_);
+            reset(id, conn);
         }
 
-        ~PlayerActor()
+        virtual ~PlayerActor()
         {
             aegis::Log::instance().debug("PlayerActor Destroyed | ID: {}", playerId_);
+        }
+
+        void reset(ActorID id, std::shared_ptr<net::Connection> conn)
+        {
+            // 1. 重置基类 (生成新 ID，设置新父亲)
+            base_reset(id, ActorID(0));
+
+            // 2. 交换/重置连接
+            // 使用 std::move 减少引用计数操作
+            // 旧的 conn_ 会在这里析构（引用计数-1），如果计数归零则关闭连接
+            conn_ = std::move(conn);
+
+            // 3. 同步 FD
+            fd_ = conn_ ? conn_->fd() : -1;
+
+            // 4. 重置逻辑数据
+            playerId_ = 0;
+
+            // 5. 重置坐标 (Atomic)
+            // 使用 memory_order_relaxed 即可，因为此时 Actor 还没对其他线程可见
+            x_.store(0.0f, std::memory_order_relaxed);
+            y_.store(0.0f, std::memory_order_relaxed);
         }
 
         // ========================================================================
@@ -50,7 +72,7 @@ namespace aegis::core
         // [New] 核心契约：将自己的外观数据写入 Proto
         // 注意：SceneActor 线程调用此函数时，传入的 x/y 应该是 Scene 自己维护的快照
         // 如果传入 -1 (默认)，则使用 PlayerActor 当前的原子坐标
-        void WriteToProto(aegis::protocol::PBPlayerInfo *out_proto, float snapshotX = -999.0f, float snapshotY = -999.0f) const
+        void WriteToProto(aegis::common::PBPlayerInfo *out_proto, float snapshotX = -999.0f, float snapshotY = -999.0f) const
         {
             if (!out_proto)
                 return;
@@ -85,7 +107,12 @@ namespace aegis::core
         {
             if (conn_)
             {
-                auto pkt = net::Packet::pack(msg_id, msg);
+
+                net::PooledPacket pkt = std::make_unique<net::Packet>();
+
+                pkt->pack_into(msg_id, msg);
+
+                // 4. 发送
                 conn_->send(std::move(pkt));
             }
         }
@@ -97,7 +124,7 @@ namespace aegis::core
             if (!conn_)
                 return;
 
-            auto pkt = net::PacketPool::instance().acquire();
+            net::PooledPacket pkt = std::make_unique<net::Packet>();
             size_t body_size = serialized_data.size();
             pkt->alloc(net::kPacketMsgHeader + body_size);
 
@@ -111,13 +138,20 @@ namespace aegis::core
                 std::memcpy(pkt->mutable_data() + net::kPacketMsgHeader, serialized_data.data(), body_size);
             }
 
-            conn_->send(std::move(*pkt));
+            conn_->send(std::move(pkt));
         }
+
+        void set_player_id(uint64_t pid) { playerId_ = pid; }
+        [[nodiscard]] uint64_t get_player_id() const { return playerId_; }
 
     protected:
         // --- Worker 线程执行此函数 ---
         void handle_message(core::ActorMessage *msg) override
         {
+            if (msg->type_id != 0)
+            {
+                Log::instance().debug("[Trace] 2. PlayerActor Recv Msg. TypeID: {}", (int)msg->type_id);
+            }
             if (msg->type_id == MSG_TYPE_NETWORK)
             {
                 auto *net_msg = static_cast<core::NetworkMessage *>(msg);
@@ -148,7 +182,6 @@ namespace aegis::core
         void on_session_closed(int reason)
         {
             aegis::Log::instance().info("[PlayerActor] Session Closed | ID: {} | Reason: {}", playerId_, reason);
-            // 这里应该通知 SceneActor 移除玩家： send(SceneLeaveMsg)
             conn_.reset();
         }
 

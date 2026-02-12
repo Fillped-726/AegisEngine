@@ -1,79 +1,134 @@
 cmake_minimum_required(VERSION 3.20)
 
-# 项目元数据
 project(AegisEngine 
     VERSION 0.1.0 
     LANGUAGES CXX C
 )
 
 # ==========================================
-# 1. 全局设置 (Global Settings)
+# 1. 全局设置
 # ==========================================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_EXTENSIONS OFF) # 确保只使用标准 C++，不依赖 GCC 特性
+set(CMAKE_CXX_EXTENSIONS OFF) 
 
-# 输出目录设置 (bin/ 放可执行, lib/ 放库)
+# 输出目录
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# 开启所有警告 (这对工业级项目很重要)
+# ==========================================
+# 2. 依赖查找 (vcpkg 托管一切)
+# ==========================================
+# 核心原则：只负责“找”，不负责“下”和“编”
+
+# --- Log & Format ---
+find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
+# --- gRPC & Protobuf (最复杂的依赖被 vcpkg 完美解决) ---
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+
+# --- Concurrent Queue ---
+# vcpkg 会提供 moodycamel::ConcurrentQueue target
+find_package(concurrentqueue CONFIG REQUIRED) 
+
+# 1. 既然 target 里的路径不可靠，我们直接去文件系统里找 concurrentqueue.h 到底在哪
+# HINTS 指引 CMake 去 vcpkg 安装目录里找
+find_path(CONCURRENTQUEUE_INCLUDE_DIR
+    NAMES "concurrentqueue.h"
+    PATHS "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include"
+    PATH_SUFFIXES "concurrentqueue/moodycamel" "concurrentqueue" "moodycamel"
+    NO_DEFAULT_PATH
+)
+
+# 如果上面的没找到，尝试在默认路径再找一次
+if(NOT CONCURRENTQUEUE_INCLUDE_DIR)
+    find_path(CONCURRENTQUEUE_INCLUDE_DIR NAMES "concurrentqueue.h")
+endif()
+
+if(CONCURRENTQUEUE_INCLUDE_DIR)
+    message(STATUS "✅ Force-located concurrentqueue.h at: ${CONCURRENTQUEUE_INCLUDE_DIR}")
+    
+    # 2. 创建一个垫片库
+    if(NOT TARGET moodycamel_shim)
+        add_library(moodycamel_shim INTERFACE)
+    endif()
+
+    # 3. 核心：直接把找到的这个绝对路径加进去！
+    # 无论它藏多深，这下编译器一定能看见了
+    target_include_directories(moodycamel_shim INTERFACE "${CONCURRENTQUEUE_INCLUDE_DIR}")
+
+    # 4. 链接到底层库 (为了获取 lib 依赖)
+    if(TARGET concurrentqueue::concurrentqueue)
+        target_link_libraries(moodycamel_shim INTERFACE concurrentqueue::concurrentqueue)
+    elseif(TARGET concurrentqueue)
+        target_link_libraries(moodycamel_shim INTERFACE concurrentqueue)
+    endif()
+
+    # 5. 创建/更新别名
+    if(NOT TARGET moodycamel::ConcurrentQueue)
+        add_library(moodycamel::ConcurrentQueue ALIAS moodycamel_shim)
+    endif()
+else()
+    message(FATAL_ERROR "❌ Could not find concurrentqueue.h in any vcpkg directory! Please check installation.")
+endif()
+
+find_package(PkgConfig REQUIRED)
+
+# 使用 PkgConfig 查找 liburing
+# IMPORTED_TARGET 参数非常重要，它会自动创建一个 PkgConfig::liburing 的目标
+pkg_check_modules(liburing REQUIRED IMPORTED_TARGET liburing)
+
+if(liburing_FOUND)
+    message(STATUS "✅ Found liburing via PkgConfig")
+else()
+    message(FATAL_ERROR "❌ liburing not found! Please check vcpkg install.")
+endif()
+pkg_check_modules(JEMALLOC jemalloc)
+
+if(JEMALLOC_FOUND)
+    message(STATUS "✅ Jemalloc found via vcpkg/system")
+    add_library(common_jemalloc INTERFACE)
+    target_link_libraries(common_jemalloc INTERFACE ${JEMALLOC_LIBRARIES})
+    target_include_directories(common_jemalloc INTERFACE ${JEMALLOC_INCLUDE_DIRS})
+    target_compile_definitions(common_jemalloc INTERFACE USE_JEMALLOC)
+else()
+    message(WARNING "⚠️ Jemalloc NOT found! Falling back to system malloc.")
+    add_library(common_jemalloc INTERFACE)
+endif()
+
+# --- GoogleTest (仅在测试开启时查找) ---
+# vcpkg 默认安装 gtest，我们只需要在测试部分 link 即可
+
+# ==========================================
+# 3. 业务模块构建
+# ==========================================
+# 编译器警告优化
 if(MSVC)
     add_compile_options(/W4)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# ==========================================
-# 2. 依赖管理 (Dependencies via FetchContent)
-# ==========================================
-include(FetchContent)
-
-message(STATUS "Downloading Dependencies... This may take a while.")
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# 2.1 spdlog (高性能日志)
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG        v1.12.0
-)
-FetchContent_MakeAvailable(spdlog)
-
-# 2.2 liburing (异步IO核心)
-# 注意：在 Linux 上通常推荐用 apt install liburing-dev
-# 这里为了确保版本统一，我们尝试查找系统库，找不到再报错
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBURING REQUIRED liburing)
-if(LIBURING_FOUND)
-    message(STATUS "Found liburing: ${LIBURING_VERSION}")
-else()
-    message(FATAL_ERROR "liburing not found! Please run: sudo apt install liburing-dev")
-endif()
-
-# 2.3 Protobuf (序列化)
-# Protobuf 编译很慢，通常建议找系统安装的。
-find_package(Protobuf REQUIRED)
-if(Protobuf_FOUND)
-    message(STATUS "Found Protobuf: ${Protobuf_VERSION}")
-else()
-    message(FATAL_ERROR "Protobuf not found! Please run: sudo apt install protobuf-compiler libprotobuf-dev")
-endif()
+# 添加子目录
+add_subdirectory(shared)      
+add_subdirectory(src)         
+add_subdirectory(services)    
 
 # ==========================================
-# 3. 添加子模块 (Subdirectories)
+# 4. 测试模块
 # ==========================================
-add_subdirectory(protocols) # 先生成协议代码
-add_subdirectory(src)       # 再编译核心库
-add_subdirectory(services)  # 最后编译业务服务
-add_subdirectory(third_party)  # 第三方工具
-# 3.2 测试模块 (修改输出路径到 tests/)
-# 保存当前的 bin 路径，以便后续恢复 (是一个好习惯，虽然在文件末尾可能不用)
+enable_testing()
+
+# 这里查找 GTest，vcpkg 已经准备好了
+find_package(GTest CONFIG REQUIRED)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_ORIG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-
-# --- [关键修改] 将后续的可执行文件输出路径改为 build/tests ---
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
-add_subdirectory(tests/benchmark)   # 压力测试
-add_subdirectory(tests/integration) # 集成测试
+
+add_subdirectory(tests/benchmark) 
+add_subdirectory(tests/integration)
+add_subdirectory(tests/unit)

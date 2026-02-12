@@ -1,0 +1,58 @@
+syntax = "proto3";
+package aegis.ss.bridge;
+
+import "common.proto"; // 假设 common 里有 Vector3 等
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/ss_bridge";
+
+// --- [新增] 通用响应头 ---
+message RpcResponse {
+    int32 code = 1;      // 0 = 成功, 非0 = 错误码
+    string msg = 2;      // 错误描述 / 提示信息
+    int64 timestamp = 3; // 响应时间戳 (可选，用于调试延迟)
+}
+
+// ---------------------------------------------------------
+// Service 定义
+// ---------------------------------------------------------
+service BattleControl {
+    rpc CreateRoom (CreateRoomReq) returns (CreateRoomRes);
+    rpc TerminateRoom (TerminateRoomReq) returns (TerminateRoomRes);
+    rpc GetServerStatus (ServerStatusReq) returns (ServerStatusRes);
+}
+
+message CreateRoomReq {
+    uint32 room_id = 1;
+    uint32 map_id = 2;
+    repeated uint64 player_ids = 3;
+}
+
+message CreateRoomRes {
+    // [修改] 使用统一头部
+    RpcResponse header = 1;
+    
+    // 业务数据
+    uint32 room_id = 2;
+    string battle_server_ip = 3;
+    int32 battle_server_port = 4;
+    string token = 5;
+}
+
+message TerminateRoomReq {
+    uint32 room_id = 1;
+}
+
+message TerminateRoomRes {
+    // [修改] 甚至可以直接只返回头部
+    RpcResponse header = 1;
+}
+
+message ServerStatusReq {}
+
+message ServerStatusRes {
+    RpcResponse header = 1; // 加上头部保持一致性
+    int32 active_rooms = 2;
+    int32 active_players = 3;
+    float cpu_load = 4;
+    int64 memory_usage = 5;
+}

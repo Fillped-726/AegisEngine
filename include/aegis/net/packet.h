@@ -1,131 +1,133 @@
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <cstring>
 #include <string>
-#include <cstring>     // for memcpy
-#include <arpa/inet.h> // for ntohl, htonl
-#include <stdexcept>
+#include <vector>
+#include <bit>       // C++20 standard endianness
+#include <algorithm> // for std::copy
+#include <array>
+#include <cassert>
 
-// 必须包含你的日志封装，而不是直接用 spdlog
+// 你的日志库
 #include "aegis/common/aegisLog.h"
+
+// [C++20 Concepts] 约束：必须是 Protobuf 消息类型
+namespace google::protobuf
+{
+    class Message;
+}
+template <typename T>
+concept ProtobufMessage = std::is_base_of_v<google::protobuf::Message, T>;
 
 namespace aegis::net
 {
-
-    // 协议常量定义
-    // 1. 业务消息头 (4字节): 也就是 MsgID
+    // 协议常量
     constexpr size_t kPacketMsgHeader = 4;
+
+    // [SSP 核心优化] SBO 阈值
+    // 经验值：大部分游戏逻辑包（心跳、移动、状态）都在 256-512 字节以内
+    // 设置为 1024 可以覆盖 99% 的场景，实现零堆分配
+    constexpr size_t kSmallBufferSize = 1024;
+
+    static constexpr size_t kMaxRetainSize = 64 * 1024;
 
     class Packet
     {
     public:
-        // 内存布局: [MsgID (4B)] + [Protobuf Body]
-        // 注意: 这里不包含 Length 头，Length 头在 Connection 层已经被“吃”掉了
-        std::vector<char> payload_;
-
         Packet() = default;
 
-        // --- 接收侧接口 (Getter) ---
+        // 必须显式处理拷贝和移动，因为我们管理了原始内存指针
+        Packet(const Packet &other);
+        Packet &operator=(const Packet &other);
 
-        // 获取消息 ID (自动处理大小端)
-        uint32_t msg_id() const
-        {
-            if (payload_.size() < kPacketMsgHeader)
-                return 0;
+        // [Move Semantics] 移动构造是性能关键
+        Packet(Packet &&other) noexcept;
+        Packet &operator=(Packet &&other) noexcept;
 
-            uint32_t net_id;
-            std::memcpy(&net_id, payload_.data(), 4);
-            return ntohl(net_id);
-        }
+        ~Packet();
 
-        // 获取纯 Body 的指针 (跳过 MsgID)
-        const void *body_ptr() const
-        {
-            if (payload_.size() <= kPacketMsgHeader)
-                return nullptr;
-            return payload_.data() + kPacketMsgHeader;
-        }
+        // --- 核心数据访问接口 ---
 
-        // 获取纯 Body 的长度
-        size_t body_len() const
-        {
-            if (payload_.size() <= kPacketMsgHeader)
-                return 0;
-            return payload_.size() - kPacketMsgHeader;
-        }
+        // 获取消息 ID (C++20 Endian handling)
+        [[nodiscard]] uint32_t msg_id() const;
 
-        // 【高内聚接口】直接解析为 Protobuf 对象
-        // 用法: if (pkt.parse(login_req)) { ... }
-        template <typename T>
+        [[nodiscard]] const char *data() const;
+        [[nodiscard]] size_t size() const;
+
+        // Connection 读数据写入时调用
+        // 关键：这里决定是用栈内存还是堆内存
+        void alloc(size_t req_size);
+
+        char *mutable_data();
+
+        // 解析 Protobuf
+        // 注意：模板函数必须定义在头文件中
+        template <ProtobufMessage T>
         bool parse(T &msg) const
         {
-            const void *ptr = body_ptr();
-            size_t len = body_len();
-
-            // Protobuf 允许解析空 Body (len=0)，只要 ptr 有效即可
-            // 但如果 payload 还没 MsgID 长 (ptr=nullptr)，则肯定失败
-            if (!ptr && payload_.size() < kPacketMsgHeader)
+            if (size_ <= kPacketMsgHeader)
                 return false;
 
-            // 特殊情况：有 MsgID 但 Body 为空 (len=0) -> 这是一个合法的空消息
-            if (len == 0)
-            {
-                return true; // 或者是 msg.Clear() ? 视业务而定
-            }
+            // 跳过头部的 MsgID
+            const void *body_ptr = data_ + kPacketMsgHeader;
+            int body_len = static_cast<int>(size_ - kPacketMsgHeader);
 
-            // 这里的 int len 转换是安全的，因为限制了包大小
-            return msg.ParseFromArray(ptr, static_cast<int>(len));
+            if (body_len == 0)
+                return true;
+
+            return msg.ParseFromArray(body_ptr, body_len);
         }
 
-        // --- Connection 侧接口 (Writer) ---
+        // --- 发送侧工厂 ---
 
-        // 预留空间 (Connection 读数据前调用)
-        // size = MsgID(4) + ProtoBodyLen
-        void alloc(size_t size)
+        // 注意：模板函数必须定义在头文件中
+        template <ProtobufMessage T>
+        void pack_into(uint32_t msg_id, const T &msg)
         {
-            payload_.resize(size);
-        }
-
-        // SSP 优化：重置对象状态，但保留内存 Capacity
-        // 供 ObjectPool 调用
-        void reset()
-        {
-            // 关键点：std::vector::clear() 不会释放 capacity()
-            // 下次 resize 时只要不超过 capacity 就不需要 malloc
-            payload_.clear();
-        }
-
-        char *mutable_data() { return payload_.data(); }
-
-        // --- 发送侧接口 (Factory) ---
-
-        // 【新增】打包工厂：将 MsgID 和 Protobuf 对象打包成 Packet
-        // 用法: auto pkt = Packet::pack(MsgID::SC_LOGIN_RES, res);
-        template <typename T>
-        static Packet pack(uint32_t msg_id, const T &msg)
-        {
-            Packet pkt;
-            // 1. 序列化 Protobuf
             size_t body_size = msg.ByteSizeLong();
+            size_t total_size = kPacketMsgHeader + body_size;
 
-            // 2. 分配总空间 (MsgID + Body)
-            // vector resize 会进行 zero-initialization，略有开销但安全
-            pkt.payload_.resize(kPacketMsgHeader + body_size);
+            alloc(total_size);
 
-            // 3. 写入 MsgID (Host -> Network)
-            uint32_t net_id = htonl(msg_id);
-            std::memcpy(pkt.payload_.data(), &net_id, kPacketMsgHeader);
+            // 1. 写入 MsgID (Big Endian)
+            uint32_t net_id = (std::endian::native == std::endian::big)
+                                  ? msg_id
+                                  : __builtin_bswap32(msg_id);
+            std::memcpy(data_, &net_id, kPacketMsgHeader);
 
-            // 4. 写入 Protobuf 数据
-            // SerializeToArray 直接写到 vector 的偏移位置
+            // 2. 写入 Body
             if (body_size > 0)
             {
-                msg.SerializeToArray(pkt.payload_.data() + kPacketMsgHeader, static_cast<int>(body_size));
+                // 直接序列化到我们的 buffer 中
+                msg.SerializeToArray(data_ + kPacketMsgHeader, static_cast<int>(body_size));
             }
-
-            return pkt;
         }
+
+    private:
+        // --- SBO 内存管理核心 ---
+
+        // 栈上缓冲区 (Hot Memory)
+        alignas(std::max_align_t) char stack_buf_[kSmallBufferSize];
+
+        // 如果数据很大，使用堆内存
+        char *heap_buf_ = nullptr;
+
+        // 当前数据指针：指向 stack_buf_ 或 heap_buf_
+        char *data_ = stack_buf_;
+
+        // 当前逻辑大小
+        size_t size_ = 0;
+
+        // 当前容量
+        size_t capacity_ = kSmallBufferSize;
+
+        // 内部辅助函数声明
+        void reset();
+        void grow(size_t new_cap);
+        void free_heap();
+        void copy_from(const Packet &other);
+        void move_from(Packet &&other);
     };
 
 } // namespace aegis::net

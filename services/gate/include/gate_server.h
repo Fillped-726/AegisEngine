@@ -2,16 +2,20 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include "aegis/core/task.h"
-
-// 前向声明，减少编译依赖
-namespace aegis::core
-{
-    class SceneActor;
-}
+#include "aegis/core/actor_registry.h"
+#include "aegis/net/socket.h"
 
 namespace aegis::gate
 {
+    // 会话上下文
+    struct ClientSession
+    {
+        // ActorID (对应 Registry 中的 ID)
+        core::ActorID actor_id;
+        bool logged_in = false;
+    };
     class GateServer
     {
     public:
@@ -31,18 +35,18 @@ namespace aegis::gate
         // 停止：优雅退出
         void stop();
 
+        inline static core::ActorID g_DefaultSceneID;
+
     private:
         // --- 基础设施方法 (Infrastructure) ---
         void start_timer();
-        void init_scene();
 
         // --- 协程循环 ---
         aegis::core::DetachedTask accept_loop(int port);
-        aegis::core::DetachedTask handle_session(int client_fd);
+        aegis::core::DetachedTask handle_session(net::Socket client_socket);
         aegis::core::DetachedTask timer_loop();
 
     private:
-        // 核心资源的所有权
-        std::shared_ptr<aegis::core::SceneActor> scene_;
+        core::ActorID room_manager_id_;
     };
 }

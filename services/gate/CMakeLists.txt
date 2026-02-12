@@ -19,4 +19,5 @@ add_executable(gate_server ${SRC_FILES})
 target_link_libraries(gate_server PRIVATE 
     AegisEngine
     AegisProto
+    common_jemalloc # 链接 jemalloc 接口库，确保可执行文件也能使用 jemalloc
 )

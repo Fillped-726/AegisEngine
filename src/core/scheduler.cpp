@@ -1,5 +1,6 @@
 #include "aegis/core/scheduler.h"
 #include "aegis/common/aegisLog.h"
+#include "aegis/core/actor_registry.h"
 #include <chrono>
 #include <immintrin.h> // _mm_pause
 
@@ -196,30 +197,112 @@ namespace aegis::core
         }
     }
 
-    void Scheduler::execute_actor(Actor *actor) // 裸指针
+    void Scheduler::execute_actor(Actor *actor)
     {
+        // 1. 设置线程局部上下文 (让 Actor 内部知道自己是谁)
         Actor::set_current(actor);
 
-        // 获取状态
-        ActorState state = actor->process_batch(100);
+        ActorState state = ActorState::Active;
+        int death_reason = 0; // 0: 正常退出, 1: 异常崩溃
 
+        // 2. 执行逻辑 (包裹在 try-catch 中以实现隔离)
+        try
+        {
+            // 执行一个时间片 (Budget = 100)
+            state = actor->process_batch(100);
+        }
+        catch (const std::exception &e)
+        {
+            // [Log] 使用你的 error 接口
+            aegis::Log::instance().error("Actor {} crashed with exception: {}", actor->id().raw, e.what());
+
+            state = ActorState::Dead;
+            death_reason = 1; // 标记为异常
+        }
+        catch (...)
+        {
+            // [Log] 未知异常
+            aegis::Log::instance().error("Actor {} crashed with unknown exception", actor->id().raw);
+
+            state = ActorState::Dead;
+            death_reason = 1;
+        }
+
+        // 3. 清理上下文
         Actor::set_current(nullptr);
 
+        // 4. 状态流转
         switch (state)
         {
         case ActorState::Active:
-            dispatch(actor); // 重新入队
+            // 还有任务，重新入调度队列
+            dispatch(actor);
             break;
 
         case ActorState::Idle:
-            // 没事做，挂起 (不 delete，也不 dispatch)
+            // 暂时没任务，保留在内存和 Registry 中，但不放入调度队列
+            // 等有新消息 push 进该 Actor 时，producer 会负责再次将其入队
             break;
 
         case ActorState::Dead:
-            // [毒丸生效]
-            // 只有在这里，在没有任何并发引用的情况下，安全自杀
-            delete actor;
-            break;
+        {
+            // --- [死亡流程] 开始 ---
+
+            // A. [修改] 获取身份快照 (保存完整的 ActorID 结构体)
+            // 直接拷贝结构体，不要拆解成 uint64 或 uint32
+            ActorID my_id = actor->id();
+            ActorID supervisor_id = actor->parent_id();
+
+            // [Log] 记录死亡 (日志库通常不支持直接打印结构体，所以取 .raw)
+            if (death_reason == 0)
+            {
+                aegis::Log::instance().info("Actor {} stopping normally.", my_id.raw);
+            }
+            else
+            {
+                aegis::Log::instance().error("Actor {} stopping due to crash.", my_id.raw);
+            }
+
+            // B. [修改] 逻辑注销
+            // 直接传入完整的 ActorID，Registry 会校验内部的版本号
+            // 之前代码强转 uint32 是错误的，会丢失版本号导致无法删除
+            ActorRegistry::instance().remove(my_id);
+
+            // C. 发送遗言 (Notify Parent)
+            // 检查 supervisor_id 是否有效 (检查 raw 是否为 0)
+            if (supervisor_id.raw != 0)
+            {
+                // [修改] 通过 Registry 查找父亲
+                // 直接传入 supervisor_id (包含 index 和 version)
+                // 只有当父亲的版本号没变时，才能找到它，这完美防止了 ABA 问题
+                Actor *supervisor = ActorRegistry::instance().get(supervisor_id);
+
+                if (supervisor)
+                {
+                    // [修改] 构建遗言消息
+                    // ActorDiedMsg 的构造函数现在接受 ActorID 类型
+                    auto *msg = new ActorDiedMsg(my_id, death_reason);
+
+                    // 投递给父亲
+                    if (!supervisor->push(msg))
+                    {
+                        // 只有极少数情况（如内存耗尽）会失败
+                        // 如果消息也是池化的，记得在这里回收 msg
+                        // msg->finalize();
+                        delete msg; // 如果是 new 出来的简单 delete
+                    }
+                }
+                else
+                {
+                    // 父亲可能已经提前销毁了，或者是 ID 版本号过期了
+                    aegis::Log::instance().info("Actor {} died alone (supervisor {} not found or expired).", my_id.raw, supervisor_id.raw);
+                }
+            }
+
+            // D. 物理销毁 (归还内存到 ObjectPool)
+            actor->finalize();
+        }
+        break;
         }
     }
 

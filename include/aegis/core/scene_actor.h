@@ -5,27 +5,19 @@
 #include <vector>
 #include <memory>
 
-#include "aegis/core/actor.h"
+#include "aegis/core/actor_traits.h"
 #include "aegis/core/aoi_grid.h"
 #include "aegis/core/message.h"
 #include "aegis/core/playerActor.h"
-
-// 引入 Protobuf 依赖 (前置声明)
-namespace aegis::protocol
-{
-    class SCMoveNtf;
-    class SCEnterViewNtf;
-    class SCLeaveViewNtf;
-}
 
 namespace aegis::core
 {
 
     // --- SceneActor ---
-    class SceneActor : public Actor
+    class SceneActor : public PooledActor<SceneActor, 128, 32>
     {
     public:
-        SceneActor(float width, float height, float cellSize);
+        SceneActor(ActorID self_id, float width, float height, float cellSize);
         ~SceneActor() = default;
 
         // 核心：处理收到的消息
@@ -44,6 +36,8 @@ namespace aegis::core
         void SendPacket(uint64_t targetId, uint32_t msgId, const T &proto);
 
         void SendBuffer(uint64_t targetId, uint32_t msgId, const std::string &buffer);
+
+        void reset(ActorID self_id, float width, float height, float cellSize);
 
     private:
         AOIGrid aoi_;
