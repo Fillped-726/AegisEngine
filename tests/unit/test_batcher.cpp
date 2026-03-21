@@ -9,8 +9,7 @@
 using namespace aegis::net;
 
 // [修改 1] 按照你的要求，测试 unique_ptr 场景
-using PacketPtr = std::unique_ptr<Packet>;
-
+using PacketPtr = PooledPacket;
 class OutboxBatcherTest : public ::testing::Test
 {
 protected:
@@ -22,7 +21,7 @@ protected:
     {
         // Packet::create 应该返回 unique_ptr 或者我们直接 make_unique
         // 假设 Packet 类有 alloc 方法
-        auto p = std::make_unique<Packet>();
+        auto p = PacketPool::instance().acquire();
         p->alloc(size);
         if (size > 0)
         {

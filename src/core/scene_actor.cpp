@@ -74,12 +74,12 @@ namespace aegis::core
         actors_[actor_id.raw] = player;
 
         // 2. [算法] 加入 AOI (使用 ActorID 保证唯一性)
-        aoi_.Add(actor_id.raw, msg->x, msg->y);
+        uint32_t grid_index = aoi_.Add(actor_id.raw, msg->x, msg->y);
+        player->set_aoi_grid_index(grid_index);
 
         // 3. [业务] 广播视野
         std::vector<uint64_t> neighbor_ids;
-        aoi_.GetViewEntityIds(msg->x, msg->y, neighbor_ids);
-
+        aoi_.GetViewEntityIds(grid_index, neighbor_ids);
         Log::instance().debug("[Scene] Actor {} (UID: {}) entered. Neighbors: {}",
                               actor_id.raw, msg->player_id, neighbor_ids.size());
 
@@ -140,18 +140,17 @@ namespace aegis::core
 
         // 获取玩家对象是为了拿坐标 (AOI 删除需要坐标)
         PlayerActor *player = it->second;
-        float x = player->GetX();
-        float y = player->GetY();
+        uint32_t grid_index = player->get_aoi_grid_index();
 
         // 3. [核心逻辑] 获取“目击者” (谁需要知道我走了？)
         // 必须在 Remove 之前或者由 Remove 返回这些邻居
         // 这里采用稳妥做法：先查周围的人，再删自己
         std::vector<uint64_t> neighbors;
-        aoi_.GetViewEntityIds(x, y, neighbors);
+        aoi_.GetViewEntityIds(grid_index, neighbors);
 
         // 4. [算法] 从 AOI 移除
         // 假设你的 Remove 只需要 ID 和坐标
-        aoi_.Remove(raw_id, x, y);
+        aoi_.RemoveByGridIndex(raw_id, grid_index);
 
         // 5. [广播] 通知周围的邻居
         if (!neighbors.empty())
@@ -187,16 +186,15 @@ namespace aegis::core
         uint64_t mover_actor_id = msg->actor_id.raw; // 用于查表、AOI
         uint64_t mover_uid = msg->player_id;         // 用于发包给客户端
 
-        float oldX = msg->oldX;
-        float oldY = msg->oldY;
+        uint32_t old_grid_index = msg->aoi_grid_index;
         float newX = msg->newX;
         float newY = msg->newY;
 
         // 2. [AOI 计算] 使用 ActorID 进行内部计算
         // cachedEnterIds_ 和 cachedLeaveIds_ 里存的都是 ActorID
-        bool moved = aoi_.Move(mover_actor_id, oldX, oldY, newX, newY, cachedEnterIds_, cachedLeaveIds_);
+        uint32_t new_grid_index = aoi_.Move(mover_actor_id, old_grid_index, newX, newY, cachedEnterIds_, cachedLeaveIds_);
 
-        if (!moved)
+        if (new_grid_index == (uint32_t)-1)
             return;
 
         auto mover = GetPlayer(mover_actor_id);
@@ -205,6 +203,10 @@ namespace aegis::core
 
         // 更新一下 mover 自己的坐标缓存
         mover->SetPos(newX, newY);
+        mover->set_aoi_grid_index(new_grid_index);
+
+        Log::instance().debug("[Scene] Actor {} (UID: {}) moved to ({}, {}). Entered: {}, Left: {}",
+                              mover_actor_id, mover_uid, newX, newY, cachedEnterIds_.size(), cachedLeaveIds_.size());
 
         // =========================================================
         // 3. 处理 [Enter View] (遇见了新朋友)

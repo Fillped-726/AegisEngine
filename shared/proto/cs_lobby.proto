@@ -1,6 +1,8 @@
 syntax = "proto3";
 package aegis.cs.lobby;
 
+import "common.proto";
+
 option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/cs_lobby";
 
 // 登录请求
@@ -12,4 +14,6 @@ message LoginReq {
 message LoginRes {
     int32 ret_code = 1; 
     string msg = 2;
+    uint64 entity_id = 3;       
+    aegis.common.PBVector3 pos = 4; 
 }

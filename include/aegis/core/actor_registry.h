@@ -14,21 +14,23 @@
 namespace aegis::core
 {
     class Actor;
+
     /**
      * @brief 复合 ID 定义 (Handle)
-     * 占用 4 字节，包含 16 位下标和 16 位版本号，用于解决 ABA 问题
+     * 占用 8 字节 (64位)，包含 32 位下标和 32 位版本号，用于解决 ABA 问题。
+     * 采用 union 结构使得可以通过 raw 进行高效的 64 位寄存器级比较。
      */
     union ActorID
     {
         struct
         {
-            uint32_t index;   ///< 数组下标 (0 ~ 65535)
-            uint32_t version; ///< 代数 (每次复用 +1)
+            uint32_t index;   ///< 数组下标 (支持极大容量扩展)
+            uint32_t version; ///< 代数 (每次复用 +1，防 ABA)
         } parts;
-        uint64_t raw; ///< 用于高效比较和网络传输
+        uint64_t raw; ///< 物理内存别名，用于高效比较、哈希和网络传输
 
         ActorID() : raw(0) {}
-        explicit ActorID(uint32_t val) : raw(val) {}
+        explicit ActorID(uint64_t val) : raw(val) {}
 
         bool operator==(const ActorID &other) const { return raw == other.raw; }
         bool operator!=(const ActorID &other) const { return raw != other.raw; }
@@ -44,7 +46,7 @@ namespace aegis::core
     class ActorRegistry
     {
     public:
-        static constexpr size_t MAX_ACTORS = 65536;
+        static constexpr size_t MAX_ACTORS = 65536; // 容量可随时无痛扩容，因为 index 已经是 32 位
         static ActorRegistry &instance();
         // 禁止拷贝
         ActorRegistry(const ActorRegistry &) = delete;
@@ -84,8 +86,7 @@ namespace aegis::core
             T *actor = nullptr;
             try
             {
-                // [关键修改] 将 id 作为第一个参数传给 create
-                // 这要求 PooledActor::create 和 SimpleActor::create 必须接受 id
+                // 将 id 作为第一个参数传给 create
                 actor = T::create(id, std::forward<Args>(args)...);
             }
             catch (const std::exception &e)
@@ -108,7 +109,9 @@ namespace aegis::core
                 return ActorID(0);
             }
 
-            // 5. 发布 (Release 语义保证初始化对 Get 线程可见)
+            // -----------------------------------------------------------
+            // 4. 发布 (Release 语义保证初始化对 Get 线程可见)
+            // -----------------------------------------------------------
             actors_[idx].store(actor, std::memory_order_release);
 
             aegis::Log::instance().debug("Actor created. ID: {}, Type: {}", id.raw, typeid(T).name());
@@ -120,7 +123,7 @@ namespace aegis::core
          */
         Actor *get(ActorID id);
 
-        Actor *get(uint32_t raw_id)
+        Actor *get(uint64_t raw_id)
         {
             return get(ActorID(raw_id));
         }
@@ -141,15 +144,17 @@ namespace aegis::core
                 p.store(nullptr, std::memory_order_relaxed);
 
             for (uint32_t i = 0; i < MAX_ACTORS; ++i)
-                free_indices_.enqueue(static_cast<uint16_t>(i));
+                free_indices_.enqueue(i);
 
             aegis::Log::instance().info("ActorRegistry initialized. Max capacity: {}", MAX_ACTORS);
         }
 
         // --- 核心存储 ---
         std::array<std::atomic<Actor *>, MAX_ACTORS> actors_;
-        std::array<std::atomic<uint16_t>, MAX_ACTORS> versions_;
-        moodycamel::ConcurrentQueue<uint16_t> free_indices_;
+
+        std::array<std::atomic<uint32_t>, MAX_ACTORS> versions_;
+
+        moodycamel::ConcurrentQueue<uint32_t> free_indices_;
     };
 
 } // namespace aegis::core

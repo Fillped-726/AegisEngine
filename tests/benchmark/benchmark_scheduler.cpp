@@ -1,208 +1,66 @@
-// #include "aegis/core/scheduler.h"
-// #include "aegis/core/actor.h"
-// #include "aegis/common/aegisLog.h"
-// #include <iostream>
-// #include <vector>
-// #include <atomic>
-// #include <chrono>
-// #include <thread>
-// #include <memory>
+#include <benchmark/benchmark.h>
+#include "aegis/core/scheduler.h"
+#include "aegis/core/actor.h"
+#include "aegis/core/message.h"
 
-// using namespace aegis::core;
+using namespace aegis::core;
 
-// // --- 简单的消息池 ---
-// struct BenchMsg : public ActorMessage
-// {
-//     int val = 0;
-// };
+// 1. 模拟一个具体的业务 Actor
+class PingPongActor : public Actor
+{
+public:
+    PingPongActor() : Actor() {}
 
-// class MsgPool
-// {
-// public:
-//     MsgPool(size_t size)
-//     {
-//         ptrs_.reserve(size);
-//         for (size_t i = 0; i < size; ++i)
-//             ptrs_.push_back(new BenchMsg());
-//     }
-//     ~MsgPool()
-//     {
-//         for (auto p : ptrs_)
-//             delete p;
-//     } // [优化] 清理未使用的消息
+    // 实现基类纯虚函数：销毁逻辑
+    void finalize() override
+    {
+        // 在调度器测试中，我们手动管理或让 Scheduler 自动销毁
+        // 如果是从 ObjectPool 拿的，这里应该归还池
+    }
 
-//     BenchMsg *alloc()
-//     {
-//         if (ptrs_.empty())
-//             return new BenchMsg();
-//         BenchMsg *m = ptrs_.back();
-//         ptrs_.pop_back();
-//         return m;
-//     }
+    // 实现基类纯虚函数：消息处理逻辑
+    void handle_message(ActorMessage *msg) override
+    {
+        // 模拟极其轻量的业务逻辑
+        benchmark::DoNotOptimize(msg);
+    }
+};
 
-// private:
-//     std::vector<BenchMsg *> ptrs_;
-// };
+// 2. 调度器开销测试：派发与执行
+static void BM_Actor_Dispatch_Latency(benchmark::State &state)
+{
+    auto &sched = Scheduler::instance();
 
-// // --- 场景 1: 测试 Actor ---
-// class BenchActor : public Actor
-// {
-// public:
-//     BenchActor(std::atomic<size_t> &counter) : global_counter_(counter) {}
+    // 初始化调度器（仅执行一次）
+    if (state.thread_index() == 0)
+    {
+        sched.start(4); // 绑定 0-3 核
+    }
 
-// protected:
-//     void handle_message(ActorMessage *msg) override
-//     {
-//         // [SSP 技巧] 检查是否是毒丸消息
-//         // 假设 ActorDestroyMsg 的类型识别逻辑如下
-//         // if (msg->get_type() == ActorMessage::Type::Destroy) { ... }
+    // 准备一个持久化的 Actor
+    auto *actor = new PingPongActor();
+    actor->set_id({1, 1}); // 模拟 ID
 
-//         // 模拟业务
-//         volatile int x = 0;
-//         for (int i = 0; i < 10; ++i)
-//             x = x + 1;
+    for (auto _ : state)
+    {
+        // 模拟外部线程向 Actor 发送消息并触发调度
+        auto *msg = new ActorMessage();     // 模拟普通消息
+        msg->type_id = MSG_TYPE_SCENE_MOVE; // 命中 switch 中的普通分支
 
-//         global_counter_.fetch_sub(1, std::memory_order_release);
-//     }
+        // 核心动作：push 会触发 Actor 的 in_global_queue_ 状态翻转
+        // dispatch 则将 Actor 送入 WorkStealing 流程
+        if (actor->push(msg))
+        {
+            sched.dispatch(actor);
+        }
+    }
 
-// private:
-//     std::atomic<size_t> &global_counter_;
-// };
+    // 清理
+    state.SetItemsProcessed(state.iterations());
 
-// // --- 场景 1 逻辑修复 ---
-// void bench_flood(int num_workers, int num_actors, int total_msgs)
-// {
-//     std::cout << "\n[Scenario 1: The Flood (Global Injection)]" << std::endl;
-//     Scheduler::instance().start(num_workers);
+    // 注意：这里的销毁逻辑在真实压测中需要小心处理，防止 Double Free
+}
+// 强制多线程压测：模拟多个生产者向同一个 Actor 塞消息
+BENCHMARK(BM_Actor_Dispatch_Latency)->Threads(1)->Threads(4)->UseRealTime();
 
-//     std::atomic<size_t> counter{(size_t)total_msgs};
-
-//     // 1. 改为裸指针存储
-//     std::vector<BenchActor *> actors;
-//     actors.reserve(num_actors);
-//     for (int i = 0; i < num_actors; ++i)
-//     {
-//         actors.push_back(new BenchActor(counter));
-//     }
-
-//     MsgPool pool(total_msgs);
-//     auto start = std::chrono::high_resolution_clock::now();
-
-//     for (int i = 0; i < total_msgs; ++i)
-//     {
-//         auto msg = pool.alloc();
-//         auto actor = actors[i % num_actors];
-//         if (actor->push(msg))
-//         {
-//             // [修复] 传入裸指针
-//             Scheduler::instance().dispatch(actor);
-//         }
-//     }
-
-//     while (counter.load(std::memory_order_acquire) > 0)
-//         std::this_thread::yield();
-
-//     auto end = std::chrono::high_resolution_clock::now();
-
-//     // [关键] 发送毒丸消息销毁 Actor
-//     for (auto actor : actors)
-//     {
-//         // 假设你的 Actor 内部收到 ActorDestroyMsg 后会执行 delete this
-//         if (actor->push(new ActorDestroyMsg()))
-//         {
-//             Scheduler::instance().dispatch(actor);
-//         }
-//     }
-
-//     Scheduler::instance().stop();
-
-//     double ms = std::chrono::duration<double, std::milli>(end - start).count();
-//     std::cout << "Time: " << ms << " ms | QPS : " << (size_t)(total_msgs / (ms / 1000.0)) << std::endl;
-// }
-
-// // --- 场景 2: 链式反应 ---
-// class ChainActor : public Actor
-// {
-// public:
-//     ChainActor(std::atomic<size_t> &counter, int limit)
-//         : global_counter_(counter), limit_(limit) {}
-
-// protected:
-//     void handle_message(ActorMessage * /*msg*/) override
-//     {
-//         global_counter_.fetch_sub(1, std::memory_order_release);
-//         processed_++;
-
-//         if (processed_ < limit_)
-//         {
-//             auto new_msg = new BenchMsg();
-//             if (this->push(new_msg))
-//             {
-//                 // [修复] 直接传 this，不再使用 shared_from_this()
-//                 Scheduler::instance().dispatch(this);
-//             }
-//         }
-//     }
-
-// private:
-//     std::atomic<size_t> &global_counter_;
-//     int limit_;
-//     int processed_ = 0;
-// };
-
-// void bench_chain(int num_workers, int num_chains, int msgs_per_chain)
-// {
-//     size_t total_msgs = num_chains * msgs_per_chain;
-//     std::cout << "\n[Scenario 2: The Chain (Local LIFO Optimization)]" << std::endl;
-
-//     Scheduler::instance().start(num_workers);
-//     std::atomic<size_t> counter{total_msgs};
-
-//     // 1. 改为裸指针
-//     std::vector<ChainActor *> actors;
-//     for (int i = 0; i < num_chains; ++i)
-//     {
-//         actors.push_back(new ChainActor(counter, msgs_per_chain));
-//     }
-
-//     auto start = std::chrono::high_resolution_clock::now();
-
-//     for (auto actor : actors)
-//     {
-//         if (actor->push(new BenchMsg()))
-//         {
-//             Scheduler::instance().dispatch(actor);
-//         }
-//     }
-
-//     while (counter.load(std::memory_order_acquire) > 0)
-//         std::this_thread::yield();
-//     auto end = std::chrono::high_resolution_clock::now();
-
-//     // [关键] 毒丸清理
-//     for (auto actor : actors)
-//     {
-//         if (actor->push(new ActorDestroyMsg()))
-//         {
-//             Scheduler::instance().dispatch(actor);
-//         }
-//     }
-
-//     Scheduler::instance().stop();
-
-//     double ms = std::chrono::duration<double, std::milli>(end - start).count();
-//     std::cout << "Time: " << ms << " ms | QPS : " << (size_t)(total_msgs / (ms / 1000.0)) << std::endl;
-// }
-
-// int main(int argc, char **argv)
-// {
-//     aegis::Log::instance().set_level(spdlog::level::warn);
-//     int workers = (argc > 1) ? std::atoi(argv[1]) : (int)std::thread::hardware_concurrency();
-//     if (workers <= 0)
-//         workers = 4;
-
-//     bench_flood(workers, 1000, 5000000);
-//     bench_chain(workers, 1000, 5000);
-
-//     return 0;
-// }
+BENCHMARK_MAIN();

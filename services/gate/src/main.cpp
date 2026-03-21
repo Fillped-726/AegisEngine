@@ -10,7 +10,7 @@ int main()
 
         // 1. 初始化 (日志、调度器、IO环)
         // 参数可以从命令行解析，这里先硬编码
-        server.init("logs/gate_server.log");
+        server.init("logs/gate_server.log", 2);
 
         // 2. 运行 (启动监听、定时器，阻塞住)
         server.run(8888);

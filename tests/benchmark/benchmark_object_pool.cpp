@@ -1,117 +1,69 @@
-#include <iostream>
+#include <benchmark/benchmark.h>
+#include "aegis/common/objectPool.h" // 假设你的文件名
 #include <vector>
-#include <thread>
-#include <chrono>
-#include <memory>
-#include <atomic>
-#include <iomanip>
-#include "aegis/common/objectPool.h" // 确保包含你的头文件
 
 using namespace aegis::core;
 
-// 模拟一个负载对象
-struct Payload
+// 测试对象：模拟一个中型对象，带有一些数据
+struct MockObject
 {
-    char data[64]; // 模拟 64 字节对象 (常见的 Cache Line 大小)
-    Payload() { data[0] = 'a'; }
-    void reset() { data[0] = 'b'; }
+    uint64_t data[16]; // 128 bytes
+    void reset() { data[0] = 0; }
 };
 
-// 计时器辅助
-class Timer
+// ==========================================
+// 1. 基准测试：原生 new/delete (jemalloc 托管)
+// ==========================================
+static void BM_RawNewDelete(benchmark::State &state)
 {
-    using Clock = std::chrono::high_resolution_clock;
-    Clock::time_point start_;
-
-public:
-    Timer() : start_(Clock::now()) {}
-    double elapsed_ms() const
+    for (auto _ : state)
     {
-        return std::chrono::duration<double, std::milli>(Clock::now() - start_).count();
+        auto *obj = new MockObject();
+        benchmark::DoNotOptimize(obj);
+        delete obj;
     }
-};
+}
+BENCHMARK(BM_RawNewDelete)->ThreadRange(1, 4)->UseRealTime();
 
-void benchmark_system_alloc(int thread_count, int iterations)
+// ==========================================
+// 2. 场景 A & B：ObjectPool 热路径 (L1 Cache)
+// ==========================================
+static void BM_ObjectPool_HotPath(benchmark::State &state)
 {
-    std::vector<std::thread> threads;
-    std::atomic<long> total_dummy{0};
-
-    Timer t;
-    for (int i = 0; i < thread_count; ++i)
+    auto &pool = ObjectPool<MockObject>::instance();
+    for (auto _ : state)
     {
-        threads.emplace_back([&, iterations]()
-                             {
-            long dummy = 0;
-            for(int j=0; j<iterations; ++j) {
-                // 模拟高频申请释放
-                volatile Payload* p = new Payload(); 
-                dummy += p->data[0];
-                delete p;
-            }
-            total_dummy += dummy; });
+        // 申请并立即释放，始终命中 ThreadLocalCache
+        auto ptr = pool.acquire();
+        benchmark::DoNotOptimize(ptr);
     }
-    for (auto &th : threads)
-        th.join();
-
-    double ms = t.elapsed_ms();
-    std::cout << "[System New/Delete] Threads: " << thread_count
-              << ", Total Ops: " << (long)thread_count * iterations
-              << ", Time: " << ms << " ms"
-              << ", OPS: " << std::fixed << std::setprecision(2)
-              << ((double)thread_count * iterations / ms * 1000.0) / 1000000.0 << " M/s" << std::endl;
 }
+// 测试单线程到 8 线程（验证 ThreadLocal 隔离性）
+BENCHMARK(BM_ObjectPool_HotPath)->ThreadRange(1, 4)->UseRealTime();
 
-void benchmark_object_pool(int thread_count, int iterations)
+// ==========================================
+// 3. 场景 C：批量搬运 (Trigger L2 Global Queue)
+// ==========================================
+static void BM_ObjectPool_BulkTransfer(benchmark::State &state)
 {
-    std::vector<std::thread> threads;
-    std::atomic<long> total_dummy{0};
+    auto &pool = ObjectPool<MockObject>::instance();
+    const size_t batch_size = 200; // 超过默认 LocalBatchSize(128)
 
-    // 预热 Pool (可选)
-    // ObjectPool<Payload>::instance();
-
-    Timer t;
-    for (int i = 0; i < thread_count; ++i)
+    for (auto _ : state)
     {
-        threads.emplace_back([&, iterations]()
-                             {
-            long dummy = 0;
-            for(int j=0; j<iterations; ++j) {
-                // 使用对象池
-                auto ptr = ObjectPool<Payload>::instance().acquire();
-                dummy += ptr->data[0];
-                // ptr 出作用域自动归还
-            }
-            total_dummy += dummy; });
+        std::vector<ObjectPool<MockObject>::Ptr> objs;
+        objs.reserve(batch_size);
+
+        // 1. 连续申请，强制触发从 Global Queue 拉取
+        for (size_t i = 0; i < batch_size; ++i)
+        {
+            objs.push_back(pool.acquire());
+        }
+
+        // 2. 连续释放，强制触发推送到 Global Queue
+        objs.clear();
     }
-    for (auto &th : threads)
-        th.join();
-
-    double ms = t.elapsed_ms();
-    std::cout << "[Aegis ObjectPool ] Threads: " << thread_count
-              << ", Total Ops: " << (long)thread_count * iterations
-              << ", Time: " << ms << " ms"
-              << ", OPS: " << std::fixed << std::setprecision(2)
-              << ((double)thread_count * iterations / ms * 1000.0) / 1000000.0 << " M/s" << std::endl;
 }
+BENCHMARK(BM_ObjectPool_BulkTransfer)->ThreadRange(1, 4)->UseRealTime();
 
-int main()
-{
-    std::cout << ">>> Running Benchmarks (Release Mode Recommended) <<<" << std::endl;
-
-    // 场景 1: 单线程基准
-    std::cout << "\n--- Single Thread ---\n";
-    benchmark_system_alloc(1, 1000000);
-    benchmark_object_pool(1, 1000000);
-
-    // 场景 2: 多线程高并发 (4 线程)
-    std::cout << "\n--- Multi Thread (4) ---\n";
-    benchmark_system_alloc(4, 1000000); // 每个线程 100万次
-    benchmark_object_pool(4, 1000000);
-
-    // 场景 3: 极限并发 (8 线程) - 观察锁竞争带来的影响
-    std::cout << "\n--- Multi Thread (8) ---\n";
-    benchmark_system_alloc(8, 1000000);
-    benchmark_object_pool(8, 1000000);
-
-    return 0;
-}
+BENCHMARK_MAIN();

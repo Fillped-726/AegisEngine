@@ -37,6 +37,7 @@ namespace aegis::core
         struct io_uring_params params;
         memset(&params, 0, sizeof(params));
         params.flags = IORING_SETUP_SQPOLL; // 保持 SQPOLL 模式
+        params.sq_thread_cpu = 1;
         params.sq_thread_idle = 2000;
 
         if (io_uring_queue_init_params(ring_depth, &ring_, &params) < 0)
@@ -103,13 +104,13 @@ namespace aegis::core
         {
             // --- Phase 1: Flush (搬运工) ---
             // 检查全局就绪队列，将 Worker 产生的 Outbox 数据转为 Write SQE
-            net::Connection *conn = nullptr;
+            std::weak_ptr<net::Connection> weak_conn;
             // 假设你已经在 Env.h 里定义了 moodycamel::ConcurrentQueue<net::Connection*> pending_conns_;
-            while (pending_conns_.try_dequeue(conn))
+            while (pending_conns_.try_dequeue(weak_conn))
             {
-                if (conn)
+                if (auto conn = weak_conn.lock())
                 {
-                    conn->flush(); // 产生 Write SQE (填入 Ring，未提交)
+                    conn->flush();
                 }
             }
 

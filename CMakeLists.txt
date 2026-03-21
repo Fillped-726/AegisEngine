@@ -125,6 +125,7 @@ enable_testing()
 
 # 这里查找 GTest，vcpkg 已经准备好了
 find_package(GTest CONFIG REQUIRED)
+find_package(benchmark CONFIG REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_ORIG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)

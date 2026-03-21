@@ -51,7 +51,7 @@ protected:
     // 辅助：生成 Packet
     net::PooledPacket make_packet(const std::string &msg)
     {
-        auto pkt = std::make_unique<net::Packet>();
+        auto pkt = net::PacketPool::instance().acquire();
         pkt->alloc(msg.size());
         std::memcpy(pkt->mutable_data(), msg.data(), msg.size());
         return pkt;

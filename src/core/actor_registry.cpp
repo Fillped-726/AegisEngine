@@ -1,5 +1,5 @@
 #include "aegis/core/actor_registry.h"
-#include "aegis/core/actor.h" 
+#include "aegis/core/actor.h"
 #include "aegis/common/aegisLog.h"
 
 namespace aegis::core
@@ -21,12 +21,13 @@ namespace aegis::core
 
         Actor *ptr = actors_[idx].load(std::memory_order_acquire);
 
-        if (!ptr) [[likely]]
+        if (!ptr) [[unlikely]]
         {
             return nullptr;
         }
 
-        if (ptr->id().raw != id.raw)
+        uint32_t current_ver = versions_[idx].load(std::memory_order_relaxed);
+        if (current_ver != id.parts.version) [[unlikely]]
         {
             return nullptr;
         }
@@ -42,16 +43,24 @@ namespace aegis::core
 
         Actor *ptr = actors_[idx].load(std::memory_order_relaxed);
 
-        if (!ptr || ptr->id().raw != id.raw)
+        uint32_t current_ver = versions_[idx].load(std::memory_order_relaxed);
+
+        if (current_ver != id.parts.version)
         {
-            // Log 这里的 id.raw 是没问题的，因为它是 uint64
-            aegis::Log::instance().warn("Attempted to remove non-existent or ID-mismatched Actor: {}", id.raw);
+            aegis::Log::instance().warn("Attempted to remove ID-mismatched Actor: {}", id.raw);
             return;
         }
 
-        // 原子置空
-        Actor *expected = ptr;
-        if (actors_[idx].compare_exchange_strong(expected, nullptr, std::memory_order_release))
+        Actor *expected = actors_[idx].load(std::memory_order_acquire);
+
+        if (!expected)
+        {
+            aegis::Log::instance().warn("Attempted to remove non-existent Actor: {}", id.raw);
+            return;
+        }
+
+        expected = ptr;
+        if (actors_[idx].compare_exchange_strong(expected, nullptr, std::memory_order_release, std::memory_order_relaxed))
         {
             // 版本号自增
             versions_[idx].fetch_add(1, std::memory_order_relaxed);

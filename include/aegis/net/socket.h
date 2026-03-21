@@ -164,8 +164,6 @@ namespace aegis::net
 
                 // 绑定 User Data
                 io_uring_sqe_set_data(sqe, static_cast<core::BaseAwaiter *>(this));
-
-                io_uring_submit(ring); // 提交以提高发送及时性
             }
 
             int await_resume()

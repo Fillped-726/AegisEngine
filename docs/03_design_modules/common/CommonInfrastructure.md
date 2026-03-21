@@ -52,30 +52,75 @@
 
 ```
 classDiagram
+    %% ==========================================
+    %% 1. 内存支柱 (Memory Pillar)
+    %% ==========================================
     class ObjectPool {
         +GlobalQueue: ConcurrentQueue
         +acquire()
         +release()
+        -is_active_: atomic bool
     }
     class ThreadLocalCache {
-        +vector<T*> ptrs
+        +vector~T*~ ptrs
         +bulk_buffer
+        +prod_token
+        +cons_token
     }
+    
+    %% 关系：池管理着每个线程的缓存
+    ObjectPool "1" *-- "N" ThreadLocalCache : Manages
+
+    %% ==========================================
+    %% 2. 调度支柱 (Scheduling Pillar)
+    %% ==========================================
     class WorkStealingQueue {
         +push()
         +pop()
         +steal()
-        -buffer: ring_buffer
+        -buffer_: array
+        -top_: atomic size_t
+        -bottom_: atomic size_t
     }
+    %% 注：调度队列是独立的，不需要依赖其他组件
+
+    %% ==========================================
+    %% 3. 结构支柱 (Structure Pillar - For Timers/Lists)
+    %% ==========================================
     class IntrusiveListNode {
-        +prev
-        +next
+        +prev: Node*
+        +next: Node*
+        +unlink()
     }
     
-    ObjectPool "1" *-- "N" ThreadLocalCache : Manages
-    ThreadLocalCache ..> ObjectPool : Bulk Transfer
-    WorkStealingQueue ..> SpinLock : Optional (Internal)
-    UserObject --|> IntrusiveListNode : Inherits
+    class IntrusiveList {
+        +root_: Node
+        +push_back()
+        +remove()
+        +splice()
+    }
+
+    %% 关系：链表操作节点
+    IntrusiveList o-- IntrusiveListNode : Manipulates
+
+    %% ==========================================
+    %% 4. 辅助工具 (Utilities)
+    %% ==========================================
+    class UniqueFd {
+        -fd_: int
+        +reset()
+    }
+    
+    class SpinLock {
+        -flag: atomic_flag
+        +lock()
+        +unlock()
+    }
+
+    %% 样式调整
+    note for ObjectPool "负责内存分配\n(TCMalloc Style)"
+    note for WorkStealingQueue "负责任务调度\n(Chase-Lev)"
+    note for IntrusiveList "负责对象组织\n(Timer/Event)"
 ```
 
 ---

@@ -53,6 +53,7 @@ namespace aegis::gate
                 // 2. 出生点计算
                 float spawnX = 100.0f + (uid % 10);
                 float spawnY = 100.0f + (uid % 10);
+                float spawnZ = 0.0f;
 
                 player->SetPos(spawnX, spawnY);
 
@@ -60,7 +61,12 @@ namespace aegis::gate
                 LoginRes res;
                 res.set_ret_code(0);
                 res.set_msg("Welcome to Aegis World!");
-                // [建议] 确保 SC_LOGIN_RES 对应 ids::SC_LOGIN_RES (1002)
+                res.set_entity_id(player->id().raw);
+                auto *pos = res.mutable_pos();
+                pos->set_x(spawnX);
+                pos->set_y(spawnY);
+                pos->set_z(spawnZ);
+
                 player->send_packet(ids::SC_LOGIN_RES, res);
 
                 // 4. 获取主城 Scene
@@ -109,15 +115,11 @@ namespace aegis::gate
                     float newX = req.target_pos().x();
                     float newY = req.target_pos().y();
 
-                    // [修复] 必须先保存旧位置，因为 SceneMoveMsg 需要它
-                    float oldX = player->GetX();
-                    float oldY = player->GetY();
-
                     // 2. 更新玩家自身数据 (乐观更新)
                     player->SetPos(newX, newY);
 
-                    // 3. [修复] 构造正确的参数顺序: id, uid, oldX, oldY, newX, newY
-                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), oldX, oldY, newX, newY);
+                    // 3. [修复] 构造正确的参数顺序: id, uid, oldGridIndex, newX, newY
+                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), player->get_aoi_grid_index(), newX, newY);
 
                     if (scene->push(msg))
                     {

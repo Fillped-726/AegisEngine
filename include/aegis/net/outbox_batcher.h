@@ -44,6 +44,7 @@ namespace aegis::net
             packet_end_indices_.clear();
 
             consumed_iov_index_ = 0; // 重置游标
+            completed_packets_cursor_ = 0;
             size_t count = 0;
 
             // 2. Iterate & Build
@@ -125,14 +126,12 @@ namespace aegis::net
                 // check if we completed any packets
                 // 检查 packet_end_indices_ 队列头部
                 // 如果当前游标已经越过了某个 Packet 的结束边界，说明该 Packet 发完了
-                while (!packet_end_indices_.empty() &&
-                       consumed_iov_index_ >= packet_end_indices_.front())
+                while (completed_packets_cursor_ < packet_end_indices_.size() &&
+                       consumed_iov_index_ >= packet_end_indices_[completed_packets_cursor_])
                 {
                     packets_completed++;
-                    // 这里的 pop 是 vector::erase(begin)，因为这里只是记录索引的
-                    // int 数组，且每次只有几十个，开销可忽略。
-                    // 追求极致可以使用 deque 或双指针，但在 BATCH_LIMIT=64 下无所谓。
-                    packet_end_indices_.erase(packet_end_indices_.begin());
+
+                    completed_packets_cursor_++;
                 }
             }
 
@@ -171,5 +170,6 @@ namespace aegis::net
         std::vector<uint32_t> header_cache_;
         std::vector<size_t> packet_end_indices_; // 单调递增的索引
         size_t consumed_iov_index_ = 0;          // [Crucial] 游标
+        size_t completed_packets_cursor_ = 0;
     };
 }

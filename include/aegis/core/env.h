@@ -28,9 +28,9 @@ namespace aegis::core
 
         io_uring *native_handle() { return &ring_; }
 
-        moodycamel::ConcurrentQueue<net::Connection *> pending_conns_;
+        moodycamel::ConcurrentQueue<std::weak_ptr<net::Connection>> pending_conns_;
 
-        void add_pending_connection(aegis::net::Connection *conn)
+        void add_pending_connection(std::weak_ptr<aegis::net::Connection> conn)
         {
             pending_conns_.enqueue(conn);
         }

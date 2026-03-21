@@ -6,11 +6,11 @@ option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/ids";
 enum MsgID {
     UNKNOWN = 0;
     
-    // 1000-1999: Lobby (Go 处理)
+    // 1000-1999: Lobby 
     CS_LOGIN_REQ = 1001;
     SC_LOGIN_RES = 1002;
     
-    // 2000-2999: Battle (C++ 处理)
+    // 2000-2999: Battle 
     CS_PING      = 2001; 
     SC_PONG      = 2002;
     CS_MOVE_REQ  = 2003;
@@ -18,7 +18,6 @@ enum MsgID {
     SC_ENTER_VIEW = 2005;
     SC_LEAVE_VIEW = 2006;
 
-    // --- 3000-3999: Server-Server Bridge (RPC 内部调用) ---
     SS_CREATE_ROOM_REQ    = 3001; // CreateRoomMsg
     SS_TERMINATE_ROOM_REQ = 3002; // TerminateRoomMsg
 }

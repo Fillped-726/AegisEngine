@@ -39,8 +39,7 @@ namespace aegis::core
         std::atomic<ActorMessage *> next{nullptr};
         uint8_t type_id = MSG_TYPE_BASE;
 
-    protected:
-        ~ActorMessage() = default; // 非虚析构
+        ~ActorMessage() = default;
     };
 
     // --- 2. 核心模版工具 (CRTP) ---
@@ -112,11 +111,11 @@ namespace aegis::core
     {
         core::ActorID actor_id;
         uint64_t player_id; // 业务 ID (UID)
-        float oldX, oldY;
+        uint32_t aoi_grid_index;
         float newX, newY;
 
-        SceneMoveMsg(core::ActorID id, uint64_t uid, float ox, float oy, float nx, float ny)
-            : actor_id(id), player_id(uid), oldX(ox), oldY(oy), newX(nx), newY(ny)
+        SceneMoveMsg(core::ActorID id, uint64_t uid, uint32_t grid_index, float nx, float ny)
+            : actor_id(id), player_id(uid), aoi_grid_index(grid_index), newX(nx), newY(ny)
         {
             type_id = MSG_TYPE_SCENE_MOVE;
         }

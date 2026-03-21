@@ -3,6 +3,7 @@
 #include "aegis/core/actor_registry.h"
 #include <chrono>
 #include <immintrin.h> // _mm_pause
+#include "aegis/common/tools.h"
 
 #ifdef __linux__
 #include <pthread.h>
@@ -71,7 +72,7 @@ namespace aegis::core
         for (int i = 0; i < num_workers; ++i)
         {
             workers_.emplace_back([this, i]
-                                  { this->worker_entry(i); });
+                                  { bind_to_core(i + 2); this->worker_entry(i); });
         }
     }
 

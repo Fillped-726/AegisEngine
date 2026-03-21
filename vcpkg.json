@@ -18,6 +18,7 @@
     "liburing",
     "jemalloc",
     "concurrentqueue",
-    "gtest"
+    "gtest",
+    "benchmark"
   ]
 }

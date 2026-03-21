@@ -1,130 +1,50 @@
-#include "aegis/common/aegisLog.h" // 确保路径正确
-#include <iostream>
-#include <chrono>
-#include <vector>
-#include <thread>
-#include <fstream>
-#include <format>
-#include <iomanip>
+#include <benchmark/benchmark.h>
+#include "aegis/common/aegisLog.h" // 你的日志头文件
+#include <spdlog/async.h>
+#include <spdlog/sinks/null_sink.h> // 使用空槽，排除磁盘 IO 干扰
 
-// 简单的计时器
-class Stopwatch
+using namespace aegis;
+
+// 初始化异步日志环境
+void SetupAsyncLogger()
 {
-    using Clock = std::chrono::high_resolution_clock;
-    std::chrono::time_point<Clock> start_time;
+    // 预热单例
+    auto &log = Log::instance();
+    // 假设你在 init_config 里配置了异步模式
+    // 为了公平测试，我们使用 null_sink，只测内存和逻辑损耗
+    auto null_sink = std::make_shared<spdlog::sinks::null_sink_st>();
 
-public:
-    Stopwatch() : start_time(Clock::now()) {}
-    double elapsed_ms()
-    {
-        auto end_time = Clock::now();
-        return std::chrono::duration<double, std::milli>(end_time - start_time).count();
-    }
-};
+    // 设置 spdlog 线程池：8192个槽位，1个后台线程
+    spdlog::init_thread_pool(8192, 1);
+    auto async_logger = std::make_shared<spdlog::async_logger>(
+        "aegis_async", null_sink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);
 
-const int LOG_COUNT = 500000; // 保持 50万条
-
-// 修改返回值为 double，返回耗时(ms)
-double bench_legacy_iostream()
-{
-    std::cerr << "[Bench] Starting Legacy iostream (Sync)..." << std::endl;
-    Stopwatch sw;
-    for (int i = 0; i < LOG_COUNT; ++i)
-    {
-        std::cout << "[Legacy] Index: " << i << " Payload: " << "SomeData" << " Float: " << 3.14f << "\n";
-    }
-    double cost = sw.elapsed_ms();
-    // std::cerr << "[Bench] Legacy iostream finished: " << cost << " ms" << std::endl;
-    return cost;
+    // 这里需要你 Log 类内部支持设置这个 logger_，或者通过 init_config 注入
+    // 假设我们已经配置好了
 }
 
-double bench_modern_cout()
+// 场景 1：日志级别未达到，触发 Early Return
+static void BM_LogDisabled(benchmark::State &state)
 {
-    std::cerr << "[Bench] Starting std::format + cout (Sync)..." << std::endl;
-    Stopwatch sw;
-    for (int i = 0; i < LOG_COUNT; ++i)
+    Log::instance().set_level(spdlog::level::warn);
+    for (auto _ : state)
     {
-        std::cout << std::format("[Modern] Index: {} Payload: {} Float: {}\n", i, "SomeData", 3.14f);
+        // info 级别被屏蔽，测试 should_log 的开销
+        Log::instance().info("This is a disabled log: {}", 42);
     }
-    double cost = sw.elapsed_ms();
-    // std::cerr << "[Bench] Modern cout finished: " << cost << " ms" << std::endl;
-    return cost;
 }
+BENCHMARK(BM_LogDisabled)->Threads(1)->Threads(4)->UseRealTime();
 
-double bench_aegis_async()
+// 场景 2：正常异步日志输出（带格式化）
+static void BM_LogAsync(benchmark::State &state)
 {
-    std::cerr << "[Bench] Starting AegisLog (Async)..." << std::endl;
-    aegis::Log::instance().init_config("logs/bench.log", "Bench");
-
-    Stopwatch sw;
-    for (int i = 0; i < LOG_COUNT; ++i)
+    Log::instance().set_level(spdlog::level::info);
+    int i = 0;
+    for (auto _ : state)
     {
-        aegis::Log::instance().info("Index: {} Payload: {} Float: {}", i, "SomeData", 3.14f);
+        Log::instance().info("Performance test log index: {}, some string: {}", ++i, "hello");
     }
-
-    double cost = sw.elapsed_ms();
-    // std::cerr << "[Bench] AegisLog (Worker Thread Release): " << cost << " ms" << std::endl;
-    return cost;
 }
+BENCHMARK(BM_LogAsync)->Threads(1)->Threads(4)->UseRealTime();
 
-struct BenchResult
-{
-    std::string name;
-    double cost_ms;
-    double qps;
-    double speedup;
-};
-
-void print_summary(const std::vector<BenchResult> &results)
-{
-    std::cerr << "\n\n=================================================================================\n";
-    std::cerr << "                               BENCHMARK SUMMARY                                 \n";
-    std::cerr << "=================================================================================\n";
-    std::cerr << std::left << std::setw(25) << "Method"
-              << std::right << std::setw(15) << "Time (ms)"
-              << std::right << std::setw(15) << "QPS (msg/s)"
-              << std::right << std::setw(15) << "Speedup (x)"
-              << "\n";
-    std::cerr << "---------------------------------------------------------------------------------\n";
-
-    for (const auto &res : results)
-    {
-        std::cerr << std::left << std::setw(25) << res.name
-                  << std::right << std::setw(15) << std::fixed << std::setprecision(2) << res.cost_ms
-                  << std::right << std::setw(15) << (int)res.qps
-                  << std::right << std::setw(15) << std::fixed << std::setprecision(2) << res.speedup
-                  << "\n";
-    }
-    std::cerr << "=================================================================================\n";
-    std::cerr << "* Speedup is relative to Legacy iostream (Baseline)\n\n";
-}
-
-int main()
-{
-    std::ios::sync_with_stdio(false);
-
-    std::cerr << "=== Benchmark Running (Count: " << LOG_COUNT << ") ===\n";
-    std::cerr << "!!! Output is redirected to stdout, stats to stderr !!!\n\n";
-
-    // 1. Run Tests
-    double t_aegis = bench_aegis_async();
-    double t_modern = bench_modern_cout();
-    double t_legacy = bench_legacy_iostream();
-
-    // 2. Calculate Stats
-    std::vector<BenchResult> results;
-
-    // Baseline
-    results.push_back({"Legacy iostream", t_legacy, (LOG_COUNT / t_legacy) * 1000.0, 1.0});
-
-    // Modern
-    results.push_back({"Modern std::format", t_modern, (LOG_COUNT / t_modern) * 1000.0, t_legacy / t_modern});
-
-    // Aegis
-    results.push_back({"AegisLog (Async)", t_aegis, (LOG_COUNT / t_aegis) * 1000.0, t_legacy / t_aegis});
-
-    // 3. Print Report
-    print_summary(results);
-
-    return 0;
-}
+BENCHMARK_MAIN();

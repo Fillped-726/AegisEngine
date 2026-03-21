@@ -104,6 +104,8 @@ namespace aegis::net
             }
         }
 
+        void reset();
+
     private:
         // --- SBO 内存管理核心 ---
 
@@ -123,7 +125,6 @@ namespace aegis::net
         size_t capacity_ = kSmallBufferSize;
 
         // 内部辅助函数声明
-        void reset();
         void grow(size_t new_cap);
         void free_heap();
         void copy_from(const Packet &other);

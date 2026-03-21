@@ -1,5 +1,6 @@
 #pragma once
 #include <atomic>
+#include "aegis/common/spinLock.h"
 #include "aegis/core/actor_traits.h"
 #include "aegis/net/connection.h"
 #include "aegis/common/aegisLog.h"
@@ -108,7 +109,7 @@ namespace aegis::core
             if (conn_)
             {
 
-                net::PooledPacket pkt = std::make_unique<net::Packet>();
+                auto pkt = net::PacketPool::instance().acquire();
 
                 pkt->pack_into(msg_id, msg);
 
@@ -121,10 +122,11 @@ namespace aegis::core
         // 必须是 public，因为 SceneActor 需要调用它
         void send_buffer(uint32_t msg_id, const std::string &serialized_data)
         {
+            std::lock_guard<common::SpinLock> guard(lock_);
             if (!conn_)
                 return;
 
-            net::PooledPacket pkt = std::make_unique<net::Packet>();
+            auto pkt = net::PacketPool::instance().acquire();
             size_t body_size = serialized_data.size();
             pkt->alloc(net::kPacketMsgHeader + body_size);
 
@@ -143,6 +145,9 @@ namespace aegis::core
 
         void set_player_id(uint64_t pid) { playerId_ = pid; }
         [[nodiscard]] uint64_t get_player_id() const { return playerId_; }
+
+        uint32_t get_aoi_grid_index() const { return aoi_grid_index; }
+        void set_aoi_grid_index(uint32_t index) { aoi_grid_index = index; }
 
     protected:
         // --- Worker 线程执行此函数 ---
@@ -164,6 +169,7 @@ namespace aegis::core
             else if (msg->type_id == MSG_TYPE_SESSION_CLOSED)
             {
                 auto *closed_msg = static_cast<core::SessionClosedMsg *>(msg);
+                std::lock_guard<common::SpinLock> guard(lock_);
                 on_session_closed(closed_msg->session_id);
             }
         }
@@ -190,6 +196,10 @@ namespace aegis::core
         int fd_ = -1;
 
         uint64_t playerId_ = 0;
+
+        uint32_t aoi_grid_index = -1;
+
+        common::SpinLock lock_;
 
         // [Safety] 使用 atomic 避免最基本的读写撕裂，虽然不能完全解决多字段一致性
         std::atomic<float> x_{0.0f};

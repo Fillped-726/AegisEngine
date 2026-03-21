@@ -56,7 +56,7 @@ namespace aegis::net
     {
         try
         {
-            auto packet = std::make_unique<Packet>();
+            auto packet = net::PacketPool::instance().acquire();
             // 1. Read Header
             while (rx_len_ < K_HEADER_SIZE)
             {
@@ -137,7 +137,7 @@ namespace aegis::net
         {
             // 1. 把自己加入全局脏名单
             // (假设 Env 加了 pending_conns_ 成员)
-            core::Env::instance().add_pending_connection(this);
+            core::Env::instance().add_pending_connection(weak_from_this());
 
             // 2. 按门铃唤醒 Env (如果它在睡)
             core::Env::instance().wake_up();
@@ -164,7 +164,7 @@ namespace aegis::net
 
     core::DetachedTask Connection::send_batch_coro(std::shared_ptr<Connection> self)
     {
-        std::vector<PooledPacket> batch;
+        std::vector<net::PooledPacket> batch;
 
         while (true)
         {
@@ -175,10 +175,6 @@ namespace aegis::net
                     // 没有数据了，释放 flush 锁，结束协程
                     self->is_flushing_.store(false, std::memory_order_release);
 
-                    // Double Check: 释放锁的瞬间可能又来了数据
-                    // 如果刚释放就有新数据，且 Worker 没来得及触发 flush，我们需要回头
-                    // 但由于 Worker 会 set in_pending_queue，Env 下一轮会再次调 flush
-                    // 所以这里直接退出是安全的。
                     co_return;
                 }
                 batch.swap(self->outbox_.buffer);

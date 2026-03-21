@@ -8,12 +8,14 @@
 #include <algorithm>
 #include <mutex>
 #include <iomanip>
+#include <array> // 记得包含 array
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
-// Aegis Core
+// Aegis Core (假设这些头文件路径正确)
 #include "aegis/core/env.h"
 #ifdef BLOCK_SIZE
 #undef BLOCK_SIZE
@@ -31,63 +33,100 @@ using namespace aegis::cs::lobby;
 using namespace aegis::cs::battle;
 using namespace aegis;
 
-// =========================================================
-// 指标采集器：计算 P50, P99 (线程安全)
-// =========================================================
-class LatencyMonitor
+void tune_fd_limit()
 {
-public:
-    void add_sample(double ms)
+    struct rlimit rl;
+    // 获取当前限制
+    if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
     {
-        // 简单自旋锁或互斥锁，压测场景下 10k QPS 的锁竞争可以接受
-        std::lock_guard<std::mutex> lock(mutex_);
-        samples_.push_back(ms);
+        perror("getrlimit");
+        return;
     }
 
-    struct Results
+    // 将软限制提升至硬限制的水平（即 1048576）
+    rl.rlim_cur = rl.rlim_max;
+
+    if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
     {
-        double avg = 0, p50 = 0, p90 = 0, p99 = 0, p999 = 0, max = 0;
-        size_t count = 0;
+        perror("setrlimit"); // 如果失败，通常是因为尝试超过硬限制
+    }
+    else
+    {
+        std::cout << "Successfully raised FD limit to: " << rl.rlim_cur << std::endl;
+    }
+}
+
+// =========================================================
+// 极简无锁延迟统计器 (Lock-Free Histogram) [已修复]
+// =========================================================
+class FastLatencyMonitor
+{
+public:
+    static constexpr size_t MAX_MS = 200;
+
+    void add_sample(double ms)
+    {
+        size_t idx = static_cast<size_t>(ms);
+        if (idx >= MAX_MS)
+            idx = MAX_MS - 1;
+        buckets_[idx].fetch_add(1, std::memory_order_relaxed);
+        count_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    struct SimpleStats
+    {
+        double avg = 0.0; // [修复] 补回 avg 字段
+        size_t p99_latency = 0;
+        size_t max_latency = 0;
+        size_t total_count = 0;
     };
 
-    Results report_and_clear()
+    SimpleStats report_and_reset()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (samples_.empty())
-            return {};
+        SimpleStats stats;
+        stats.total_count = count_.exchange(0, std::memory_order_relaxed);
 
-        // 排序以获取百分位数
-        std::sort(samples_.begin(), samples_.end());
+        if (stats.total_count == 0)
+            return stats;
 
-        double sum = 0;
-        for (double s : samples_)
-            sum += s;
+        size_t threshold = static_cast<size_t>(stats.total_count * 0.99);
+        size_t current_sum = 0;      // 用于找 P99
+        uint64_t total_time_sum = 0; // [修复] 用于计算 Avg
+        bool p99_found = false;
 
-        Results r;
-        r.count = samples_.size();
-        r.avg = sum / r.count;
-        r.p50 = samples_[size_t(r.count * 0.50)];
-        r.p90 = samples_[size_t(r.count * 0.90)];
-        r.p99 = samples_[size_t(r.count * 0.99)];
-        r.p999 = samples_[size_t(r.count * 0.999)];
-        r.max = samples_.back();
+        for (size_t i = 0; i < MAX_MS; ++i)
+        {
+            int val = buckets_[i].exchange(0, std::memory_order_relaxed);
 
-        samples_.clear();
-        return r;
+            if (val > 0)
+            {
+                current_sum += val;
+                total_time_sum += (i * val); // 累加总耗时
+                stats.max_latency = i;       // 只要有值，当前 i 就是已知的最大值
+
+                if (!p99_found && current_sum >= threshold)
+                {
+                    stats.p99_latency = i;
+                    p99_found = true;
+                }
+            }
+        }
+
+        // 计算平均值
+        stats.avg = static_cast<double>(total_time_sum) / stats.total_count;
+        return stats;
     }
 
 private:
-    std::vector<double> samples_;
-    std::mutex mutex_;
+    std::array<std::atomic<int>, MAX_MS> buckets_{};
+    std::atomic<size_t> count_{0};
 };
 
 // 全局指标
-LatencyMonitor g_latency_monitor;
+FastLatencyMonitor g_fast_monitor;
 std::atomic<uint64_t> g_recv_count{0};
 std::atomic<uint64_t> g_send_count{0};
-std::atomic<uint64_t> g_recv_bytes{0};
-std::atomic<uint64_t> g_enter_view_count{0};
-std::atomic<uint64_t> g_error_count{0};
+std::atomic<uint64_t> g_error_count{0}; // [确认保留]
 
 // =========================================================
 // Robot Class
@@ -132,7 +171,6 @@ public:
                     break;
 
                 g_recv_count++;
-                g_recv_bytes += packet->size();
                 handle_packet(*packet);
             }
         }
@@ -147,7 +185,6 @@ public:
         if (!conn_)
             return;
 
-        // 简单的反弹移动模拟
         x_ += vx_ * 50.0f * dt;
         y_ += vy_ * 50.0f * dt;
         if (x_ <= 0 || x_ >= 500.0f)
@@ -159,17 +196,12 @@ public:
         auto *pos = req.mutable_target_pos();
         pos->set_x(x_);
         pos->set_y(y_);
-        // 方向同步
         req.set_direction(0.0f);
-        // 时间戳 (用于服务端延迟补偿计算)
         req.set_timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
                               std::chrono::system_clock::now().time_since_epoch())
                               .count());
 
         last_move_send_time_ = std::chrono::steady_clock::now();
-
-        // [SSP Fix] 使用枚举值，不要写死 2001 (那现在是 PING 了！)
-        // 正确应该是 CS_MOVE_REQ (2003)
         send_packet(ids::CS_MOVE_REQ, req);
         g_send_count++;
     }
@@ -189,11 +221,8 @@ private:
         std::lock_guard<std::mutex> lock(send_mutex_);
         if (conn_)
         {
-            net::PooledPacket pkt = std::make_unique<net::Packet>();
-
+            auto pkt = net::PacketPool::instance().acquire();
             pkt->pack_into(msg_id, msg);
-
-            // 4. 发送
             conn_->send(std::move(pkt));
         }
     }
@@ -207,42 +236,24 @@ private:
         std::memcpy(&net_id, pkt.data(), 4);
         uint32_t msg_id = ntohl(net_id);
 
-        // [SSP Fix] 使用 switch-case 和枚举，清晰且不易错
         switch (msg_id)
         {
-        case ids::SC_MOVE_NTF: // 2004 (旧代码是 1002)
+        case ids::SC_MOVE_NTF:
         {
-            // 计算 RTT
             auto now = std::chrono::steady_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - last_move_send_time_);
-            g_latency_monitor.add_sample(duration.count() / 1000.0);
+            double ms = std::chrono::duration<double, std::milli>(now - last_move_send_time_).count();
+            g_fast_monitor.add_sample(ms);
             break;
         }
-        case ids::SC_ENTER_VIEW: // 2005 (旧代码是 1003)
-        {
-            SCEnterViewNtf ntf;
-            if (ntf.ParseFromArray(pkt.data() + 4, pkt.size() - 4))
-            {
-                g_enter_view_count += ntf.entities_size();
-            }
+        case ids::SC_ENTER_VIEW:
+            break; // 优化：不解析，仅利用 g_recv_count 统计 PPS
+        case ids::SC_LEAVE_VIEW:
             break;
-        }
-        case ids::SC_LEAVE_VIEW: // 2006
-        {
-            // 处理离开视野逻辑...
+        case ids::SC_PONG:
             break;
-        }
-        case ids::SC_PONG: // 2002
-        {
+        case ids::SC_LOGIN_RES:
             break;
-        }
-        case ids::SC_LOGIN_RES: // 1002
-        {
-            // 登录成功
-            break;
-        }
         default:
-            // std::cout << "Unknown MsgID: " << msg_id << std::endl;
             break;
         }
     }
@@ -259,13 +270,13 @@ private:
 // =========================================================
 int main()
 {
+    tune_fd_limit();
     Log::instance().set_level(spdlog::level::warn);
-    // 关闭控制台缓冲，防止打印错乱
     std::setvbuf(stdout, nullptr, _IONBF, 0);
 
     core::Env::instance().init();
     std::vector<std::shared_ptr<Robot>> robots;
-    const int ROBOT_COUNT = 500;
+    const int ROBOT_COUNT = 800;
 
     std::cout << ">>> Launching robots..." << std::endl;
     for (int i = 0; i < ROBOT_COUNT; ++i)
@@ -277,13 +288,13 @@ int main()
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
-    // 后台启动 IO 线程
     std::thread io_thread([]()
                           { core::Env::instance().run(); });
 
     auto last_tick = std::chrono::steady_clock::now();
     auto last_log = last_tick;
     uint64_t tick_count = 0;
+    double max_loop_cost_ms = 0;
 
     // 严谨的主循环
     while (true)
@@ -293,49 +304,60 @@ int main()
         // 1. 逻辑 Tick (10Hz)
         if (now - last_tick >= std::chrono::milliseconds(100))
         {
+            auto tick_start = std::chrono::high_resolution_clock::now();
             float dt = std::chrono::duration<float>(now - last_tick).count();
             last_tick = now;
 
             for (auto &r : robots)
                 r->tick(dt);
             tick_count++;
+
+            auto tick_end = std::chrono::high_resolution_clock::now();
+            double cost_ms = std::chrono::duration<double, std::milli>(tick_end - tick_start).count();
+
+            // 记录这一秒内的最大耗时
+            if (cost_ms > max_loop_cost_ms)
+                max_loop_cost_ms = cost_ms;
         }
 
         // 2. 日志 Tick (1Hz)
         if (now - last_log >= std::chrono::seconds(1))
         {
-            // 获取并重置计数器
-            auto lat = g_latency_monitor.report_and_clear();
+            auto lat = g_fast_monitor.report_and_reset();
+
             uint64_t qps_in = g_recv_count.exchange(0);
             uint64_t qps_out = g_send_count.exchange(0);
-            double bw_mb = g_recv_bytes.exchange(0) / 1024.0 / 1024.0;
-            uint64_t ev = g_enter_view_count.exchange(0);
             uint64_t errs = g_error_count.load();
+            double current_loop_cost = max_loop_cost_ms;
+            max_loop_cost_ms = 0;
 
-            // 格式化输出
+            std::cout << " [Client Health]" << "\n";
+            std::cout << "   Loop Cost (Max): " << std::fixed << std::setprecision(2) << current_loop_cost << " ms";
+            if (current_loop_cost > 80.0)
+                std::cout << " [CRITICAL: Client is LAGGY]";
+            else
+                std::cout << " [OK]";
+            std::cout << "\n";
+
             std::cout << "\n==================================================" << "\n";
             std::cout << " Aegis Benchmark Report (" << ROBOT_COUNT << " Bots)" << "\n";
             std::cout << "--------------------------------------------------" << "\n";
             std::cout << " [Throughput]" << "\n";
             std::cout << "   In : " << std::setw(8) << qps_in << " pkg/s" << "\n";
             std::cout << "   Out: " << std::setw(8) << qps_out << " pkg/s" << "\n";
-            std::cout << "   BW : " << std::fixed << std::setprecision(2) << bw_mb << " MB/s" << "\n";
-            std::cout << " [Logic]" << "\n";
-            std::cout << "   EnterView: " << ev << " entities/s" << "\n";
             std::cout << "--------------------------------------------------" << "\n";
 
-            if (lat.count > 0)
+            // [修复] lat 现在有值了，count > 0 检查有效
+            if (lat.total_count > 0)
             {
-                std::cout << " [Latency RTT] (Samples: " << lat.count << ")" << "\n";
+                std::cout << " [Latency RTT] (Samples: " << lat.total_count << ")" << "\n";
                 std::cout << "   Avg : " << std::fixed << std::setprecision(2) << lat.avg << " ms" << "\n";
-                std::cout << "   P50 : " << lat.p50 << " ms" << "\n";
-                std::cout << "   P90 : " << lat.p90 << " ms" << "\n";
-                std::cout << "   P99 : " << lat.p99 << " ms" << "\n";
-                std::cout << "   Max : " << lat.max << " ms" << "\n";
+                std::cout << "   P99 : " << lat.p99_latency << " ms" << "\n";
+                std::cout << "   Max : " << lat.max_latency << " ms" << "\n";
             }
             else
             {
-                std::cout << " [Latency RTT] No samples (Check MsgID 1002)" << "\n";
+                std::cout << " [Latency RTT] No samples" << "\n";
             }
 
             std::cout << " [Errors] Count: " << errs << "\n";
@@ -344,7 +366,6 @@ int main()
             last_log = now;
         }
 
-        // 避免空转烧 CPU
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 

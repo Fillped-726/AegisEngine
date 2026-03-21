@@ -33,8 +33,6 @@ namespace aegis::common
     private:
         std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
-        static constexpr int kMaxSpinsBeforeYield = 4000;
-
     public:
         SpinLock() noexcept = default;
         SpinLock(const SpinLock &) = delete;
@@ -56,18 +54,8 @@ namespace aegis::common
                 // 在这个循环里，cache line 处于 Shared 状态，不产生总线流量
                 while (flag.test(std::memory_order_relaxed))
                 {
-                    if (spin_count < kMaxSpinsBeforeYield)
-                    {
-                        cpu_relax();
-                        spin_count++;
-                    }
-                    else
-                    {
-                        // 惩罚机制：自旋太久了，说明锁竞争激烈或持有者被切走了
-                        // 主动让出 CPU，防止活锁 (Livelock)
-                        std::this_thread::yield();
-                        spin_count = 0; // 归零，回来后继续尝试自旋
-                    }
+                    cpu_relax();
+                    spin_count++;
                 }
 
                 // 尝试获取锁 (TTAS 的 TAS)
