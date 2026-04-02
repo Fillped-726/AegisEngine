@@ -1,0 +1,1306 @@
+// --- SOURCE_FILE: ./include/aegis/core/room_manager.h ---
+#pragma once
+
+#include <unordered_map>
+#include "aegis/core/actor_traits.h" // 包含 SimpleActor
+#include "aegis/core/message.h"
+#include "aegis/core/actor_registry.h"
+#include "cs_battle.pb.h" // 你的 Protobuf 定义
+
+namespace aegis::core
+{
+    class RoomManager : public SimpleActor<RoomManager>
+    {
+    public:
+        // 继承构造函数
+        using SimpleActor::SimpleActor;
+
+        ~RoomManager() override = default;
+
+    protected:
+        // 核心：消息分发中心
+        void handle_message(ActorMessage *msg) override;
+
+    private:
+        // --- 业务逻辑 ---
+        void on_create_room(const RPCCreateRoomMsg &msg);
+        void on_terminate_room(const RPCTerminateRoomMsg &msg);
+
+        // --- 监管逻辑 ---
+        void on_scene_died(uint64_t deceased_id, int reason);
+
+    private:
+        // 双向索引：保证 O(1) 的查找和清理
+        std::unordered_map<uint32_t, uint32_t> room_id_to_actor_; // RoomID -> ActorID (Scene)
+        std::unordered_map<uint32_t, uint32_t> actor_to_room_id_; // ActorID -> RoomID
+    };
+}-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/scene_actor.h ---
+#pragma once
+
+#include <unordered_map>
+#include <string>
+#include <vector>
+#include <memory>
+
+#include "aegis/core/actor_traits.h"
+#include "aegis/core/aoi_grid.h"
+#include "aegis/core/message.h"
+#include "aegis/core/playerActor.h"
+#include "aegis/core/sync_manager.h"
+
+namespace aegis::core
+{
+
+    // --- SceneActor ---
+    class SceneActor : public PooledActor<SceneActor, 128, 32>
+    {
+    public:
+        SceneActor(ActorID self_id, float width, float height, float cellSize);
+        ~SceneActor() = default;
+
+        void handle_message(ActorMessage *msg) override;
+        void OnTick();
+
+    private:
+        // 内部处理逻辑 (串行执行，无需加锁)
+        void OnHandleEnter(SceneEnterMsg *msg);
+        void OnHandleLeave(SceneLeaveMsg *msg);
+        void OnHandleMove(SceneMoveMsg *msg);
+
+        void ProcessAoiEnterLeave(PlayerActor *mover,
+                                  const std::vector<uint64_t> &enterIds,
+                                  const std::vector<uint64_t> &leaveIds);
+
+        // 辅助函数
+        PlayerActor *GetPlayer(uint64_t actorId) const;
+
+        template <typename T>
+        void SendPacket(uint64_t targetId, uint32_t msgId, const T &proto);
+
+        void SendSharedBuffer(uint64_t targetId, uint32_t msgId, std::shared_ptr<std::string> sharedBuf);
+
+        void reset(ActorID self_id, float width, float height, float cellSize);
+
+    private:
+        bool is_ticking_ = false; // 场景是否已开始 Tick 驱动
+        AOIGrid aoi_;
+        std::unordered_map<uint64_t, PlayerActor *> actors_;
+
+        SyncManager sync_mgr_;
+
+        // 缓存复用 (在 Actor 模型下单线程访问，安全)
+        std::vector<uint64_t> cachedEnterIds_;
+        std::vector<uint64_t> cachedLeaveIds_;
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/playerActor.h ---
+#pragma once
+#include <atomic>
+#include "aegis/common/spinLock.h"
+#include "aegis/core/actor_traits.h"
+#include "aegis/net/connection.h"
+#include "aegis/common/aegisLog.h"
+#include "aegis/core/task.h"
+#include "aegis/net/dispatcher.h"
+#include "aegis/common/scopeGuard.h"
+#include "cs_battle.pb.h"
+#include "common.pb.h"
+
+namespace aegis::common
+{
+    class PBPlayerInfo; // 前置声明
+}
+
+namespace aegis::core
+{
+    class PlayerActor : public PooledActor<PlayerActor>
+    {
+    public:
+        enum DirtyFlag : uint8_t
+        {
+            DIRTY_NONE = 0,
+            DIRTY_POS = 1 << 0,
+            DIRTY_HP = 1 << 1,
+            // ... 可扩展其他属性
+        };
+
+        void MarkDirty(uint8_t flag) { dirty_mask_ |= flag; }
+        void ClearDirty() { dirty_mask_ = DIRTY_NONE; }
+        bool IsDirty(uint8_t flag) const { return (dirty_mask_ & flag) != 0; }
+        bool HasAnyDirty() const { return dirty_mask_ != DIRTY_NONE; }
+
+        PlayerActor(ActorID id, std::shared_ptr<net::Connection> conn)
+            : PooledActor()
+        {
+            reset(id, conn);
+        }
+
+        virtual ~PlayerActor()
+        {
+            aegis::Log::instance().debug("PlayerActor Destroyed | ID: {}", playerId_);
+        }
+
+        void reset(ActorID id, std::shared_ptr<net::Connection> conn)
+        {
+            // 1. 重置基类 (生成新 ID，设置新父亲)
+            base_reset(id, ActorID(0));
+
+            // 2. 交换/重置连接
+            // 使用 std::move 减少引用计数操作
+            // 旧的 conn_ 会在这里析构（引用计数-1），如果计数归零则关闭连接
+            conn_ = std::move(conn);
+
+            // 3. 同步 FD
+            fd_ = conn_ ? conn_->fd() : -1;
+
+            // 4. 重置逻辑数据
+            playerId_ = 0;
+
+            // 5. 重置坐标 (Atomic)
+            // 使用 memory_order_relaxed 即可，因为此时 Actor 还没对其他线程可见
+            x_.store(0.0f, std::memory_order_relaxed);
+            y_.store(0.0f, std::memory_order_relaxed);
+        }
+
+        // ========================================================================
+        // AOI / Scene Interface
+        // ========================================================================
+
+        [[nodiscard]] uint64_t GetID() const { return playerId_; }
+
+        // [Thread-Safety Warning] 这些 Getter 可能会被 SceneActor 线程调用
+        // 在 x64 上读取对齐的 float 通常是原子的，但在严格内存模型下存在风险
+        [[nodiscard]] float GetX() const { return x_.load(std::memory_order_relaxed); }
+        [[nodiscard]] float GetY() const { return y_.load(std::memory_order_relaxed); }
+        float GetZ() const { return z_; }
+
+        // [New] Setter 使用原子操作，稍微安全一点
+        void SetPos(float x, float y, float z = 0.0f, uint8_t dirty_flag = DIRTY_POS)
+        {
+            x_.store(x, std::memory_order_relaxed);
+            y_.store(y, std::memory_order_relaxed);
+            z_ = z;
+            MarkDirty(dirty_flag);
+        }
+
+        // [New] 核心契约：将自己的外观数据写入 Proto
+        // 注意：SceneActor 线程调用此函数时，传入的 x/y 应该是 Scene 自己维护的快照
+        // 如果传入 -1 (默认)，则使用 PlayerActor 当前的原子坐标
+        void WriteToProto(aegis::common::PBPlayerInfo *out_proto, float snapshotX = -999.0f, float snapshotY = -999.0f) const
+        {
+            if (!out_proto)
+                return;
+
+            out_proto->set_entity_id(playerId_);
+
+            auto *pos = out_proto->mutable_pos();
+            // 如果 Scene 传了坐标，就用 Scene 的（防止这一帧画面撕裂）
+            // 否则读自己的原子坐标
+            if (snapshotX > -900.0f)
+            {
+                pos->set_x(snapshotX);
+                pos->set_y(snapshotY);
+            }
+            else
+            {
+                pos->set_x(GetX());
+                pos->set_y(GetY());
+            }
+            pos->set_z(0.0f);
+
+            // 静态数据或低频变动数据（Name, Skin），并发读取风险较低
+            // 生产环境中这些字符串应该用 std::string_view 或加锁
+            out_proto->set_name("Player_" + std::to_string(playerId_));
+            out_proto->set_hp(100);
+            out_proto->set_skin_id(1);
+        }
+
+        // [Public] 发送 Protobuf 消息
+        template <typename T>
+        void send_packet(uint32_t msg_id, const T &msg)
+        {
+            if (conn_)
+            {
+
+                auto pkt = net::PacketPool::instance().acquire();
+
+                pkt->pack_into(msg_id, msg);
+
+                // 4. 发送
+                conn_->send(std::move(pkt));
+            }
+        }
+
+        // [Public] 发送预序列化 Buffer (高性能广播专用)
+        // 必须是 public，因为 SceneActor 需要调用它
+        void send_buffer(uint32_t msg_id, const std::string &serialized_data)
+        {
+            if (!conn_)
+                return;
+
+            auto pkt = net::PacketPool::instance().acquire();
+            size_t body_size = serialized_data.size();
+            pkt->alloc(net::kPacketMsgHeader + body_size);
+
+            // 写头 (Big Endian)
+            uint32_t net_id = htonl(msg_id);
+            std::memcpy(pkt->mutable_data(), &net_id, net::kPacketMsgHeader);
+
+            // 写体 (Zero Copy logic handled by packet pool, but here we copy from string)
+            if (body_size > 0)
+            {
+                std::memcpy(pkt->mutable_data() + net::kPacketMsgHeader, serialized_data.data(), body_size);
+            }
+
+            conn_->send(std::move(pkt));
+        }
+
+        void set_player_id(uint64_t pid) { playerId_ = pid; }
+        [[nodiscard]] uint64_t get_player_id() const { return playerId_; }
+
+        uint32_t get_aoi_grid_index() const { return aoi_grid_index; }
+        void set_aoi_grid_index(uint32_t index) { aoi_grid_index = index; }
+
+    protected:
+        void handle_message(core::ActorMessage *msg)
+        {
+            if (!msg)
+                return;
+
+            // 仅在 Trace 级别打印，减少性能损耗
+            if (msg->type_id != 0)
+            {
+                Log::instance().debug("[Trace] PlayerActor Recv Msg. TypeID: {}", (int)msg->type_id);
+            }
+
+            switch (msg->type_id)
+            {
+            case MSG_TYPE_NETWORK:
+            {
+                auto *net_msg = static_cast<core::NetworkMessage *>(msg);
+                if (net_msg->pkt)
+                {
+                    // 启动协程处理业务逻辑
+                    launch_task(net::Dispatcher::instance().dispatch(this, *net_msg->pkt));
+                }
+                break;
+            }
+
+            case MSG_TYPE_SESSION_CLOSED:
+            {
+                auto *closed_msg = static_cast<core::SessionClosedMsg *>(msg);
+                // 维持原有锁逻辑，保护 session 状态
+                std::lock_guard<common::SpinLock> guard(lock_);
+                on_session_closed(closed_msg->session_id);
+                break;
+            }
+
+            // =========================================================
+            // 【新增】处理由 SceneActor 异步投递过来的转发请求
+            // =========================================================
+            case MSG_TYPE_FORWARD_PACKET:
+            {
+                auto *fwd = static_cast<ForwardPacketMsg *>(msg);
+
+                // 直接调用你已有的 Public 接口 send_buffer
+                // 该接口内部会处理 PacketPool 申请、大端序转换及实际发送
+                if (fwd->shared_buf)
+                {
+                    this->send_buffer(fwd->msg_id, *(fwd->shared_buf));
+                }
+                break;
+            }
+
+            default:
+                break;
+            }
+        }
+
+    private:
+        // 辅助：启动并分离协程
+        void launch_task(core::Task<void> task)
+        {
+            // C++20 立即执行 lambda
+            [](core::Task<void> t) -> core::DetachedTask
+            {
+                co_await t;
+            }(std::move(task));
+        }
+
+        void on_session_closed(int reason)
+        {
+            aegis::Log::instance().info("[PlayerActor] Session Closed | ID: {} | Reason: {}", playerId_, reason);
+            conn_.reset();
+        }
+
+    private:
+        std::shared_ptr<net::Connection> conn_;
+        int fd_ = -1;
+
+        uint64_t playerId_ = 0;
+        uint8_t dirty_mask_ = DIRTY_NONE;
+
+        uint32_t aoi_grid_index = -1;
+
+        common::SpinLock lock_;
+
+        // [Safety] 使用 atomic 避免最基本的读写撕裂，虽然不能完全解决多字段一致性
+        std::atomic<float> x_{0.0f};
+        std::atomic<float> y_{0.0f};
+        float z_{0.0f};
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/sync_manager.h ---
+#pragma once
+
+#include <vector>
+#include <unordered_set>
+#include <cstdint>
+#include <memory>
+#include <functional>
+
+#include "aegis/core/playerActor.h"
+#include "aegis/core/aoi_grid.h"
+// 包含你刚刚新增的 protobuf 定义
+#include "cs_battle.pb.h"
+
+namespace aegis::core
+{
+    class SyncManager
+    {
+    public:
+        SyncManager()
+        {
+            // 面试高光：预分配内存，避免 Tick 过程中的动态扩容开销
+            dirty_players_.reserve(1024);
+        }
+        ~SyncManager() = default;
+
+        void AddDirtyPlayer(PlayerActor *player)
+        {
+            if (dirty_set_.insert(player->get_player_id()).second)
+            {
+                dirty_players_.push_back(player);
+            }
+        }
+
+        void RemoveDirtyPlayer(PlayerActor *player)
+        {
+            dirty_set_.erase(player->get_player_id());
+            // 简单移除，实际项目中可使用侵入式链表做到 O(1) 移除
+            std::erase(dirty_players_, player);
+        }
+
+        /**
+         * @brief 核心 Tick 驱动
+         * @param aoi 场景的 AOI 实例
+         * @param onEnterLeave 回调：处理跨越网格时的视野变更
+         * @param onSendBatch 回调：处理最终的批量发包
+         */
+        template <typename EnterLeaveFunc, typename SendBatchFunc>
+        void Tick(AOIGrid &aoi, EnterLeaveFunc &&onEnterLeave, SendBatchFunc &&onSendBatch)
+        {
+            if (dirty_players_.empty())
+                return;
+
+            // ==========================================
+            // 阶段 1：计算视野变更 (Enter / Leave)
+            // ==========================================
+            for (PlayerActor *mover : dirty_players_)
+            {
+                if (!mover->IsDirty(PlayerActor::DIRTY_POS))
+                    continue;
+
+                std::vector<uint64_t> enterIds;
+                std::vector<uint64_t> leaveIds;
+
+                uint32_t new_grid = aoi.Move(mover->id().raw, mover->get_aoi_grid_index(),
+                                             mover->GetX(), mover->GetY(),
+                                             enterIds, leaveIds);
+
+                if (new_grid != (uint32_t)-1)
+                {
+                    mover->set_aoi_grid_index(new_grid);
+                    // 只有真跨格了，才回调给 SceneActor 处理视野包
+                    if (!enterIds.empty() || !leaveIds.empty())
+                    {
+                        onEnterLeave(mover, enterIds, leaveIds);
+                    }
+                }
+            }
+
+            // ==========================================
+            // 阶段 2：聚合打包与广播 (状态同步)
+            // ==========================================
+            // 映射：接收者的 ActorID -> 他将看到的移动包
+            std::unordered_map<uint64_t, aegis::cs::battle::SCMoveNtfBatch> receiver_batches;
+
+            for (PlayerActor *mover : dirty_players_)
+            {
+                if (!mover->IsDirty(PlayerActor::DIRTY_POS))
+                    continue;
+
+                // 获取该玩家周围 9 宫格的观众
+                std::vector<uint64_t> neighbors;
+                aoi.GetViewEntityIds(mover->get_aoi_grid_index(), neighbors);
+
+                for (uint64_t neighborActorId : neighbors)
+                {
+                    if (neighborActorId == mover->id().raw)
+                        continue; // 不发给自己
+
+                    // 将 mover 的移动信息塞入 receiver 的专属 batch 中
+                    auto *move_info = receiver_batches[neighborActorId].add_moves();
+                    move_info->set_entity_id(mover->get_player_id());
+                    move_info->mutable_pos()->set_x(mover->GetX());
+                    move_info->mutable_pos()->set_y(mover->GetY());
+                }
+            }
+
+            // ==========================================
+            // 阶段 3：执行批量发送
+            // ==========================================
+            for (const auto &[receiverActorId, batch] : receiver_batches)
+            {
+                if (batch.moves_size() > 0)
+                {
+                    // 整个 Tick 中，对某个玩家的所有移动更新只序列化一次！
+                    auto shared_buf = std::make_shared<std::string>(batch.SerializeAsString());
+                    onSendBatch(receiverActorId, shared_buf);
+                }
+            }
+
+            // ==========================================
+            // 阶段 4：清理标记
+            // ==========================================
+            for (PlayerActor *player : dirty_players_)
+            {
+                player->ClearDirty();
+            }
+            dirty_players_.clear();
+            dirty_set_.clear();
+        }
+
+    private:
+        std::vector<PlayerActor *> dirty_players_;
+        std::unordered_set<uint64_t> dirty_set_;
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/aoi_grid.h ---
+#pragma once
+
+#include <vector>
+#include <cstdint>
+#include <cmath>
+#include <algorithm>
+#include "aegis/common/spinLock.h"
+
+namespace aegis::core
+{
+    using EntityId = uint64_t;
+
+    /**
+     * @brief 表示网格中的单个单元格
+     * 保持简单 POD (Plain Old Data) 风格，方便扩展锁机制
+     */
+    struct AOICell
+    {
+        std::vector<EntityId> entities;
+
+        AOICell() = default;
+        AOICell(AOICell &&other) noexcept;
+
+        void clear();
+    };
+
+    /**
+     * @brief 基于网格的高性能 AOI 管理器
+     */
+    class AOIGrid
+    {
+    public:
+        AOIGrid(float width, float height, float cellSize);
+        ~AOIGrid() = default;
+
+        // 禁止拷贝，允许移动
+        AOIGrid(const AOIGrid &) = delete;
+        AOIGrid &operator=(const AOIGrid &) = delete;
+        AOIGrid(AOIGrid &&) = default;
+        AOIGrid &operator=(AOIGrid &&) = default;
+
+        void reset(float width, float height, float cellSize);
+
+        uint32_t Add(EntityId id, float x, float y);
+        bool RemoveByGridIndex(EntityId id, uint32_t gridIndex);
+
+        uint32_t Move(EntityId id, uint32_t oldIndex, float newX, float newY,
+                      std::vector<EntityId> &outEnterView,
+                      std::vector<EntityId> &outLeaveView);
+
+        void GetViewEntityIds(float newX, float newY, std::vector<EntityId> &out_result) const;
+        void GetViewEntityIds(uint32_t gridIndex, std::vector<EntityId> &out_result) const;
+
+        [[nodiscard]] std::vector<uint32_t> GetNeighborGridIndices(float x, float y) const;
+        [[nodiscard]] std::vector<uint32_t> GetNeighborGridIndices(uint32_t gridIndex) const;
+
+    private:
+        /**
+         * @brief 核心映射算法：坐标 -> 数组索引
+         * @note 这是热点代码路径，不做边界检查，由调用者保证
+         */
+        [[nodiscard]] inline uint32_t getIndexUnsafe(float x, float y) const
+        {
+            float clampedX = std::clamp(x, 0.0f, width_ - 0.001f);
+            float clampedY = std::clamp(y, 0.0f, height_ - 0.001f);
+            uint32_t col = static_cast<uint32_t>(clampedX * invCellSize_);
+            uint32_t row = static_cast<uint32_t>(clampedY * invCellSize_);
+            return row * colCount_ + col;
+        }
+
+        [[nodiscard]] inline bool isValidPos(float x, float y) const
+        {
+            constexpr float kEpsilon = 0.1f;
+            return x >= -kEpsilon && x <= width_ + kEpsilon &&
+                   y >= -kEpsilon && y <= height_ + kEpsilon;
+        }
+
+        void init_internal();
+
+    public: // 将模板放在 private 下方或 public 中皆可，这里归类为核心遍历器
+        /**
+         * @brief 核心原语：9宫格遍历器
+         * @note 模板函数必须在头文件中实现
+         */
+        template <typename Func>
+        inline void ForEachNeighborIndex(uint32_t centerGridIndex, Func &&visitor) const
+        {
+            if (centerGridIndex >= cells_.size()) [[unlikely]]
+                return;
+
+            uint32_t centerCol = centerGridIndex % colCount_;
+            uint32_t centerRow = centerGridIndex / colCount_;
+
+            uint32_t startCol = (centerCol > 0) ? centerCol - 1 : 0;
+            uint32_t endCol = (centerCol + 1 < colCount_) ? centerCol + 1 : colCount_ - 1;
+            uint32_t startRow = (centerRow > 0) ? centerRow - 1 : 0;
+            uint32_t endRow = (centerRow + 1 < rowCount_) ? centerRow + 1 : rowCount_ - 1;
+
+            for (uint32_t r = startRow; r <= endRow; ++r)
+            {
+                uint32_t rowBase = r * colCount_;
+                for (uint32_t c = startCol; c <= endCol; ++c)
+                {
+                    visitor(rowBase + c);
+                }
+            }
+        }
+
+        template <typename Func>
+        inline void ForEachNeighborIndex(float x, float y, Func &&visitor) const
+        {
+            if (!isValidPos(x, y)) [[unlikely]]
+                return;
+            ForEachNeighborIndex(getIndexUnsafe(x, y), std::forward<Func>(visitor));
+        }
+
+    private:
+        float width_;
+        float height_;
+        float cellSize_;
+        float invCellSize_;
+
+        uint32_t colCount_;
+        uint32_t rowCount_;
+
+        std::vector<AOICell> cells_;
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/room_manager.cpp ---
+#include "aegis/core/room_manager.h"
+#include "aegis/common/aegisLog.h"
+#include "aegis/core/scene_actor.h"
+
+namespace aegis::core
+{
+
+    void RoomManager::handle_message(ActorMessage *msg)
+    {
+        switch (msg->type_id)
+        {
+        // 1. 创建房间请求 (RPC)
+        case MSG_TYPE_RPC_CREATE_ROOM:
+        {
+            // 强转为具体类型
+            auto *real_msg = static_cast<RPCCreateRoomMsg *>(msg);
+            on_create_room(*real_msg);
+            break;
+        }
+
+        // 2. 销毁房间请求 (RPC)
+        case MSG_TYPE_RPC_TERMINATE_ROOM:
+        {
+            auto *real_msg = static_cast<RPCTerminateRoomMsg *>(msg);
+            on_terminate_room(*real_msg);
+            break;
+        }
+
+        // 3. 【核心】监管：收到子节点死亡通知
+        case MSG_TYPE_ACTOR_DIED: // 请确保这个枚举值和你定义的一致
+        {
+            auto *real_msg = static_cast<ActorDiedMsg *>(msg);
+            on_scene_died(real_msg->deceased_id.parts.index, real_msg->reason);
+            // 同样，如果是 new 出来的消息，外层 Actor::process_batch 会调用 destroy_message
+            break;
+        }
+
+        default:
+            aegis::Log::instance().warn("[RoomMgr] Unknown message type: {}", msg->type_id);
+            break;
+        }
+    }
+
+    void RoomManager::on_create_room(const RPCCreateRoomMsg &msg)
+    {
+        const auto &req = msg.req;
+        uint32_t room_id = req.room_id();
+
+        aegis::ss::bridge::CreateRoomRes res;
+
+        // 1. 查重
+        if (room_id_to_actor_.find(room_id) != room_id_to_actor_.end())
+        {
+            res.mutable_header()->set_code(1);
+            res.mutable_header()->set_msg("Room ID already exists");
+            msg.Reply(res);
+            return;
+        }
+
+        // 2. 【核心】孵化 SceneActor
+        // [修改点 1] 不要传 this->id() 了，因为 SceneActor 的构造函数只接受 (ActorID, w, h, s)
+        // Registry 会自动生成新 ID 并传给 SceneActor
+        ActorID scene_id = ActorRegistry::instance().create_actor<SceneActor>(500.0f, 500.0f, 10.0f);
+
+        if (!scene_id.is_valid())
+        {
+            res.mutable_header()->set_code(2);
+            res.mutable_header()->set_msg("Failed to allocate SceneActor (Out of memory/slots)");
+            msg.Reply(res);
+            return;
+        }
+
+        // 3. 【核心】认父 (Set Supervisor)
+        // [修改点 2] 创建成功后，获取对象指针，显式设置我是它的父亲
+        auto *scene = ActorRegistry::instance().get(scene_id);
+        if (scene)
+        {
+            // 绑定父子关系：如果有未捕获异常导致 Scene 崩溃，消息会发给 RoomManager
+            scene->set_parent_id(this->id());
+        }
+        else
+        {
+            // 极少见的情况：刚创建完就拿不到（除非多线程竞态极高导致被回收），防一手
+            res.mutable_header()->set_code(3);
+            res.mutable_header()->set_msg("System Error: Scene created but not found");
+            msg.Reply(res);
+            return;
+        }
+
+        // 4. 记录状态
+        room_id_to_actor_[room_id] = scene_id.raw;
+        actor_to_room_id_[scene_id.raw] = room_id;
+
+        // 这里的日志可以用 scene_id.raw 打印
+        aegis::Log::instance().info("[RoomMgr] Created Room {} -> SceneActor {}", room_id, scene_id.raw);
+
+        // 5. 回复 RPC
+        res.mutable_header()->set_code(0);
+        res.set_room_id(room_id);
+
+        // 如果是直连模式，这里通常还要返回 token, ip, port
+        // res.set_token(...);
+
+        msg.Reply(res);
+    }
+
+    void RoomManager::on_terminate_room(const RPCTerminateRoomMsg &msg)
+    {
+        uint32_t room_id = msg.req.room_id();
+        auto it = room_id_to_actor_.find(room_id);
+
+        aegis::ss::bridge::TerminateRoomRes res;
+
+        if (it != room_id_to_actor_.end())
+        {
+            uint32_t scene_actor_id = it->second;
+
+            // 1. 逻辑移除 (防止后续请求进来)
+            room_id_to_actor_.erase(it);
+            actor_to_room_id_.erase(scene_actor_id);
+
+            // 2. 赐死 (让 Scene 自杀)
+            // Scene 收到后会处理后事，然后 finalize，最后发 DiedMsg 回来
+            auto *scene_ptr = ActorRegistry::instance().get(scene_actor_id);
+            if (scene_ptr)
+            {
+                // 发送毒药丸 (你需要定义这个消息，或者复用 SessionClosed/Destroy)
+                // scene_ptr->push(new PoisonPillMsg());
+
+                // 如果没有毒药丸消息，暂时用这个代替测试
+                scene_ptr->push(new ActorDestroyMsg());
+            }
+
+            res.mutable_header()->set_code(0);
+        }
+        else
+        {
+            res.mutable_header()->set_code(1);
+            res.mutable_header()->set_msg("Room not found");
+        }
+
+        msg.Reply(res);
+    }
+
+    void RoomManager::on_scene_died(uint64_t deceased_id, int reason)
+    {
+        uint32_t actor_id = static_cast<uint32_t>(deceased_id);
+
+        // 查反向表：谁死了？
+        auto it = actor_to_room_id_.find(actor_id);
+        if (it != actor_to_room_id_.end())
+        {
+            uint32_t room_id = it->second;
+
+            // 彻底清理
+            // 注意：如果在 on_terminate_room 里已经清理过了，这里可能找不到，是正常的
+            // 这里主要处理"Scene 意外崩溃"的情况
+            room_id_to_actor_.erase(room_id);
+            actor_to_room_id_.erase(it);
+
+            if (reason != 0)
+            {
+                aegis::Log::instance().error("[RoomMgr] Room {} (Scene {}) CRASHED! Reason: {}", room_id, actor_id, reason);
+                // TODO: 可以在这里实现重启策略 (Restart Strategy)
+            }
+            else
+            {
+                aegis::Log::instance().info("[RoomMgr] Room {} (Scene {}) stopped normally.", room_id, actor_id);
+            }
+        }
+    }
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/sync_manager.cpp ---
+-e 
+
+
+// --- SOURCE_FILE: ./src/core/aoi_grid.cpp ---
+#include "aegis/core/aoi_grid.h"
+#include "aegis/common/aegisLog.h" // 根据实际路径调整
+#include <ranges>
+
+namespace aegis::core
+{
+
+    // ---------------------------------------------------------
+    // AOICell 实现
+    // ---------------------------------------------------------
+
+    AOICell::AOICell(AOICell &&other) noexcept
+        : entities(std::move(other.entities))
+    {
+    }
+
+    void AOICell::clear()
+    {
+        entities.clear();
+    }
+
+    // ---------------------------------------------------------
+    // AOIGrid 实现
+    // ---------------------------------------------------------
+
+    AOIGrid::AOIGrid(float width, float height, float cellSize)
+        : width_(width), height_(height), cellSize_(cellSize)
+    {
+        init_internal();
+    }
+
+    void AOIGrid::reset(float width, float height, float cellSize)
+    {
+        bool dimChanged = (width_ != width) || (height_ != height) || (cellSize_ != cellSize);
+
+        if (dimChanged)
+        {
+            width_ = width;
+            height_ = height;
+            cellSize_ = cellSize;
+            init_internal();
+        }
+
+        for (auto &cell : cells_)
+        {
+            cell.clear();
+        }
+    }
+
+    uint32_t AOIGrid::Add(EntityId id, float x, float y)
+    {
+        if (!isValidPos(x, y)) [[unlikely]]
+        {
+            return (uint32_t)-1;
+        }
+
+        uint32_t index = getIndexUnsafe(x, y);
+        cells_[index].entities.push_back(id);
+        return index;
+    }
+
+    bool AOIGrid::RemoveByGridIndex(EntityId id, uint32_t gridIndex)
+    {
+        if (gridIndex >= cells_.size()) [[unlikely]]
+        {
+            return false;
+        }
+
+        auto &entities = cells_[gridIndex].entities;
+        auto it = std::ranges::find(entities, id);
+
+        if (it != entities.end()) [[likely]]
+        {
+            if (entities.size() > 1)
+            {
+                *it = entities.back();
+            }
+            entities.pop_back();
+            return true;
+        }
+
+        return false;
+    }
+
+    uint32_t AOIGrid::Move(EntityId id, uint32_t oldIndex, float newX, float newY,
+                           std::vector<EntityId> &outEnterView,
+                           std::vector<EntityId> &outLeaveView)
+    {
+        outEnterView.clear();
+        outLeaveView.clear();
+
+        if (!isValidPos(newX, newY)) [[unlikely]]
+            return (uint32_t)-1;
+
+        if (oldIndex >= cells_.size() || oldIndex == (uint32_t)-1) [[unlikely]]
+            return Add(id, newX, newY);
+
+        uint32_t newIndex = getIndexUnsafe(newX, newY);
+
+        if (oldIndex == newIndex)
+        {
+            return newIndex;
+        }
+
+        RemoveByGridIndex(id, oldIndex);
+        Add(id, newX, newY);
+
+        auto oldGrids = GetNeighborGridIndices(oldIndex);
+        auto newGrids = GetNeighborGridIndices(newX, newY);
+
+        std::vector<uint32_t> addedGrids;
+        std::vector<uint32_t> removedGrids;
+        addedGrids.reserve(9);
+        removedGrids.reserve(9);
+
+        std::ranges::set_difference(newGrids, oldGrids, std::back_inserter(addedGrids));
+        std::ranges::set_difference(oldGrids, newGrids, std::back_inserter(removedGrids));
+
+        for (uint32_t gridIdx : addedGrids)
+        {
+            const auto &ents = cells_[gridIdx].entities;
+            outEnterView.insert(outEnterView.end(), ents.begin(), ents.end());
+        }
+
+        for (uint32_t gridIdx : removedGrids)
+        {
+            const auto &ents = cells_[gridIdx].entities;
+            outLeaveView.insert(outLeaveView.end(), ents.begin(), ents.end());
+        }
+
+        return newIndex;
+    }
+
+    void AOIGrid::GetViewEntityIds(float newX, float newY, std::vector<EntityId> &out_result) const
+    {
+        out_result.clear();
+
+        if (!isValidPos(newX, newY)) [[unlikely]]
+            return;
+
+        uint32_t gridIndex = getIndexUnsafe(newX, newY);
+
+        ForEachNeighborIndex(gridIndex, [&](uint32_t neighborIdx)
+                             {
+            const auto &ents = cells_[neighborIdx].entities;
+            out_result.insert(out_result.end(), ents.begin(), ents.end()); });
+    }
+
+    void AOIGrid::GetViewEntityIds(uint32_t gridIndex, std::vector<EntityId> &out_result) const
+    {
+        out_result.clear();
+
+        ForEachNeighborIndex(gridIndex, [&](uint32_t neighborIdx)
+                             {
+            const auto &ents = cells_[neighborIdx].entities;
+            out_result.insert(out_result.end(), ents.begin(), ents.end()); });
+    }
+
+    std::vector<uint32_t> AOIGrid::GetNeighborGridIndices(float x, float y) const
+    {
+        std::vector<uint32_t> indices;
+
+        ForEachNeighborIndex(x, y, [&](uint32_t neighborIdx)
+                             {
+             if (indices.capacity() == 0) indices.reserve(9);
+             indices.push_back(neighborIdx); });
+
+        return indices;
+    }
+
+    std::vector<uint32_t> AOIGrid::GetNeighborGridIndices(uint32_t gridIndex) const
+    {
+        std::vector<uint32_t> indices;
+        indices.reserve(9);
+
+        ForEachNeighborIndex(gridIndex, [&](uint32_t neighborIdx)
+                             { indices.push_back(neighborIdx); });
+
+        return indices;
+    }
+
+    void AOIGrid::init_internal()
+    {
+        if (cellSize_ <= 0.0f)
+            return;
+
+        invCellSize_ = 1.0f / cellSize_;
+        colCount_ = static_cast<uint32_t>(std::ceil(width_ / cellSize_));
+        rowCount_ = static_cast<uint32_t>(std::ceil(height_ / cellSize_));
+
+        size_t newSize = colCount_ * rowCount_;
+        cells_.resize(newSize);
+    }
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/scene_actor.cpp ---
+#include "aegis/core/scene_actor.h"
+#include "aegis/common/aegisLog.h"
+#include "cs_battle.pb.h"
+#include "ids.pb.h"
+#include "aegis/common/actor_utils.h"
+#include "aegis/net/packet_builder.h"
+
+namespace aegis::core
+{
+    using namespace aegis::cs::battle;
+    using namespace aegis::common;
+
+    SceneActor::SceneActor(ActorID self_id, float width, float height, float cellSize)
+        : PooledActor(),
+          aoi_(width, height, cellSize)
+    {
+
+        base_reset(self_id, ActorID(0));
+
+        // 预分配内存，避免后续动态扩容
+        cachedEnterIds_.reserve(50);
+        cachedLeaveIds_.reserve(50);
+
+        Log::instance().info("[SceneActor] Created & Initialized Grid: {}x{} (Cell: {}) ID: {}",
+                             width, height, cellSize, self_id.raw);
+    }
+
+    void SceneActor::reset(ActorID self_id, float width, float height, float cellSize)
+    {
+        // 1. 重置 Actor 基类 (ID 和 父节点)
+        base_reset(self_id, ActorID(0));
+
+        // 2. 重置 AOI 网格
+        // 这里会根据尺寸决定是否重分配内存，通常是零分配
+        aoi_.reset(width, height, cellSize);
+
+        // 3. 清理玩家映射表
+        // clear() 只是设置 size=0，不会释放 bucket 内存，复用极快
+        actors_.clear();
+
+        // 4. 清理缓存容器
+        cachedEnterIds_.clear();
+        cachedLeaveIds_.clear();
+
+        // Log::instance().debug("[SceneActor] Resetted for parent {}", parent_id);
+    }
+
+    void SceneActor::handle_message(ActorMessage *msg)
+    {
+        Log::instance().debug("[Trace] 3. SceneActor Recv Msg. TypeID: {}", (int)msg->type_id);
+        switch (msg->type_id)
+        {
+        case MSG_TYPE_SCENE_ENTER:
+            OnHandleEnter(static_cast<SceneEnterMsg *>(msg));
+            break;
+        case MSG_TYPE_SCENE_LEAVE:
+            OnHandleLeave(static_cast<SceneLeaveMsg *>(msg));
+            break;
+        case MSG_TYPE_SCENE_MOVE:
+            OnHandleMove(static_cast<SceneMoveMsg *>(msg));
+            break;
+        default:
+            Log::instance().warn("[SceneActor] Unknown message type: {}", msg->type_id);
+            break;
+        }
+    }
+
+    void SceneActor::OnHandleEnter(SceneEnterMsg *msg)
+    {
+        assert(msg != nullptr && "SceneEnterMsg cannot be null");
+
+        if (!is_ticking_)
+        {
+            is_ticking_ = true;
+            schedule_timer(50, [this]()
+                           { OnTick(); });
+            Log::instance().info("[SceneActor] Scene woken up. Tick scheduling started.");
+        }
+
+        ActorID actor_id = msg->actor_id;
+        auto *base_actor = ActorRegistry::instance().get(actor_id);
+        if (!base_actor)
+            return;
+
+        auto *player = static_cast<PlayerActor *>(base_actor);
+        actors_[actor_id.raw] = player;
+
+        uint32_t grid_index = aoi_.Add(actor_id.raw, msg->x, msg->y);
+        player->set_aoi_grid_index(grid_index);
+
+        std::vector<uint64_t> neighbor_ids;
+        aoi_.GetViewEntityIds(grid_index, neighbor_ids);
+
+        if (neighbor_ids.empty())
+            return;
+
+        // 1. 构建发给邻居的包："我来了"
+        auto shared_data_to_others = net::PacketBuilder::BuildEnterView({msg->player_id, msg->x, msg->y});
+
+        // 2. 收集邻居信息，准备发给"我"
+        std::vector<net::EntityViewInfo> neighbors_info;
+        neighbors_info.reserve(neighbor_ids.size());
+
+        for (uint64_t neighbor_raw_id : neighbor_ids)
+        {
+            if (neighbor_raw_id == actor_id.raw)
+                continue;
+
+            auto it = actors_.find(neighbor_raw_id);
+            if (it != actors_.end())
+            {
+                PlayerActor *neighbor = it->second;
+                neighbors_info.push_back({neighbor->get_player_id(), neighbor->GetX(), neighbor->GetY()});
+
+                // 通知邻居
+                auto *forward_msg = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_others);
+                dispatch_msg(neighbor, forward_msg);
+            }
+        }
+
+        // 3. 通知"我"周围有谁
+        if (!neighbors_info.empty())
+        {
+            auto shared_data_to_me = net::PacketBuilder::BuildEnterView(neighbors_info);
+            auto *self_forward = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_me);
+            dispatch_msg(player, self_forward);
+        }
+    }
+
+    void SceneActor::OnHandleLeave(SceneLeaveMsg *msg)
+    {
+        assert(msg != nullptr && "SceneLeaveMsg cannot be null");
+
+        uint64_t raw_id = msg->actor_id.raw;
+        auto it = actors_.find(raw_id);
+        if (it == actors_.end())
+            return;
+
+        PlayerActor *player = it->second;
+        uint32_t grid_index = player->get_aoi_grid_index();
+
+        std::vector<uint64_t> neighbors;
+        aoi_.GetViewEntityIds(grid_index, neighbors);
+
+        aoi_.RemoveByGridIndex(raw_id, grid_index);
+
+        if (!neighbors.empty())
+        {
+            // 委托 Builder 构建离开视野的广播包
+            auto shared_buf = net::PacketBuilder::BuildLeaveView(msg->player_id);
+
+            for (uint64_t neighbor_raw_id : neighbors)
+            {
+                if (neighbor_raw_id == raw_id)
+                    continue;
+
+                if (auto neighbor_it = actors_.find(neighbor_raw_id); neighbor_it != actors_.end())
+                {
+                    auto *forward_msg = new ForwardPacketMsg(ids::SC_LEAVE_VIEW, shared_buf);
+                    dispatch_msg(neighbor_it->second, forward_msg);
+                }
+            }
+        }
+
+        actors_.erase(it);
+    }
+
+    // ==========================================
+    // 2. 重写 OnHandleMove：只记状态，坚决不发包！
+    // ==========================================
+    void SceneActor::OnHandleMove(SceneMoveMsg *msg)
+    {
+        uint64_t mover_actor_id = msg->actor_id.raw;
+        auto mover = GetPlayer(mover_actor_id);
+        if (!mover)
+            return;
+
+        // 仅更新内存坐标，并打上脏标记
+        mover->SetPos(msg->newX, msg->newY, 0.0f, msg->direction);
+
+        // 扔进同步队列，等待 Tick 处理
+        sync_mgr_.AddDirtyPlayer(mover);
+    }
+
+    // ==========================================
+    // 3. 新增 OnTick 驱动函数 (在头文件中声明 void OnTick();)
+    // ==========================================
+    void SceneActor::OnTick()
+    {
+        // 调用同步管理器的 Tick，传入处理 Enter/Leave 和 发包的 Lambda 闭包
+        sync_mgr_.Tick(aoi_,
+                       // Callback 1: 处理视野跨格 (完美复用你原有的拆解逻辑)
+                       [this](PlayerActor *mover, const std::vector<uint64_t> &enterIds, const std::vector<uint64_t> &leaveIds)
+                       { this->ProcessAoiEnterLeave(mover, enterIds, leaveIds); },
+                       // Callback 2: 批量发送 SCMoveNtfBatch
+                       [this](uint64_t targetActorId, std::shared_ptr<std::string> sharedBuf)
+                       {
+                // IDs::SC_MOVE_NTF_BATCH 需要在你的 message_id 中定义
+                this->SendSharedBuffer(targetActorId, ids::SC_MOVE_NTF, sharedBuf); });
+
+        // 如果 schedule_timer 是一次性的，需要在这里重新注册下一次 Tick
+        schedule_timer(50, [this]()
+                       { OnTick(); });
+    }
+
+    // ==========================================
+    // 4. 新增辅助函数 (把原先 OnHandleMove 里处理 Enter/Leave 的代码抽出来)
+    // ==========================================
+    void SceneActor::ProcessAoiEnterLeave(PlayerActor *mover,
+                                          const std::vector<uint64_t> &enter_ids,
+                                          const std::vector<uint64_t> &leave_ids)
+    {
+        if (!mover)
+            return;
+
+        uint64_t mover_uid = mover->get_player_id();
+
+        // --- 处理跨网格新进入视野 ---
+        if (!enter_ids.empty())
+        {
+            auto shared_data_to_others = net::PacketBuilder::BuildEnterView({mover_uid, mover->GetX(), mover->GetY()});
+
+            std::vector<net::EntityViewInfo> new_neighbors_info;
+            new_neighbors_info.reserve(enter_ids.size());
+
+            for (uint64_t neighbor_id : enter_ids)
+            {
+                if (auto *neighbor = GetPlayer(neighbor_id))
+                {
+                    new_neighbors_info.push_back({neighbor->get_player_id(), neighbor->GetX(), neighbor->GetY()});
+                    SendSharedBuffer(neighbor_id, ids::SC_ENTER_VIEW, shared_data_to_others);
+                }
+            }
+
+            if (!new_neighbors_info.empty())
+            {
+                auto shared_data_to_me = net::PacketBuilder::BuildEnterView(new_neighbors_info);
+                SendSharedBuffer(mover->id().raw, ids::SC_ENTER_VIEW, shared_data_to_me);
+            }
+        }
+
+        // --- 处理跨网格离开视野 ---
+        if (!leave_ids.empty())
+        {
+            auto shared_data_to_others = net::PacketBuilder::BuildLeaveView(mover_uid);
+
+            std::vector<uint64_t> leave_neighbors_uids;
+            leave_neighbors_uids.reserve(leave_ids.size());
+
+            for (uint64_t neighbor_id : leave_ids)
+            {
+                if (auto *neighbor = GetPlayer(neighbor_id))
+                {
+                    leave_neighbors_uids.push_back(neighbor->get_player_id());
+                    SendSharedBuffer(neighbor_id, ids::SC_LEAVE_VIEW, shared_data_to_others);
+                }
+            }
+
+            if (!leave_neighbors_uids.empty())
+            {
+                auto shared_data_to_me = net::PacketBuilder::BuildLeaveView(leave_neighbors_uids);
+                SendSharedBuffer(mover->id().raw, ids::SC_LEAVE_VIEW, shared_data_to_me);
+            }
+        }
+    }
+
+    PlayerActor *SceneActor::GetPlayer(uint64_t actorId) const
+    {
+        auto it = actors_.find(actorId);
+        return (it != actors_.end()) ? it->second : nullptr;
+    }
+
+    template <typename T>
+    void SceneActor::SendPacket(uint64_t targetId, uint32_t msgId, const T &proto)
+    {
+        if (auto actor = GetPlayer(targetId))
+        {
+            auto *forward = new ForwardPacketMsg(msgId, std::make_shared<std::string>(proto.SerializeAsString()));
+            dispatch_msg(actor, forward);
+        }
+    }
+
+    void SceneActor::SendSharedBuffer(uint64_t targetId, uint32_t msgId, std::shared_ptr<std::string> sharedBuf)
+    {
+        if (auto actor = GetPlayer(targetId))
+        {
+            // 多个 ForwardPacketMsg 共享同一个 buffer 内存
+            auto *forward = new ForwardPacketMsg(msgId, sharedBuf);
+            dispatch_msg(actor, forward);
+        }
+    }
+
+} // namespace aegis::core-e 
+
+

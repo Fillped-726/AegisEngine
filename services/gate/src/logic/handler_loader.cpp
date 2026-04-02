@@ -9,6 +9,8 @@
 #include "aegis/core/actor_registry.h" // [重要] 引入 Registry
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/message.h" // 引入刚才定义的消息
+#include "aegis/core/worker.h"
+#include "aegis/common/actor_utils.h" // 引入 dispatch_msg 函数
 
 // 引入 Protocol Buffers
 #include "cs_lobby.pb.h"
@@ -51,8 +53,8 @@ namespace aegis::gate
                 Log::instance().info("[Logic] Login Request | UID: {} -> ActorID: {}", uid, player->id().raw);
 
                 // 2. 出生点计算
-                float spawnX = 100.0f + (uid % 10);
-                float spawnY = 100.0f + (uid % 10);
+                float spawnX = 100.0f;
+                float spawnY = 100.0f;
                 float spawnZ = 0.0f;
 
                 player->SetPos(spawnX, spawnY);
@@ -83,9 +85,21 @@ namespace aegis::gate
                     // 压入消息队列
                     if (scene->push(msg))
                     {
-                        // 唤醒 Scene Actor
-                        aegis::core::Scheduler::instance().dispatch(scene);
-                        Log::instance().info("[Login] Player {} dispatched to Scene {}", uid, scene_id.raw);
+                        // [核心修复]：拒绝 Round-Robin，定向投递回它出生的 Worker
+                        auto *target_worker = aegis::core::Scheduler::instance().get_worker(scene->worker_id());
+
+                        // 如果当前就在这个 Worker，直接进快轨；否则走跨核队列
+                        if (aegis::core::Worker::get_current_id() == scene->worker_id())
+                        {
+                            target_worker->dispatch_local(scene);
+                        }
+                        else
+                        {
+                            target_worker->post_cross_core_task(scene);
+                        }
+
+                        Log::instance().info("[Login] Player {} dispatched to Scene {} on Worker {}",
+                                             uid, scene_id.raw, scene->worker_id());
                     }
                 }
                 else
@@ -115,16 +129,21 @@ namespace aegis::gate
                     float newX = req.target_pos().x();
                     float newY = req.target_pos().y();
 
+                    float oldX = player->GetX();
+                    float oldY = player->GetY();
+                    unsigned direction = 0;
+                    if (newX != oldX || newY != oldY)
+                    {
+                        direction |= PlayerActor::DIRTY_POS;
+                    }
+
                     // 2. 更新玩家自身数据 (乐观更新)
                     player->SetPos(newX, newY);
 
                     // 3. [修复] 构造正确的参数顺序: id, uid, oldGridIndex, newX, newY
-                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), player->get_aoi_grid_index(), newX, newY);
+                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), player->get_aoi_grid_index(), newX, newY, direction);
 
-                    if (scene->push(msg))
-                    {
-                        aegis::core::Scheduler::instance().dispatch(scene);
-                    }
+                    dispatch_msg(scene, msg);
                 }
                 else
                 {

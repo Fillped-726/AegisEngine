@@ -199,4 +199,45 @@ namespace aegis::core
         };
     };
 
+    class MoveOnlyTask
+    {
+        struct Base
+        {
+            virtual ~Base() = default;
+            virtual void call() = 0;
+        };
+
+        template <typename F>
+        struct Derived : Base
+        {
+            F f;
+            Derived(F &&func) : f(std::forward<F>(func)) {}
+            void call() override { f(); }
+        };
+
+        std::unique_ptr<Base> ptr_;
+
+    public:
+        MoveOnlyTask() = default;
+
+        template <typename F>
+        MoveOnlyTask(F &&f) : ptr_(std::make_unique<Derived<std::decay_t<F>>>(std::forward<F>(f))) {}
+
+        void operator()()
+        {
+            if (ptr_)
+                ptr_->call();
+        }
+
+        // 禁止拷贝
+        MoveOnlyTask(const MoveOnlyTask &) = delete;
+        MoveOnlyTask &operator=(const MoveOnlyTask &) = delete;
+
+        // 允许移动
+        MoveOnlyTask(MoveOnlyTask &&) noexcept = default;
+        MoveOnlyTask &operator=(MoveOnlyTask &&) noexcept = default;
+
+        explicit operator bool() const { return !!ptr_; }
+    };
+
 } // namespace aegis::core

@@ -3,91 +3,59 @@
 #include <vector>
 #include <thread>
 #include <atomic>
-#include <optional>
-#include <mutex>
-#include <condition_variable>
 #include <memory>
 
-// Third-party
-#include "concurrentqueue.h"
-
 // Aegis
-#include "aegis/core/actor_traits.h"
-#include "aegis/common/work_stealing_queue.h" // 刚才那个 Lock-Free Queue 的头文件
+#include "aegis/core/worker.h"
 
+// 前置声明
+namespace aegis::core
+{
+    class Actor;
+}
 using SchedulerTask = aegis::core::Actor *;
 
 namespace aegis::core
 {
+    // ===================================================================
+    // Thread-per-Core 架构下的 Scheduler (控制面)
+    // 仅负责 Worker 的生命周期管理与初始负载均衡，不再参与具体调度
+    // ===================================================================
     class Scheduler
     {
     public:
         static Scheduler &instance();
 
+        // 启动指定数量的 Worker 线程 (通常 = CPU 核心数)
         void start(int num_workers);
+
+        // 安全停止所有 Worker
         void stop();
 
+        // 【核心入口】将一个全新的 Actor 或任务分配给某个 Worker
+        // 采用 Round-Robin (轮询) 策略实现基础负载均衡
         void dispatch(SchedulerTask task);
+
+        // 获取当前线程所在的 Worker ID
+        static int current_worker_id();
+
+        // 获取特定 Worker 的指针 (用于跨核通信时的精确投递)
+        Worker *get_worker(int id);
 
     private:
         Scheduler() = default;
         ~Scheduler();
 
-        void worker_entry(int id);
-        void notify_one_worker();
-
-        void monitor_entry();
-
-        // 这里的返回值适配 WorkStealingQueue::pop/steal 的 optional
-        std::optional<SchedulerTask> try_local_pop(int worker_id);
-        std::optional<SchedulerTask> try_global_pop(int worker_id);
-        std::optional<SchedulerTask> try_steal(int thief_id);
-
-        void execute_actor(SchedulerTask task);
-
-        void handle_actor_death(Actor *actor, int reason);
-        void cleanup_graveyard();
-
-        static int64_t now_ms()
-        {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(
-                       std::chrono::steady_clock::now().time_since_epoch())
-                .count();
-        }
-
         std::atomic<bool> running_{false};
-        std::vector<std::thread> workers_;
 
-        using WorkQueue = aegis::common::WorkStealingQueue<SchedulerTask>;
-        std::vector<std::unique_ptr<WorkQueue>> local_queues_;
+        // Worker 实例数组 (生命周期与 Scheduler 绑定)
+        std::vector<std::unique_ptr<Worker>> workers_;
 
-        // 全局无锁队列
-        moodycamel::ConcurrentQueue<SchedulerTask> global_queue_;
+        // 实际执行的系统线程
+        std::vector<std::thread> threads_;
 
-        // 线程休眠/唤醒
-        std::mutex sleep_mtx_;
-        std::condition_variable sleep_cv_;
-        std::atomic<int> sleeping_workers_{0};
-
-        // --- 延迟回收数据结构 ---
-
-        // 1. 坟墓队列 (Lock-Free)
-        // 多生产者(Workers) -> 单消费者(Monitor)
-        moodycamel::ConcurrentQueue<Actor *> graveyard_queue_;
-
-        // 2. 本地待销毁列表 (Thread-Local to Monitor Thread)
-        // 结构: {死亡时间戳, Actor指针}
-        struct DeadActorEntry
-        {
-            int64_t death_time;
-            Actor *actor;
-        };
-        // 使用 deque 因为我们需要高效的头部删除
-        std::deque<DeadActorEntry> pending_deletions_;
-
-        // 3. 安全时间窗口 (配置项)
-        // 5000ms 足够覆盖任何极端情况下的 CPU 调度延迟
-        static constexpr int64_t GRAVEYARD_DELAY_MS = 5000;
+        // 用于 Round-Robin 分发的原子计数器
+        std::atomic<uint64_t> rr_counter_{0};
     };
 
 } // namespace aegis::core

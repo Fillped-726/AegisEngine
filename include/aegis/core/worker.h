@@ -1,27 +1,42 @@
 #pragma once
 
 #include <liburing.h>
+#ifdef BLOCK_SIZE
+#undef BLOCK_SIZE
+#endif
 #include <thread>
 #include <atomic>
 #include <vector>
 #include <memory>
 #include <deque>
+#include <sys/eventfd.h>
+#include <unistd.h>
+#include "functional"
+#include "aegis/core/task.h"
+#include "aegis/core/hierarchy_timer.h"
 
 // Third-party
 #include "concurrentqueue.h"
 
 // 假设这些前置声明存在
-namespace aegis::core { class Actor; }
-namespace aegis::net { class Connection; }
+namespace aegis::core
+{
+    class Actor;
+    union ActorID;
+}
+namespace aegis::net
+{
+    class Connection;
+}
 
-using SchedulerTask = aegis::core::Actor*;
+using SchedulerTask = aegis::core::Actor *;
 
 namespace aegis::core
 {
+    extern thread_local int t_worker_id;
     // ===================================================================
-    // 核心类：Worker (也即 EventLoop)
-    // 每一个 Worker 独占一个系统线程，绑定一个 CPU 核心，拥有独立的 io_uring
-    // 绝对禁止跨 Worker 访问非线程安全的数据！
+    // Thread-per-Core 的核心引擎：Worker
+    // 集 IO 轮询、协程恢复、Actor 状态机调度于一身
     // ===================================================================
     class Worker
     {
@@ -29,62 +44,75 @@ namespace aegis::core
         Worker(int worker_id);
         ~Worker();
 
-        // 线程的真正入口，死循环
+        // 启动 Event Loop (将被 Scheduler 在新线程中调用)
         void run();
+
+        // 停止当前 Worker
         void stop();
 
-        // 提供给其他 Worker 调用的跨核通信接口（无锁投递）
-        // 比如 Worker A 想把一个新建的 Connection 扔给 Worker B
+        // [线程安全] 供其他 Worker 调用的跨核通信接口
         void post_cross_core_task(SchedulerTask task);
+
+        // [线程安全] 供其他模块调用的自定义任务接口
+        void post_custom_task(MoveOnlyTask task);
+
+        void dispatch_local(SchedulerTask task); // 本地极速派发
+
+        // [线程安全] 唤醒该 Worker 的 io_uring (基于 eventfd)
+        void wake_up();
+
+        static int get_current_id()
+        {
+            return t_worker_id;
+        }
 
         int id() const { return worker_id_; }
 
+        io_uring *ring() { return &ring_; }
+
+        HierarchicalTimeWheel &time_wheel() { return time_wheel_; }
+
     private:
-        // --- 核心模块 1：网络 I/O (取代了以前的全局 Env) ---
-        void process_io();
-        struct io_uring ring_;
-        bool is_uring_initialized_ = false;
+        // --- 初始化相关 ---
+        void init_io_uring();
+        void arm_wakeup();
 
-        // --- 核心模块 2：本地计算任务 ---
+        // --- Event Loop 的三大阶段 ---
+        void process_io(bool wait_for_events, uint32_t ms_to_next_tick);
         void process_local_tasks();
-        // 注意！因为只有当前 Worker 线程会 pop，这里其实可以用更轻量的结构
-        // 但为了接收当前线程产生的源源不断的任务，依然保持一个队列
-        std::deque<SchedulerTask> local_run_queue_; 
-
-        // --- 核心模块 3：跨核消息接收 (多生产者，单消费者) ---
         void process_cross_core_messages();
-        // 其他 Worker 通过 post_cross_core_task 把任务/消息推到这里
-        moodycamel::ConcurrentQueue<SchedulerTask> cross_core_queue_;
+
+        // --- 从 Scheduler 迁移过来的执行逻辑 ---
+        void execute_actor(SchedulerTask task);
 
         int worker_id_;
         std::atomic<bool> is_running_{false};
+
+        // --- I/O 模块 (原 Env 逻辑) ---
+        struct io_uring ring_;
+        bool is_uring_initialized_ = false;
+        int wakeup_fd_ = -1;
+        uint64_t wakeup_buf_ = 0;
+        static inline void *const kEventToken = reinterpret_cast<void *>(0xBEEF);
+
+        // --- 定时器模块 (Phase 1 & 2) ---
+        HierarchicalTimeWheel time_wheel_;
+
+        // 【面试亮点】：使用标志位合并高频唤醒，避免 eventfd 风暴
+        std::atomic<bool> is_waking_up_{false};
+
+        // --- 计算模块 (原 Scheduler 逻辑) ---
+        // 本地待执行队列 (当前线程私有，无锁！普通 deque 即可)
+        std::deque<SchedulerTask> local_run_queue_;
+
+        // 跨核消息接收队列 (多生产者，单消费者，Lock-free)
+        moodycamel::ConcurrentQueue<SchedulerTask> cross_core_queue_;
+        std::unique_ptr<moodycamel::ConsumerToken> cross_core_cons_token_;
+
+        // --- 自定义任务队列 (供其他模块投递的非 Actor 任务) ---
+        moodycamel::ConcurrentQueue<MoveOnlyTask> custom_task_queue_;
     };
 
-    // ===================================================================
-    // 调度器：退化为一个纯粹的“管理器”和“分发器”
-    // 不再负责具体的 while(true) 调度，只负责启动 Worker 和初始哈希路由
-    // ===================================================================
-    class Scheduler
-    {
-    public:
-        static Scheduler& instance();
-
-        void start(int num_workers);
-        void stop();
-
-        // 外部入口：比如 Acceptor 收到一个新连接产生的 Actor，按 Hash 分发给某个 Worker
-        void dispatch_to_worker(SchedulerTask task, int target_worker_id);
-
-        // 获取 Worker 实例（主要用于跨核发消息时拿到目标 Worker 的引用）
-        Worker* get_worker(int id);
-
-    private:
-        Scheduler() = default;
-        ~Scheduler() = default;
-
-        std::vector<std::unique_ptr<Worker>> workers_;
-        std::vector<std::thread> threads_;
-        std::atomic<bool> running_{false};
-    };
+    extern thread_local Worker *t_current_worker;
 
 } // namespace aegis::core

@@ -13,10 +13,14 @@ message CSMoveReq {
 }
 
 // [SC] 移动通知
-message SCMoveNtf {
-  uint64 entity_id = 1;
-  aegis.common.PBVector3 pos = 2;
-  float direction = 3;
+
+message SCMoveNtfBatch {
+  message MoveInfo {
+    uint64 entity_id = 1;
+    aegis.common.PBVector3 pos = 2;
+    float direction = 3;
+  }
+  repeated MoveInfo moves = 1; // 一次下发视野内所有移动的玩家
 }
 
 // [SC] 进入视野

@@ -2,30 +2,54 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "default",
+      "name": "base",
       "hidden": true,
-      "generator": "Ninja", 
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_CXX_STANDARD": "20"
       }
     },
     {
       "name": "debug",
-      "inherits": "default",
-      "displayName": "Debug Build",
+      "inherits": "base",
+      "displayName": "Debug (No ASan)",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
+      "name": "asan",
+      "inherits": "base",
+      "displayName": "Debug with ASan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_ASAN": "ON" 
+      }
+    },
+    {
       "name": "release",
-      "inherits": "default",
-      "displayName": "Release Build",
+      "inherits": "base",
+      "displayName": "Release (Performance Optimized)",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
     }
   ]
 }

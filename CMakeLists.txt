@@ -19,6 +19,21 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ==========================================
+# 自动探测并开启 ASan (由 Preset 触发)
+# ==========================================
+option(ENABLE_ASAN "Enable AddressSanitizer for debugging" OFF)
+
+if(ENABLE_ASAN)
+    message(STATUS "🚀 [Aegis] AddressSanitizer ENABLED")
+    if(MSVC)
+        add_compile_options(/fsanitize=address)
+    else()
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+        add_link_options(-fsanitize=address)
+    endif()
+endif()
+
+# ==========================================
 # 2. 依赖查找 (vcpkg 托管一切)
 # ==========================================
 # 核心原则：只负责“找”，不负责“下”和“编”
@@ -133,3 +148,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 add_subdirectory(tests/benchmark) 
 add_subdirectory(tests/integration)
 add_subdirectory(tests/unit)
+

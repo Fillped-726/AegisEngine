@@ -1,6 +1,7 @@
 #include "aegis/core/actor.h"
 #include "aegis/common/aegisLog.h" // 仅在 cpp 中包含日志
 #include <exception>               // process_batch 捕获异常需要
+#include "aegis/core/worker.h"     // 定时器调度需要访问 Worker 的时间轮
 
 namespace aegis::core
 {
@@ -11,8 +12,6 @@ namespace aegis::core
     Actor::Actor(uint64_t parent_id)
         : parent_id_(parent_id)
     {
-        // 初始状态：创建一个哑节点 (Stub)
-        // 此时 Head 和 Tail 都指向它
         ActorMessage *stub = new ActorMessage();
         stub->next.store(nullptr, std::memory_order_relaxed);
 
@@ -35,30 +34,37 @@ namespace aegis::core
 
     ActorState Actor::process_batch(int budget)
     {
-        // head_ 始终指向"上一个已处理完的节点" (即当前的 Stub)
-        // 真正的有效数据在 head_->next 中
 
         for (int i = 0; i < budget; ++i)
         {
             ActorMessage *head = head_; // 保存旧 Stub，稍后回收
             ActorMessage *next = head->next.load(std::memory_order_acquire);
 
-            // --- 1. 队列判空逻辑 (完全保持原有无锁算法的精髓) ---
             if (next == nullptr)
             {
-                in_global_queue_.store(false, std::memory_order_release);
-
-                // Double Check: 处理 Race Condition
+                // Double Check: 判断是真没数据了，还是 Producer 被卡在了指令缝隙里
                 ActorMessage *tail = tail_.load(std::memory_order_acquire);
-                if (head != tail)
+                if (head == tail)
                 {
-                    bool expected = false;
-                    if (in_global_queue_.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
+                    // 【情况 A】：真没数据了。安全挂起。
+                    is_scheduled_.store(false, std::memory_order_release);
+
+                    // 防御性再检查一次，防止在 store(false) 的瞬间有新数据进来
+                    // 这是为了彻底杜绝 Lost Wakeup
+                    if (tail_.load(std::memory_order_acquire) != head)
                     {
-                        continue; // 抢救回来，继续处理
+                        bool expected = false;
+                        if (is_scheduled_.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
+                        {
+                            // 抢救成功，下一轮继续
+                            // 因为没有消费，这里退还 budget
+                            --i;
+                            continue;
+                        }
                     }
+                    return ActorState::Idle;
                 }
-                return ActorState::Idle; // 真的空了
+                return ActorState::Active;
             }
 
             // --- 2. 节点步进 ---
@@ -75,11 +81,7 @@ namespace aegis::core
                     // 1. 回收旧 Stub (head)
                     free_message(head);
 
-                    // 2. 注意：当前的 next (即 Destroy 消息本身) 现在变成了 head_ (新 Stub)
-                    // 当调度器执行 delete actor 时，~Actor() 会遍历并清理链表，
-                    // 所以这里不用手动 free(next)，交给析构函数处理剩余链表即可。
-
-                    return ActorState::Dead; // <--- 唯一出口：通知 Scheduler 销毁我
+                    return ActorState::Dead; // <--- 唯一出口：通知 worker 销毁我
                 }
 
                 // [Case B] 协程唤醒：基础设施
@@ -116,8 +118,6 @@ namespace aegis::core
             Actor::free_message(head);
         }
 
-        // Budget 用完了还有数据 (next != nullptr)，或者刚好处理完 budget 个
-        // 保持 in_global_queue_ 为 true，让调度器重新入队
         return ActorState::Active;
     }
 
@@ -163,6 +163,9 @@ namespace aegis::core
         case MSG_TYPE_SCENE_MOVE:
             static_cast<SceneMoveMsg *>(msg)->finalize();
             break;
+        case MSG_TYPE_FORWARD_PACKET:
+            static_cast<ForwardPacketMsg *>(msg)->finalize();
+            break;
 
         // --- RPC 消息 ---
         // 这里必须 Cast 成对应的模板实例化类型
@@ -183,11 +186,13 @@ namespace aegis::core
 
         default:
             aegis::Log::instance().error("Leak warning: Unknown message type in free_message: {}", msg->type_id);
-            // 为了防止彻底内存泄漏，这里可以尝试直接 delete msg
-            // 虽然会 leak 派生类资源，但至少回收了基类内存。
-            // 但在这个架构下，应该视作 Fatal Error。
             break;
         }
+    }
+
+    TimerId Actor::schedule_timer(uint32_t delay_ms, std::function<void()> cb)
+    {
+        return aegis::core::t_current_worker->time_wheel().add_timer(delay_ms, std::move(cb));
     }
 
 } // namespace aegis::core

@@ -6,6 +6,7 @@
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/task.h"
 #include "aegis/net/dispatcher.h"
+#include "aegis/common/scopeGuard.h"
 #include "cs_battle.pb.h"
 #include "common.pb.h"
 
@@ -19,6 +20,19 @@ namespace aegis::core
     class PlayerActor : public PooledActor<PlayerActor>
     {
     public:
+        enum DirtyFlag : uint8_t
+        {
+            DIRTY_NONE = 0,
+            DIRTY_POS = 1 << 0,
+            DIRTY_HP = 1 << 1,
+            // ... 可扩展其他属性
+        };
+
+        void MarkDirty(uint8_t flag) { dirty_mask_ |= flag; }
+        void ClearDirty() { dirty_mask_ = DIRTY_NONE; }
+        bool IsDirty(uint8_t flag) const { return (dirty_mask_ & flag) != 0; }
+        bool HasAnyDirty() const { return dirty_mask_ != DIRTY_NONE; }
+
         PlayerActor(ActorID id, std::shared_ptr<net::Connection> conn)
             : PooledActor()
         {
@@ -62,12 +76,15 @@ namespace aegis::core
         // 在 x64 上读取对齐的 float 通常是原子的，但在严格内存模型下存在风险
         [[nodiscard]] float GetX() const { return x_.load(std::memory_order_relaxed); }
         [[nodiscard]] float GetY() const { return y_.load(std::memory_order_relaxed); }
+        float GetZ() const { return z_; }
 
         // [New] Setter 使用原子操作，稍微安全一点
-        void SetPos(float x, float y)
+        void SetPos(float x, float y, float z = 0.0f, uint8_t dirty_flag = DIRTY_POS)
         {
             x_.store(x, std::memory_order_relaxed);
             y_.store(y, std::memory_order_relaxed);
+            z_ = z;
+            MarkDirty(dirty_flag);
         }
 
         // [New] 核心契约：将自己的外观数据写入 Proto
@@ -122,7 +139,6 @@ namespace aegis::core
         // 必须是 public，因为 SceneActor 需要调用它
         void send_buffer(uint32_t msg_id, const std::string &serialized_data)
         {
-            std::lock_guard<common::SpinLock> guard(lock_);
             if (!conn_)
                 return;
 
@@ -150,14 +166,20 @@ namespace aegis::core
         void set_aoi_grid_index(uint32_t index) { aoi_grid_index = index; }
 
     protected:
-        // --- Worker 线程执行此函数 ---
-        void handle_message(core::ActorMessage *msg) override
+        void handle_message(core::ActorMessage *msg)
         {
+            if (!msg)
+                return;
+
+            // 仅在 Trace 级别打印，减少性能损耗
             if (msg->type_id != 0)
             {
-                Log::instance().debug("[Trace] 2. PlayerActor Recv Msg. TypeID: {}", (int)msg->type_id);
+                Log::instance().debug("[Trace] PlayerActor Recv Msg. TypeID: {}", (int)msg->type_id);
             }
-            if (msg->type_id == MSG_TYPE_NETWORK)
+
+            switch (msg->type_id)
+            {
+            case MSG_TYPE_NETWORK:
             {
                 auto *net_msg = static_cast<core::NetworkMessage *>(msg);
                 if (net_msg->pkt)
@@ -165,12 +187,36 @@ namespace aegis::core
                     // 启动协程处理业务逻辑
                     launch_task(net::Dispatcher::instance().dispatch(this, *net_msg->pkt));
                 }
+                break;
             }
-            else if (msg->type_id == MSG_TYPE_SESSION_CLOSED)
+
+            case MSG_TYPE_SESSION_CLOSED:
             {
                 auto *closed_msg = static_cast<core::SessionClosedMsg *>(msg);
+                // 维持原有锁逻辑，保护 session 状态
                 std::lock_guard<common::SpinLock> guard(lock_);
                 on_session_closed(closed_msg->session_id);
+                break;
+            }
+
+            // =========================================================
+            // 【新增】处理由 SceneActor 异步投递过来的转发请求
+            // =========================================================
+            case MSG_TYPE_FORWARD_PACKET:
+            {
+                auto *fwd = static_cast<ForwardPacketMsg *>(msg);
+
+                // 直接调用你已有的 Public 接口 send_buffer
+                // 该接口内部会处理 PacketPool 申请、大端序转换及实际发送
+                if (fwd->shared_buf)
+                {
+                    this->send_buffer(fwd->msg_id, *(fwd->shared_buf));
+                }
+                break;
+            }
+
+            default:
+                break;
             }
         }
 
@@ -196,6 +242,7 @@ namespace aegis::core
         int fd_ = -1;
 
         uint64_t playerId_ = 0;
+        uint8_t dirty_mask_ = DIRTY_NONE;
 
         uint32_t aoi_grid_index = -1;
 
@@ -204,6 +251,7 @@ namespace aegis::core
         // [Safety] 使用 atomic 避免最基本的读写撕裂，虽然不能完全解决多字段一致性
         std::atomic<float> x_{0.0f};
         std::atomic<float> y_{0.0f};
+        float z_{0.0f};
     };
 
 } // namespace aegis::core

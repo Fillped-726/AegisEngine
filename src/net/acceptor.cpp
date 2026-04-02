@@ -35,10 +35,6 @@ namespace aegis::net
             Log::instance().warn("Acceptor: Failed to set SO_REUSEADDR");
         }
 
-        // // 2. 设置非阻塞 (Essential for co_await)
-        // int flags = ::fcntl(fd, F_GETFL, 0);
-        // ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-
         // 3. Bind
         addr_.sin_family = AF_INET;
         addr_.sin_port = htons(port_);
@@ -101,9 +97,6 @@ namespace aegis::net
         }
         else
         {
-            // 错误处理交给调用者，或者返回一个无效 Socket
-            // 这里我们抛出异常或者返回无效 Socket 都可以，
-            // 考虑到协程异常处理，返回无效 Socket 并在上层判断更安全。
             co_return Socket(-1);
         }
     }
@@ -111,10 +104,6 @@ namespace aegis::net
     void Acceptor::optimize_client_socket(int fd)
     {
         int opt = 1;
-
-        // // 1. 设置非阻塞
-        // int flags = ::fcntl(fd, F_GETFL, 0);
-        // ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
         // 2. 禁用 Nagle 算法 (低延迟)
         if (::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0)

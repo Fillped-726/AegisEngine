@@ -1,22 +1,25 @@
+// include/aegis/common/spinLock.h
 #pragma once
 
 #include <atomic>
 #include <thread>
 #include <new>
 
+// [DEPENDENCY: Architecture-specific CPU intrinsics]
 #if defined(__x86_64__) || defined(_M_X64)
 #include <immintrin.h>
 #endif
 
 namespace aegis::common
 {
-    // 获取硬件造成的破坏性干扰大小（通常即 Cache Line 大小），如果编译器不支持则回退到 64
+    // [PERF: Detect L1 cache line size to prevent false sharing; fallback to 64 bytes]
 #ifdef __cpp_lib_hardware_interference_size
     constexpr std::size_t kCacheLineSize = std::hardware_destructive_interference_size;
 #else
     constexpr std::size_t kCacheLineSize = 64;
 #endif
 
+    // [INTENT: CPU yield hint to optimize instruction pipeline and power during busy-wait]
     inline void cpu_relax() noexcept
     {
 #if defined(__x86_64__) || defined(_M_X64)
@@ -28,9 +31,11 @@ namespace aegis::common
 #endif
     }
 
+    // [STATE: Lock mechanism padded to cache line boundary]
     struct alignas(kCacheLineSize) SpinLock
     {
     private:
+        // [STATE: Atomic synchronization primitive]
         std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
     public:
@@ -38,42 +43,41 @@ namespace aegis::common
         SpinLock(const SpinLock &) = delete;
         SpinLock &operator=(const SpinLock &) = delete;
 
+        // [STATE_MUTATION: Block until acquisition]
         void lock() noexcept
         {
-            // 快速路径：如果运气好，一次就拿到了，完全不用进循环
+            // [INTENT: Fast path Test-and-Set (TAS)]
             if (!flag.test_and_set(std::memory_order_acquire))
             {
                 return;
             }
 
-            // 慢速路径：开始自旋
+            // [INTENT: Slow path Test-and-Test-and-Set (TTAS)]
             int spin_count = 0;
             while (true)
             {
-                // Inner Loop: 只读自旋 (TTAS 的第一个 T)
-                // 在这个循环里，cache line 处于 Shared 状态，不产生总线流量
+                // [PERF: Relaxed read loop maintains L1 shared state; minimizes bus traffic]
                 while (flag.test(std::memory_order_relaxed))
                 {
                     cpu_relax();
                     spin_count++;
                 }
 
-                // 尝试获取锁 (TTAS 的 TAS)
-                // 只有上面的循环检测到锁释放了，这里才会执行原子写
+                // [STATE_MUTATION: Re-attempt TAS acquisition]
                 if (!flag.test_and_set(std::memory_order_acquire))
                 {
-                    return; // 成功拿到锁
+                    return;
                 }
-
-                // 如果 CAS 失败（被别人抢了），回到大循环继续 read-spin
             }
         }
 
+        // [STATE_MUTATION: Relinquish control with memory barrier]
         void unlock() noexcept
         {
             flag.clear(std::memory_order_release);
         }
 
+        // [INTENT: Non-blocking acquisition attempt]
         [[nodiscard]] bool try_lock() noexcept
         {
             return !flag.test_and_set(std::memory_order_acquire);

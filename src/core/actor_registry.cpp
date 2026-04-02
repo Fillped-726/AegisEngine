@@ -69,4 +69,5 @@ namespace aegis::core
             aegis::Log::instance().debug("Actor {} removed from registry.", id.raw);
         }
     }
+
 }

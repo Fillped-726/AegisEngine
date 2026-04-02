@@ -14,6 +14,9 @@
 namespace aegis::core
 {
     class Actor;
+    class Worker;
+
+    extern thread_local Worker *t_current_worker;
 
     /**
      * @brief 复合 ID 定义 (Handle)
@@ -109,6 +112,8 @@ namespace aegis::core
                 return ActorID(0);
             }
 
+            actor->set_worker_id(get_current_worker_id());
+
             // -----------------------------------------------------------
             // 4. 发布 (Release 语义保证初始化对 Get 线程可见)
             // -----------------------------------------------------------
@@ -127,6 +132,7 @@ namespace aegis::core
         {
             return get(ActorID(raw_id));
         }
+        int get_current_worker_id();
 
         /**
          * @brief 逻辑销毁

@@ -1,39 +1,36 @@
 // include/aegis/common/unique_fd.h
 #pragma once
 
-#include <unistd.h>
+#include <unistd.h> // [DEPENDENCY: POSIX unistd (close)]
 #include <utility>
-#include <algorithm> // for std::swap if needed
+#include <algorithm>
 
 namespace aegis::common
 {
-    /**
-     * @brief 遵循 RAII 原则的通用文件描述符包装器
-     * 适用于 socket, timerfd, eventfd, signalfd, file 等所有 Linux fd
-     */
+    // [INTENT: Strict RAII ownership manager for generic POSIX file descriptors]
     class UniqueFd
     {
     public:
+        // [STATE_MUTATION: Adopt raw fd integer]
         explicit UniqueFd(int fd = -1) noexcept : fd_(fd) {}
 
+        // [STATE_MUTATION: Deterministic OS resource release]
         ~UniqueFd()
         {
             if (fd_ >= 0)
             {
-                // 生产环境建议：虽然析构函数不抛异常，但可以记录 close 失败的 Log
-                // 特别是 EINTR 或 EIO
                 ::close(fd_);
             }
         }
 
-        // 禁止拷贝
+        // [CONSTRAINT: Non-copyable; enforce unique ownership]
         UniqueFd(const UniqueFd &) = delete;
         UniqueFd &operator=(const UniqueFd &) = delete;
 
-        // 移动构造
+        // [STATE_MUTATION: Ownership transfer; invalidate source via std::exchange]
         UniqueFd(UniqueFd &&other) noexcept : fd_(std::exchange(other.fd_, -1)) {}
 
-        // 移动赋值
+        // [STATE_MUTATION: Clean existing resource; adopt source payload]
         UniqueFd &operator=(UniqueFd &&other) noexcept
         {
             if (this != &other)
@@ -45,16 +42,13 @@ namespace aegis::common
 
         int get() const noexcept { return fd_; }
 
+        // [STATE_MUTATION: Yield ownership; bypass dtor cleanup]
         [[nodiscard]] int release() noexcept { return std::exchange(fd_, -1); }
 
         explicit operator bool() const noexcept { return fd_ >= 0; }
 
-        /**
-         * @brief 重置 FD
-         * @note [Fix] 增加了自赋值检查。
-         * 如果不检查，调用 fd.reset(fd.get()) 会导致 fd 被 close，但成员变量依然持有旧值，
-         * 造成 Double Close 或 Use-After-Close。
-         */
+        // [STATE_MUTATION: Conditional active resource cleanup and new payload adoption]
+        // [INTENT: Aliasing/self-assignment guard prevents use-after-close]
         void reset(int new_fd = -1) noexcept
         {
             if (fd_ == new_fd)
@@ -68,6 +62,7 @@ namespace aegis::common
         }
 
     private:
+        // [STATE: Raw OS handle]
         int fd_ = -1;
     };
 

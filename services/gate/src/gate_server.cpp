@@ -11,7 +11,7 @@
 #include <sys/resource.h>
 
 // Core Framework
-#include "aegis/core/env.h"
+#include "aegis/core/worker.h"
 #ifdef BLOCK_SIZE
 #undef BLOCK_SIZE
 #endif
@@ -33,6 +33,11 @@
 #include "aegis/common/tools.h"
 
 using namespace aegis;
+
+namespace aegis::core
+{
+    extern thread_local core::Worker *t_current_worker;
+}
 
 namespace aegis::gate
 {
@@ -74,13 +79,17 @@ namespace aegis::gate
         Log::instance().set_level(spdlog::level::debug); // 默认错误级别，后续可通过配置调整
 
         // 1. 【Bootstrap】创建全局 RoomManager
-        // 既然是直连，我们在这里手动启动"上帝 Actor"
         room_manager_id_ = core::ActorRegistry::instance().create_actor<core::RoomManager>();
         Log::instance().info("[Init] RoomManager Created. ID: {}", room_manager_id_.raw);
 
-        // 2. [修改] 直接同步创建默认场景 (主城)
-        // 不再使用 Fake RPC，确保 init 完成时场景一定存在
+        // 2. 直接同步创建默认场景 (主城)
         auto scene_id = core::ActorRegistry::instance().create_actor<core::SceneActor>(500.0f, 500.0f, 10.0f);
+
+        auto *scene = core::ActorRegistry::instance().get(scene_id);
+        if (scene)
+        {
+            scene->set_worker_id(3);
+        }
 
         if (scene_id.is_valid())
         {
@@ -116,21 +125,24 @@ namespace aegis::gate
         }
         Log::instance().info("[Init] Starting Scheduler with {} workers...", num_workers);
         core::Scheduler::instance().start(num_workers);
-
-        // 5. 初始化 IO 环境
-        core::Env::instance().init();
     }
 
     void GateServer::run(int port)
     {
         try
         {
-            bind_to_core(0);
-            // start_timer();
-            accept_loop(port);
+            Log::instance().info("[Gate] Dispatching Acceptor to Worker 0...");
 
-            Log::instance().info("[Init] Entering Main IO Loop.");
-            core::Env::instance().run();
+            auto *worker0 = core::Scheduler::instance().get_worker(0);
+            worker0->post_custom_task([this, port]()
+                                      { this->accept_loop(port); });
+
+            // 主线程化身为守护者，仅仅阻塞防止程序退出
+            Log::instance().info("[Gate] Main thread entering wait state.");
+            while (true)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
         catch (const std::exception &e)
         {
@@ -147,15 +159,14 @@ namespace aegis::gate
 
     core::DetachedTask GateServer::handle_session(net::Socket client_socket)
     {
-        // 1. 物理连接封装
+        // 【此时此刻的震撼】：
+        // 这行代码执行时，我们已经身处 target_worker_id 对应的线程里了！
+        // 接下来所有的 IO、Actor 计算，全部在这个 L1 Cache 极度亲和的核心里打转！
+
+        auto client_fd = client_socket.native_handle();
         auto conn = std::make_shared<net::Connection>(std::move(client_socket));
 
-        auto client_fd = conn->socket().native_handle();
-
-        // 2. 【核心】通过 Registry 创建 PlayerActor
-        // 此时玩家还是"游离态"，没有进入任何房间
-        core::ActorID player_id = core::ActorRegistry::instance()
-                                      .create_actor<core::PlayerActor>(conn);
+        core::ActorID player_id = core::ActorRegistry::instance().create_actor<core::PlayerActor>(conn);
 
         if (!player_id.is_valid())
         {
@@ -163,67 +174,24 @@ namespace aegis::gate
             co_return;
         }
 
-        // 本地会话记录
-        ClientSession session;
-        session.actor_id = player_id;
-
         try
         {
             while (true)
             {
+                // 这里的 co_await 会毫无阻碍地使用当前 Worker 的 io_uring
                 auto packet = co_await conn->read_packet();
                 if (!packet)
-                    break; // 连接断开
+                    break;
 
-                // ================== 快速验证工具 (临时插入) ==================
-                auto to_hex_quick = [](const uint8_t *data, size_t len)
+                auto *target_actor = core::ActorRegistry::instance().get(player_id);
+                if (target_actor)
                 {
-                    std::string out;
-                    char buf[4];
-                    for (size_t i = 0; i < std::min(len, (size_t)32); ++i)
-                    { // 只看前32字节防止刷屏
-                        snprintf(buf, sizeof(buf), "%02X ", data[i]);
-                        out += buf;
-                    }
-                    return out;
-                };
-
-                // 假设 packet->data() 返回 uint8_t*，根据你定义的结构调整调用
-                const uint8_t *raw_ptr = reinterpret_cast<const uint8_t *>(packet->data());
-                size_t raw_len = packet->size();
-
-                // 重点：尝试用你的理解去解析一下这块内存里的 MsgID
-                // 假设前4字节是长度，5-8字节是 MsgID
-                uint32_t debug_id = 0;
-                if (raw_len >= 8)
-                {
-                    // 试试看是不是大端解析（网络序）
-                    uint32_t network_id = *reinterpret_cast<const uint32_t *>(raw_ptr + 4);
-                    debug_id = __builtin_bswap32(network_id); // 字节序转换
-                }
-
-                Log::instance().debug("[QuickCheck] FD: {} | Len: {} | ID(Guess): {} | RawHex: {}",
-                                      client_fd, raw_len, debug_id, to_hex_quick(raw_ptr, raw_len));
-                // ==========================================================
-                // 3. 【核心】路由消息
-                auto *actor = core::ActorRegistry::instance().get(player_id);
-                if (actor)
-                {
-                    // 封装成 NetworkMessage
                     auto msg = core::NetworkMessagePool::instance().acquire(std::move(packet), client_fd);
 
-                    Log::instance().debug("[Trace] 1. NetMsg Created. Ptr: {}, TypeID: {} (Expect: 1)",
-                                          (void *)msg.get(), (int)msg->type_id);
-
-                    // 投递并调度
-                    if (actor->push(msg.release()))
-                    {
-                        core::Scheduler::instance().dispatch(actor);
-                    }
+                    dispatch_to_actor(target_actor, msg.release());
                 }
                 else
                 {
-                    // Actor 可能已经被踢下线或销毁
                     break;
                 }
             }
@@ -233,20 +201,14 @@ namespace aegis::gate
             Log::instance().error("[Gate] Error: {}", e.what());
         }
 
-        // 4. 【核心】断开处理
-        // Gate 不负责销毁 Actor，只通知它"网线拔了"
-        auto *actor = core::ActorRegistry::instance().get(player_id);
-        if (actor)
+        // 断开处理
+        auto *target_actor = core::ActorRegistry::instance().get(player_id);
+        if (target_actor)
         {
-            // PlayerActor 收到这个消息后，应该触发存盘、退出场景等逻辑，最后 finalize()
-            auto *msg = new core::SessionClosedMsg(0);
-            if (actor->push(msg))
-            {
-                core::Scheduler::instance().dispatch(actor);
-            }
+            dispatch_to_actor(target_actor, new core::SessionClosedMsg(0));
         }
 
-        Log::instance().info("[Gate] Connection Closed: {}", client_socket.native_handle());
+        Log::instance().info("[Gate] Connection Closed: {}", client_fd);
     }
 
     // 监听协程 (基本未变，只是日志移到了 Log 库)
@@ -254,58 +216,54 @@ namespace aegis::gate
     {
         try
         {
-            // 1. 创建 Acceptor (RAII 管理)
             net::Acceptor acceptor(port);
+            uint64_t connection_counter = 0;
+
+            Log::instance().info("[Acceptor] Start listening on port {} (Running on Worker 0)", port);
 
             while (true)
             {
-                // 2. 异步等待新连接 (返回封装好的 Socket 对象)
                 net::Socket client_socket = co_await acceptor.accept();
 
                 if (client_socket.is_valid())
                 {
-                    // 3. 处理会话 (注意 handle_session 参数需要改一下，或者取 native_handle)
-                    // 建议 handle_session 直接接收 Socket 对象，或者传 fd
-                    handle_session(std::move(client_socket));
-                    // release() 释放所有权给 handle_session，防止析构关闭 fd
+                    // 【核心巨变：跨核 Socket 移交】
+                    int total_workers = 4;
+                    int target_worker_id = (connection_counter++) % total_workers;
+
+                    auto *target_worker = core::Scheduler::instance().get_worker(target_worker_id);
+
+                    // 把 Socket 转移(move)给目标 Worker，让他在自己的核上拉起协程！
+                    target_worker->post_custom_task([this, s = std::move(client_socket)]() mutable
+                                                    { this->handle_session(std::move(s)); });
                 }
-                else
+                else if (errno == EMFILE || errno == ENFILE)
                 {
-                    // 处理 EMFILE 等临时错误
-                    if (errno == EMFILE || errno == ENFILE)
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
             }
         }
         catch (const std::exception &e)
         {
             Log::instance().critical("Accept Loop Fatal Error: {}", e.what());
-            // 决定是退出还是重启 loop
         }
     }
 
-    // Timer Loop
-    void GateServer::start_timer() { timer_loop(); }
-
-    core::DetachedTask GateServer::timer_loop()
+    void GateServer::dispatch_to_actor(core::Actor *actor, core::ActorMessage *msg)
     {
-        auto &wheel = core::HierarchicalTimeWheel::instance();
-        wheel.init();
-        int fd = wheel.get_fd();
-        if (fd < 0)
-            co_return;
+        if (!actor || !msg)
+            return;
 
-        while (true)
+        if (actor->push(msg))
         {
-            uint64_t expirations = 0;
-            int n = co_await net::Socket::AsyncRead(fd, &expirations, sizeof(expirations));
-            if (n != 8)
-                break;
-
-            for (uint64_t i = 0; i < expirations; ++i)
-                wheel.tick();
+            if (actor->worker_id() == core::t_current_worker->id())
+            {
+                core::t_current_worker->dispatch_local(actor);
+            }
+            else
+            {
+                core::Scheduler::instance().get_worker(actor->worker_id())->post_cross_core_task(actor);
+            }
         }
     }
 

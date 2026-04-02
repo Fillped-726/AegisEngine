@@ -7,6 +7,12 @@
 #include "aegis/core/actor_registry.h"
 #include "aegis/net/socket.h"
 
+namespace aegis::core
+{
+    class Actor;
+    class ActorMessage;
+}
+
 namespace aegis::gate
 {
     // 会话上下文
@@ -38,13 +44,10 @@ namespace aegis::gate
         inline static core::ActorID g_DefaultSceneID;
 
     private:
-        // --- 基础设施方法 (Infrastructure) ---
-        void start_timer();
-
         // --- 协程循环 ---
         aegis::core::DetachedTask accept_loop(int port);
         aegis::core::DetachedTask handle_session(net::Socket client_socket);
-        aegis::core::DetachedTask timer_loop();
+        void dispatch_to_actor(core::Actor *actor, core::ActorMessage *msg);
 
     private:
         core::ActorID room_manager_id_;

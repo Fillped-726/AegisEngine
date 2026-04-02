@@ -15,8 +15,6 @@ namespace aegis::core
             // 强转为具体类型
             auto *real_msg = static_cast<RPCCreateRoomMsg *>(msg);
             on_create_room(*real_msg);
-            // 注意：RpcMessage 通常不需要手动 delete，如果是 new 出来的，这里需要 delete
-            // 但如果用了你的 destroy_message 静态方法，外层循环会负责销毁
             break;
         }
 

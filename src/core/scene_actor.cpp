@@ -2,6 +2,8 @@
 #include "aegis/common/aegisLog.h"
 #include "cs_battle.pb.h"
 #include "ids.pb.h"
+#include "aegis/common/actor_utils.h"
+#include "aegis/net/packet_builder.h"
 
 namespace aegis::core
 {
@@ -12,6 +14,7 @@ namespace aegis::core
         : PooledActor(),
           aoi_(width, height, cellSize)
     {
+
         base_reset(self_id, ActorID(0));
 
         // 预分配内存，避免后续动态扩容
@@ -64,243 +67,200 @@ namespace aegis::core
 
     void SceneActor::OnHandleEnter(SceneEnterMsg *msg)
     {
-        // 1. [系统] 存入映射表 (用于发消息)
-        ActorID actor_id = msg->actor_id;
-        auto *actor = ActorRegistry::instance().get(actor_id);
-        if (!actor)
-            return; // 容错
+        assert(msg != nullptr && "SceneEnterMsg cannot be null");
 
-        auto *player = static_cast<PlayerActor *>(actor);
+        if (!is_ticking_)
+        {
+            is_ticking_ = true;
+            schedule_timer(50, [this]()
+                           { OnTick(); });
+            Log::instance().info("[SceneActor] Scene woken up. Tick scheduling started.");
+        }
+
+        ActorID actor_id = msg->actor_id;
+        auto *base_actor = ActorRegistry::instance().get(actor_id);
+        if (!base_actor)
+            return;
+
+        auto *player = static_cast<PlayerActor *>(base_actor);
         actors_[actor_id.raw] = player;
 
-        // 2. [算法] 加入 AOI (使用 ActorID 保证唯一性)
         uint32_t grid_index = aoi_.Add(actor_id.raw, msg->x, msg->y);
         player->set_aoi_grid_index(grid_index);
 
-        // 3. [业务] 广播视野
         std::vector<uint64_t> neighbor_ids;
         aoi_.GetViewEntityIds(grid_index, neighbor_ids);
-        Log::instance().debug("[Scene] Actor {} (UID: {}) entered. Neighbors: {}",
-                              actor_id.raw, msg->player_id, neighbor_ids.size());
 
         if (neighbor_ids.empty())
             return;
 
-        // A. 构造 [我看见了谁]
-        SCEnterViewNtf ntf_to_me;
+        // 1. 构建发给邻居的包："我来了"
+        auto shared_data_to_others = net::PacketBuilder::BuildEnterView({msg->player_id, msg->x, msg->y});
 
-        // B. 构造 [谁看见了我]
-        SCEnterViewNtf ntf_to_others;
-        auto *my_ent = ntf_to_others.add_entities();
-        my_ent->set_entity_id(msg->player_id); // [直接用消息里的 UID!]
-        my_ent->mutable_pos()->set_x(msg->x);
-        my_ent->mutable_pos()->set_y(msg->y);
-        std::string buf_to_others = ntf_to_others.SerializeAsString();
+        // 2. 收集邻居信息，准备发给"我"
+        std::vector<net::EntityViewInfo> neighbors_info;
+        neighbors_info.reserve(neighbor_ids.size());
 
         for (uint64_t neighbor_raw_id : neighbor_ids)
         {
             if (neighbor_raw_id == actor_id.raw)
                 continue;
 
-            // 查找邻居对象
             auto it = actors_.find(neighbor_raw_id);
             if (it != actors_.end())
             {
                 PlayerActor *neighbor = it->second;
+                neighbors_info.push_back({neighbor->get_player_id(), neighbor->GetX(), neighbor->GetY()});
 
-                // 填入发给我的包
-                auto *ent = ntf_to_me.add_entities();
-                ent->set_entity_id(neighbor->get_player_id()); // 邻居的 UID 还是得 Get 一下
-                ent->mutable_pos()->set_x(neighbor->GetX());
-                ent->mutable_pos()->set_y(neighbor->GetY());
-
-                // 发送 [我来了] 给邻居
-                // 假设你实现了 send_buffer，如果没有就用 send_packet
-                neighbor->send_buffer(ids::SC_ENTER_VIEW, buf_to_others);
+                // 通知邻居
+                auto *forward_msg = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_others);
+                dispatch_msg(neighbor, forward_msg);
             }
         }
 
-        if (ntf_to_me.entities_size() > 0)
+        // 3. 通知"我"周围有谁
+        if (!neighbors_info.empty())
         {
-            player->send_packet(ids::SC_ENTER_VIEW, ntf_to_me);
+            auto shared_data_to_me = net::PacketBuilder::BuildEnterView(neighbors_info);
+            auto *self_forward = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_me);
+            dispatch_msg(player, self_forward);
         }
     }
 
     void SceneActor::OnHandleLeave(SceneLeaveMsg *msg)
     {
-        // 1. [数据解包] 从新消息结构里拿数据
-        ActorID actor_id = msg->actor_id; // 用于查找 PlayerActor 对象
-        uint64_t uid = msg->player_id;    // 用于告诉客户端“谁走了”
+        assert(msg != nullptr && "SceneLeaveMsg cannot be null");
 
-        // 2. [查表] 确保玩家确实在场景里
-        uint64_t raw_id = actor_id.raw;
+        uint64_t raw_id = msg->actor_id.raw;
         auto it = actors_.find(raw_id);
         if (it == actors_.end())
             return;
 
-        // 获取玩家对象是为了拿坐标 (AOI 删除需要坐标)
         PlayerActor *player = it->second;
         uint32_t grid_index = player->get_aoi_grid_index();
 
-        // 3. [核心逻辑] 获取“目击者” (谁需要知道我走了？)
-        // 必须在 Remove 之前或者由 Remove 返回这些邻居
-        // 这里采用稳妥做法：先查周围的人，再删自己
         std::vector<uint64_t> neighbors;
         aoi_.GetViewEntityIds(grid_index, neighbors);
 
-        // 4. [算法] 从 AOI 移除
-        // 假设你的 Remove 只需要 ID 和坐标
         aoi_.RemoveByGridIndex(raw_id, grid_index);
 
-        // 5. [广播] 通知周围的邻居
         if (!neighbors.empty())
         {
-            SCLeaveViewNtf ntf;
-            ntf.add_entity_ids(uid); // 【重点】告诉客户端是 UID: 10001 走了
-            std::string buf = ntf.SerializeAsString();
+            // 委托 Builder 构建离开视野的广播包
+            auto shared_buf = net::PacketBuilder::BuildLeaveView(msg->player_id);
 
             for (uint64_t neighbor_raw_id : neighbors)
             {
-                // 排除自己 (因为自己马上要销毁/离开了，客户端通常自己处理自己的销毁)
                 if (neighbor_raw_id == raw_id)
                     continue;
 
-                // 发送给邻居
-                // 注意：这里需要 neighbor_raw_id 也是 ActorID，去 actors_ 表里查对象
                 if (auto neighbor_it = actors_.find(neighbor_raw_id); neighbor_it != actors_.end())
                 {
-                    // 使用 send_buffer 发送序列化好的数据
-                    neighbor_it->second->send_buffer(ids::SC_LEAVE_VIEW, buf);
+                    auto *forward_msg = new ForwardPacketMsg(ids::SC_LEAVE_VIEW, shared_buf);
+                    dispatch_msg(neighbor_it->second, forward_msg);
                 }
             }
         }
 
-        // 6. [清理] 从内存映射中移除
         actors_.erase(it);
-        Log::instance().debug("[Scene] Actor {} (UID: {}) left.", raw_id, uid);
     }
 
+    // ==========================================
+    // 2. 重写 OnHandleMove：只记状态，坚决不发包！
+    // ==========================================
     void SceneActor::OnHandleMove(SceneMoveMsg *msg)
     {
-        // 1. [数据准备] 区分系统ID和业务ID
-        uint64_t mover_actor_id = msg->actor_id.raw; // 用于查表、AOI
-        uint64_t mover_uid = msg->player_id;         // 用于发包给客户端
-
-        uint32_t old_grid_index = msg->aoi_grid_index;
-        float newX = msg->newX;
-        float newY = msg->newY;
-
-        // 2. [AOI 计算] 使用 ActorID 进行内部计算
-        // cachedEnterIds_ 和 cachedLeaveIds_ 里存的都是 ActorID
-        uint32_t new_grid_index = aoi_.Move(mover_actor_id, old_grid_index, newX, newY, cachedEnterIds_, cachedLeaveIds_);
-
-        if (new_grid_index == (uint32_t)-1)
-            return;
-
+        uint64_t mover_actor_id = msg->actor_id.raw;
         auto mover = GetPlayer(mover_actor_id);
         if (!mover)
             return;
 
-        // 更新一下 mover 自己的坐标缓存
-        mover->SetPos(newX, newY);
-        mover->set_aoi_grid_index(new_grid_index);
+        // 仅更新内存坐标，并打上脏标记
+        mover->SetPos(msg->newX, msg->newY, 0.0f, msg->direction);
 
-        Log::instance().debug("[Scene] Actor {} (UID: {}) moved to ({}, {}). Entered: {}, Left: {}",
-                              mover_actor_id, mover_uid, newX, newY, cachedEnterIds_.size(), cachedLeaveIds_.size());
+        // 扔进同步队列，等待 Tick 处理
+        sync_mgr_.AddDirtyPlayer(mover);
+    }
 
-        // =========================================================
-        // 3. 处理 [Enter View] (遇见了新朋友)
-        // =========================================================
-        if (!cachedEnterIds_.empty())
+    // ==========================================
+    // 3. 新增 OnTick 驱动函数 (在头文件中声明 void OnTick();)
+    // ==========================================
+    void SceneActor::OnTick()
+    {
+        // 调用同步管理器的 Tick，传入处理 Enter/Leave 和 发包的 Lambda 闭包
+        sync_mgr_.Tick(aoi_,
+                       // Callback 1: 处理视野跨格 (完美复用你原有的拆解逻辑)
+                       [this](PlayerActor *mover, const std::vector<uint64_t> &enterIds, const std::vector<uint64_t> &leaveIds)
+                       { this->ProcessAoiEnterLeave(mover, enterIds, leaveIds); },
+                       // Callback 2: 批量发送 SCMoveNtfBatch
+                       [this](uint64_t targetActorId, std::shared_ptr<std::string> sharedBuf)
+                       {
+                // IDs::SC_MOVE_NTF_BATCH 需要在你的 message_id 中定义
+                this->SendSharedBuffer(targetActorId, ids::SC_MOVE_NTF, sharedBuf); });
+
+        // 如果 schedule_timer 是一次性的，需要在这里重新注册下一次 Tick
+        schedule_timer(50, [this]()
+                       { OnTick(); });
+    }
+
+    // ==========================================
+    // 4. 新增辅助函数 (把原先 OnHandleMove 里处理 Enter/Leave 的代码抽出来)
+    // ==========================================
+    void SceneActor::ProcessAoiEnterLeave(PlayerActor *mover,
+                                          const std::vector<uint64_t> &enter_ids,
+                                          const std::vector<uint64_t> &leave_ids)
+    {
+        if (!mover)
+            return;
+
+        uint64_t mover_uid = mover->get_player_id();
+
+        // --- 处理跨网格新进入视野 ---
+        if (!enter_ids.empty())
         {
-            // A. 告诉 mover (我自己)："你看见了这些新邻居"
-            SCEnterViewNtf ntfToSelf;
+            auto shared_data_to_others = net::PacketBuilder::BuildEnterView({mover_uid, mover->GetX(), mover->GetY()});
 
-            // B. 告诉这些新邻居 (别人)："我(UID)进入了你们的视野"
-            SCEnterViewNtf ntfToNeighbors;
-            auto *me = ntfToNeighbors.add_entities();
-            me->set_entity_id(mover_uid); // [重点] 发 UID
-            me->mutable_pos()->set_x(newX);
-            me->mutable_pos()->set_y(newY);
-            std::string bufToNeighbors = ntfToNeighbors.SerializeAsString();
+            std::vector<net::EntityViewInfo> new_neighbors_info;
+            new_neighbors_info.reserve(enter_ids.size());
 
-            for (uint64_t neighborActorId : cachedEnterIds_)
+            for (uint64_t neighbor_id : enter_ids)
             {
-                if (auto neighbor = GetPlayer(neighborActorId))
+                if (auto *neighbor = GetPlayer(neighbor_id))
                 {
-                    // 填入发给我的包 (把邻居的 ActorID 转为 UID)
-                    auto *ent = ntfToSelf.add_entities();
-                    ent->set_entity_id(neighbor->get_player_id()); // [重点] 邻居 UID
-                    ent->mutable_pos()->set_x(neighbor->GetX());
-                    ent->mutable_pos()->set_y(neighbor->GetY());
-
-                    // 发给邻居
-                    SendBuffer(neighborActorId, ids::SC_ENTER_VIEW, bufToNeighbors);
+                    new_neighbors_info.push_back({neighbor->get_player_id(), neighbor->GetX(), neighbor->GetY()});
+                    SendSharedBuffer(neighbor_id, ids::SC_ENTER_VIEW, shared_data_to_others);
                 }
             }
 
-            if (ntfToSelf.entities_size() > 0)
+            if (!new_neighbors_info.empty())
             {
-                SendPacket(mover_actor_id, ids::SC_ENTER_VIEW, ntfToSelf);
+                auto shared_data_to_me = net::PacketBuilder::BuildEnterView(new_neighbors_info);
+                SendSharedBuffer(mover->id().raw, ids::SC_ENTER_VIEW, shared_data_to_me);
             }
         }
 
-        // =========================================================
-        // 4. 处理 [Leave View] (朋友离开了)
-        // =========================================================
-        if (!cachedLeaveIds_.empty())
+        // --- 处理跨网格离开视野 ---
+        if (!leave_ids.empty())
         {
-            // A. 告诉 mover："这些邻居(UID)离开了你的视野"
-            SCLeaveViewNtf ntfToSelf;
+            auto shared_data_to_others = net::PacketBuilder::BuildLeaveView(mover_uid);
 
-            // B. 告诉这些旧邻居："我(UID)离开了你们的视野"
-            SCLeaveViewNtf ntfToNeighbors;
-            ntfToNeighbors.add_entity_ids(mover_uid); // [重点] 发 UID
-            std::string bufToNeighbors = ntfToNeighbors.SerializeAsString();
+            std::vector<uint64_t> leave_neighbors_uids;
+            leave_neighbors_uids.reserve(leave_ids.size());
 
-            for (uint64_t neighborActorId : cachedLeaveIds_)
+            for (uint64_t neighbor_id : leave_ids)
             {
-                // 注意：虽然离开了视野，但 neighbor 只要还在场景里，GetPlayer 就能取到
-                if (auto neighbor = GetPlayer(neighborActorId))
+                if (auto *neighbor = GetPlayer(neighbor_id))
                 {
-                    // 填入发给我的包 (把邻居 ActorID 转为 UID)
-                    ntfToSelf.add_entity_ids(neighbor->get_player_id()); // [重点] 邻居 UID
-
-                    // 发给邻居
-                    SendBuffer(neighborActorId, ids::SC_LEAVE_VIEW, bufToNeighbors);
+                    leave_neighbors_uids.push_back(neighbor->get_player_id());
+                    SendSharedBuffer(neighbor_id, ids::SC_LEAVE_VIEW, shared_data_to_others);
                 }
             }
 
-            if (ntfToSelf.entity_ids_size() > 0)
+            if (!leave_neighbors_uids.empty())
             {
-                SendPacket(mover_actor_id, ids::SC_LEAVE_VIEW, ntfToSelf);
+                auto shared_data_to_me = net::PacketBuilder::BuildLeaveView(leave_neighbors_uids);
+                SendSharedBuffer(mover->id().raw, ids::SC_LEAVE_VIEW, shared_data_to_me);
             }
-        }
-
-        // =========================================================
-        // 5. 处理 [Move] 广播 (视野内移动)
-        // =========================================================
-        std::vector<uint64_t> neighbors;
-        neighbors.reserve(50);
-        // 获取当前视野内所有的 ActorID
-        aoi_.GetViewEntityIds(newX, newY, neighbors);
-
-        SCMoveNtf moveNtf;
-        moveNtf.set_entity_id(mover_uid); // [重点] 发 UID
-        auto *pos = moveNtf.mutable_pos();
-        pos->set_x(newX);
-        pos->set_y(newY);
-
-        std::string moveBuffer = moveNtf.SerializeAsString();
-
-        for (uint64_t neighborActorId : neighbors)
-        {
-            if (neighborActorId == mover_actor_id)
-                continue; // 不发给自己(通常客户端自己预测)
-
-            // 简单发送 (此处包含了刚才 Enter/Leave 的人，会有冗余包，
-            // 但为了代码简单且健壮，先这样发，客户端能处理冗余 Move)
-            SendBuffer(neighborActorId, ids::SC_MOVE_NTF, moveBuffer);
         }
     }
 
@@ -315,16 +275,18 @@ namespace aegis::core
     {
         if (auto actor = GetPlayer(targetId))
         {
-            // 这是线程安全的，因为 send_packet 只是把数据 Push 到 Connection 的 Outbox
-            actor->send_packet(msgId, proto);
+            auto *forward = new ForwardPacketMsg(msgId, std::make_shared<std::string>(proto.SerializeAsString()));
+            dispatch_msg(actor, forward);
         }
     }
 
-    void SceneActor::SendBuffer(uint64_t targetId, uint32_t msgId, const std::string &buffer)
+    void SceneActor::SendSharedBuffer(uint64_t targetId, uint32_t msgId, std::shared_ptr<std::string> sharedBuf)
     {
         if (auto actor = GetPlayer(targetId))
         {
-            actor->send_buffer(msgId, buffer);
+            // 多个 ForwardPacketMsg 共享同一个 buffer 内存
+            auto *forward = new ForwardPacketMsg(msgId, sharedBuf);
+            dispatch_msg(actor, forward);
         }
     }
 

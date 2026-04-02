@@ -1,0 +1,705 @@
+// --- SOURCE_FILE: ./include/aegis/net/socket.h ---
+#pragma once
+
+#include <liburing.h> // [DEPENDENCY: Linux io_uring]
+#include <coroutine>  // [DEPENDENCY: C++20 coroutines]
+#include <system_error>
+#include <span>
+#include <vector>
+
+#include "aegis/core/awaiter.h" // [DEPENDENCY: aegis::core::BaseAwaiter]
+#include "aegis/common/unique_fd.h"
+
+namespace aegis::net
+{
+    using UniqueFd = aegis::common::UniqueFd;
+
+    // [INTENT: io_uring async IO facade via C++20 coroutines]
+    class Socket
+    {
+    public:
+        // [STATE_MUTATION: Adopt RAII fd handle]
+        explicit Socket(int fd = -1) : fd_(fd) {}
+        Socket(Socket &&other) noexcept = default;
+        Socket &operator=(Socket &&other) noexcept = default;
+
+        int native_handle() const { return fd_.get(); }
+        void close() { fd_.reset(); }
+        bool is_valid() const { return fd_.get() >= 0; }
+
+        // [STATE_MUTATION: Acquire SQE; force submission ring flush on overflow]
+        static struct io_uring_sqe *get_sqe_safe(struct io_uring *ring);
+
+        // [INTENT: io_uring opcode awaitables; map CQE results to coroutine resumption]
+
+        // [STATE: Read scalar buffer]
+        struct AsyncRead : public core::BaseAwaiter
+        {
+            int fd_;
+            void *buf_;
+            size_t len_;
+            int flags_;
+
+            AsyncRead(int fd, void *buf, size_t len, int flags = 0);
+            bool await_ready() const noexcept { return false; }
+            void await_suspend(std::coroutine_handle<> h);
+            int await_resume();
+        };
+
+        // [STATE: Read scatter-gather vectors]
+        struct AsyncReadV : public core::BaseAwaiter
+        {
+            int fd_;
+            const struct iovec *iovs_;
+            size_t count_;
+
+            AsyncReadV(int fd, std::span<struct iovec> iovs);
+            bool await_ready() const noexcept { return false; }
+            void await_suspend(std::coroutine_handle<> h);
+            int await_resume();
+        };
+
+        // [STATE: Write scalar buffer]
+        struct AsyncWrite : public core::BaseAwaiter
+        {
+            int fd_;
+            const void *buf_;
+            size_t len_;
+
+            AsyncWrite(int fd, const void *buf, size_t len);
+            bool await_ready() const noexcept { return false; }
+            void await_suspend(std::coroutine_handle<> h);
+            int await_resume();
+        };
+
+        // [STATE: Write scatter-gather vectors]
+        struct AsyncWriteV : public core::BaseAwaiter
+        {
+            int fd_;
+            const struct iovec *iovs_;
+            size_t count_;
+
+            AsyncWriteV(int fd, std::span<struct iovec> iov_span);
+            bool await_ready() const noexcept { return false; }
+            void await_suspend(std::coroutine_handle<> h);
+            int await_resume();
+        };
+
+        // [STATE: Async peer acceptance]
+        struct AsyncAccept : public core::BaseAwaiter
+        {
+            int server_fd_;
+            struct sockaddr *client_addr_;
+            socklen_t *client_len_;
+
+            AsyncAccept(int fd, struct sockaddr *addr, socklen_t *len);
+            bool await_ready() const noexcept { return false; }
+            void await_suspend(std::coroutine_handle<> h);
+            int await_resume();
+        };
+
+        // [INTENT: Zero-cost awaiter factories for co_await suspension points]
+
+        [[nodiscard]] AsyncRead recv(void *buf, size_t len, int flags = 0)
+        {
+            return AsyncRead(fd_.get(), buf, len, flags);
+        }
+
+        [[nodiscard]] AsyncReadV recv(std::span<struct iovec> iovs)
+        {
+            return AsyncReadV(fd_.get(), iovs);
+        }
+
+        [[nodiscard]] AsyncWrite send(const void *buf, size_t len)
+        {
+            return AsyncWrite(fd_.get(), buf, len);
+        }
+
+        [[nodiscard]] AsyncWriteV send(std::span<struct iovec> iovs)
+        {
+            return AsyncWriteV(fd_.get(), iovs);
+        }
+
+        [[nodiscard]] AsyncAccept accept(struct sockaddr *addr, socklen_t *len)
+        {
+            return AsyncAccept(fd_.get(), addr, len);
+        }
+
+    private:
+        // [STATE: Managed POSIX handle]
+        UniqueFd fd_;
+    };
+}-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/connection.h ---
+#pragma once
+
+#include <vector>
+#include <deque>
+#include <memory>
+#include "aegis/core/task.h"  // [DEPENDENCY: aegis::core::Task, core::DetachedTask]
+#include "aegis/net/socket.h" // [DEPENDENCY: aegis::net::Socket]
+#ifdef BLOCK_SIZE
+#undef BLOCK_SIZE
+#endif
+#include "aegis/net/packet.h"
+#include "aegis/net/packetPool.h" // [DEPENDENCY: aegis::net::PooledPacket]
+#include "aegis/net/outbox_batcher.h"
+
+namespace aegis::net
+{
+    // [INTENT: Single-threaded async TCP peer state machine]
+    // [STATE: Shared ownership lifecycle for safe coroutine capture]
+    class Connection : public std::enable_shared_from_this<Connection>
+    {
+    public:
+        // [STATE: IO memory tuning parameters]
+        static constexpr size_t K_INITIAL_RX_SIZE = 4096;
+        static constexpr size_t K_SHRINK_THRESHOLD = 1 * 1024 * 1024;
+        static constexpr size_t K_MAX_PACKET_SIZE = 10 * 1024 * 1024;
+        static constexpr size_t K_HEADER_SIZE = 4;
+
+        // [STATE_MUTATION: Adopt connected peer socket]
+        explicit Connection(Socket &&s);
+        ~Connection();
+
+        // [CONSTRAINT: Non-copyable to maintain strict resource ownership]
+        Connection(const Connection &) = delete;
+        Connection &operator=(const Connection &) = delete;
+
+        [[nodiscard]] const Socket &socket() const { return socket_; }
+        [[nodiscard]] int fd() const { return socket_.native_handle(); }
+
+        // [INTENT: Coroutine suspension point yielding assembled protocol framing]
+        core::Task<PooledPacket> read_packet();
+
+        // [STATE_MUTATION: Enqueue payload to egress buffer]
+        void send(PooledPacket packet);
+
+        // [STATE_MUTATION: Manually dispatch egress queue to OS]
+        void flush();
+
+    private:
+        // [STATE: Lock-free, single-threaded egress payload queue]
+        struct Outbox
+        {
+            std::vector<PooledPacket> buffer;
+        };
+
+        // [INTENT: Async egress IO multiplexing loop; detached execution]
+        core::DetachedTask send_batch_coro(std::shared_ptr<Connection> self);
+
+        // [STATE_MUTATION: Dynamic ingress buffer resizing]
+        void ensure_rx_capacity(size_t required_size);
+        void try_shrink_rx_buffer();
+
+        // [STATE: Active egress IO loop guard; assumes single-thread context]
+        bool is_flushing_{false};
+
+        // [STATE: Raw IO handle]
+        Socket socket_;
+
+        // [STATE: Ingress assembly byte stream]
+        std::vector<char> rx_buffer_;
+        size_t rx_len_ = 0;
+
+        // [STATE: Egress subsystem]
+        Outbox outbox_;
+        OutboxBatcher batcher_;
+    };
+
+} // namespace aegis::net-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/packetPool.h ---
+#pragma once
+#include "aegis/common/objectPool.h" // [DEPENDENCY: aegis::core::ObjectPool]
+#include "aegis/net/packet.h"        // [DEPENDENCY: aegis::net::Packet]
+
+namespace aegis::net
+{
+    // [CONSTRAINT: Enforce minimum Small Buffer Optimization (SBO) capacity]
+    static_assert(sizeof(Packet) >= 1024, "Packet SBO size is too small!");
+
+    // [CONSTRAINT: Enforce strict ABI memory layout and padding alignment]
+    static_assert(sizeof(Packet) == 1056, "ABI Alert: Packet size is not 1056. Check padding/alignas!");
+
+    // [STATE: Singleton pool definition; L2 capacity=100k, TLS L1 batch=128]
+    using PacketPool = aegis::core::ObjectPool<Packet, 100000, 128>;
+
+    // [STATE: RAII auto-release smart pointer alias]
+    using PooledPacket = PacketPool::Ptr;
+}-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/outbox_batcher.h ---
+#pragma once
+
+#include <vector>
+#include <deque>
+#include <sys/uio.h>   // [DEPENDENCY: POSIX sys/uio (iovec)]
+#include <arpa/inet.h> // [DEPENDENCY: POSIX arpa/inet (htonl)]
+#include <limits.h>
+#include "aegis/net/packet.h"
+#include "aegis/net/packetPool.h"
+
+namespace aegis::net
+{
+    // [INTENT: Zero-copy scatter-gather (writev) view builder; manages transient header lifecycle]
+    class OutboxBatcher
+    {
+    public:
+        // [CONSTRAINT: Bound syscall latency and respect OS IOV_MAX]
+        static constexpr size_t BATCH_LIMIT = 64;
+
+        // [PERF: Preallocate vector capacity to eliminate runtime reallocation jitter]
+        OutboxBatcher()
+        {
+            iovecs_.reserve(BATCH_LIMIT * 2);
+            header_cache_.reserve(BATCH_LIMIT);
+        }
+
+        // [STATE_MUTATION: Hydrate iovec array from packet queue]
+        size_t prepare_batch(const std::vector<PooledPacket> &queue)
+        {
+            iovecs_.clear();
+            header_cache_.clear();
+            packet_end_indices_.clear();
+
+            consumed_iov_index_ = 0;
+            completed_packets_cursor_ = 0;
+            size_t count = 0;
+
+            for (const auto &pkt : queue)
+            {
+                // [CONSTRAINT: Hard limit on single-syscall iovec count]
+                if (count >= BATCH_LIMIT || iovecs_.size() + 2 > 1024)
+                {
+                    break;
+                }
+
+                uint32_t body_len = static_cast<uint32_t>(pkt->size());
+                uint32_t net_len = htonl(body_len);
+
+                // [STATE: Materialize Big-Endian header into heap to guarantee memory lifecycle across syscall]
+                header_cache_.push_back(net_len);
+
+                struct iovec iov_h;
+                iov_h.iov_base = &header_cache_.back();
+                iov_h.iov_len = sizeof(uint32_t);
+                iovecs_.push_back(iov_h);
+
+                if (body_len > 0)
+                {
+                    struct iovec iov_b;
+                    // [INTENT: Zero-copy payload mapping]
+                    iov_b.iov_base = const_cast<char *>(pkt->data());
+                    iov_b.iov_len = body_len;
+                    iovecs_.push_back(iov_b);
+                }
+
+                packet_end_indices_.push_back(iovecs_.size());
+                count++;
+            }
+
+            return count;
+        }
+
+        // [STATE_MUTATION: Fast-forward internal cursors based on actual bytes written]
+        size_t advance(size_t written_bytes)
+        {
+            size_t packets_completed = 0;
+
+            while (written_bytes > 0 && consumed_iov_index_ < iovecs_.size())
+            {
+                struct iovec &iov = iovecs_[consumed_iov_index_];
+
+                if (written_bytes >= iov.iov_len)
+                {
+                    // [INTENT: Segment fully consumed]
+                    written_bytes -= iov.iov_len;
+                    consumed_iov_index_++;
+                }
+                else
+                {
+                    // [INTENT: Partial write resolution; mutate pending iovec base/len]
+                    iov.iov_base = static_cast<char *>(iov.iov_base) + written_bytes;
+                    iov.iov_len -= written_bytes;
+                    written_bytes = 0;
+                }
+
+                // [INTENT: Map consumed iovecs back to completed logical packets]
+                while (completed_packets_cursor_ < packet_end_indices_.size() &&
+                       consumed_iov_index_ >= packet_end_indices_[completed_packets_cursor_])
+                {
+                    packets_completed++;
+                    completed_packets_cursor_++;
+                }
+            }
+
+            return packets_completed;
+        }
+
+        const struct iovec *iov_data() const { return iovecs_.data(); }
+        int iov_count() const { return static_cast<int>(iovecs_.size()); }
+
+        // [INTENT: Aggregate pending byte count]
+        size_t total_bytes() const
+        {
+            size_t bytes = 0;
+            for (const auto &iov : iovecs_)
+            {
+                bytes += iov.iov_len;
+            }
+            return bytes;
+        }
+
+        // [INTENT: Expose unconsumed scatter-gather span]
+        std::span<struct iovec> remaining_iovecs()
+        {
+            if (consumed_iov_index_ >= iovecs_.size())
+                return {};
+            return {iovecs_.data() + consumed_iov_index_, iovecs_.size() - consumed_iov_index_};
+        }
+
+        bool is_empty() const { return consumed_iov_index_ >= iovecs_.size(); }
+
+    private:
+        // [STATE: Syscall payload structure]
+        std::vector<struct iovec> iovecs_;
+        // [STATE: Backing store for protocol headers lacking existing memory addresses]
+        std::vector<uint32_t> header_cache_;
+        // [STATE: Monotonically increasing iovec boundaries per packet]
+        std::vector<size_t> packet_end_indices_;
+        // [STATE: Read heads for advancing partial writes]
+        size_t consumed_iov_index_ = 0;
+        size_t completed_packets_cursor_ = 0;
+    };
+}-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/acceptor.h ---
+#pragma once
+
+#include "aegis/core/task.h"  // [DEPENDENCY: aegis::core::Task]
+#include "aegis/net/socket.h" // [DEPENDENCY: aegis::net::Socket]
+#include <string>
+#include <netinet/in.h>
+
+namespace aegis::net
+{
+    // [INTENT: Async TCP listener facade; RAII lifecycle management]
+    class Acceptor
+    {
+    public:
+        // [STATE_MUTATION: Immediate bind and listen; throws on failure]
+        explicit Acceptor(int port, const std::string &ip = "0.0.0.0");
+        ~Acceptor() = default;
+
+        // [CONSTRAINT: Move-only semantics]
+        Acceptor(const Acceptor &) = delete;
+        Acceptor &operator=(const Acceptor &) = delete;
+        Acceptor(Acceptor &&) = default;
+        Acceptor &operator=(Acceptor &&) = default;
+
+        // [INTENT: Coroutine suspension point yielding connected peer socket]
+        core::Task<Socket> accept();
+
+        // [STATE: Expose underlying POSIX listener fd]
+        [[nodiscard]] int native_handle() const { return listener_.native_handle(); }
+        [[nodiscard]] int port() const { return port_; }
+
+    private:
+        // [STATE_MUTATION: Execute socket/bind/listen syscall sequence]
+        void init_listener(const std::string &ip);
+
+        // [STATE_MUTATION: Apply performance tuning (e.g., TCP_NODELAY, O_NONBLOCK) to accepted fd]
+        void optimize_client_socket(int fd);
+
+        // [STATE: RAII listener handle]
+        Socket listener_;
+        int port_;
+        // [STATE: Bound IPv4 topology]
+        sockaddr_in addr_{};
+    };
+
+} // namespace aegis::net-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/packet_builder.h ---
+#pragma once
+
+#include <memory>
+#include <string>
+#include <vector>
+#include <span> // [DEPENDENCY: C++20 std::span]
+
+namespace aegis::net
+{
+
+    // [STATE: POD; spatial awareness payload for Area of Interest (AoI)]
+    struct EntityViewInfo
+    {
+        uint64_t uid;
+        float x;
+        float y;
+    };
+
+    // [INTENT: Stateless factory for Protobuf serialization; yields immutable shared network buffers for broadcast]
+    class PacketBuilder
+    {
+    public:
+        PacketBuilder() = delete;
+
+        // [INTENT: Serialize single-entity AoI entrance]
+        static std::shared_ptr<std::string> BuildEnterView(const EntityViewInfo &entity);
+
+        // [INTENT: Serialize batch AoI entrance via contiguous memory view]
+        static std::shared_ptr<std::string> BuildEnterView(std::span<const EntityViewInfo> entities);
+
+        // [INTENT: Serialize single-entity AoI exit]
+        static std::shared_ptr<std::string> BuildLeaveView(uint64_t uid);
+
+        // [INTENT: Serialize batch AoI exit via contiguous memory view]
+        static std::shared_ptr<std::string> BuildLeaveView(std::span<const uint64_t> uids);
+    };
+
+} // namespace aegis::network-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/packet.h ---
+#pragma once
+
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
+#include <bit> // [DEPENDENCY: C++20 std::endian]
+#include <algorithm>
+#include <array>
+#include <cassert>
+
+#include "aegis/common/aegisLog.h" // [DEPENDENCY: aegis::Log]
+
+namespace google::protobuf
+{
+    class Message;
+}
+
+// [CONSTRAINT: T requires google::protobuf::Message base]
+template <typename T>
+concept ProtobufMessage = std::is_base_of_v<google::protobuf::Message, T>;
+
+namespace aegis::net
+{
+    constexpr size_t kPacketMsgHeader = 4;
+
+    // [STATE: Small Buffer Optimization (SBO) threshold]
+    constexpr size_t kSmallBufferSize = 1024;
+
+    static constexpr size_t kMaxRetainSize = 64 * 1024;
+
+    // [INTENT: SBO-backed network payload container; minimizes heap allocations]
+    class Packet
+    {
+    public:
+        Packet() = default;
+
+        // [STATE_MUTATION: SBO-aware deep copy]
+        Packet(const Packet &other);
+        Packet &operator=(const Packet &other);
+
+        // [STATE_MUTATION: SBO-aware ownership transfer]
+        Packet(Packet &&other) noexcept;
+        Packet &operator=(Packet &&other) noexcept;
+
+        ~Packet();
+
+        // [INTENT: Read big-endian header]
+        [[nodiscard]] uint32_t msg_id() const;
+
+        [[nodiscard]] const char *data() const;
+        [[nodiscard]] size_t size() const;
+
+        // [STATE_MUTATION: Resolve stack vs heap allocation strategy]
+        void alloc(size_t req_size);
+
+        char *mutable_data();
+
+        // [INTENT: Extract body to Protobuf object; bypass header]
+        template <ProtobufMessage T>
+        bool parse(T &msg) const
+        {
+            if (size_ <= kPacketMsgHeader)
+                return false;
+
+            const void *body_ptr = data_ + kPacketMsgHeader;
+            int body_len = static_cast<int>(size_ - kPacketMsgHeader);
+
+            if (body_len == 0)
+                return true;
+
+            return msg.ParseFromArray(body_ptr, body_len);
+        }
+
+        // [STATE_MUTATION: Serialize header + Protobuf body to active buffer]
+        template <ProtobufMessage T>
+        void pack_into(uint32_t msg_id, const T &msg)
+        {
+            size_t body_size = msg.ByteSizeLong();
+            size_t total_size = kPacketMsgHeader + body_size;
+
+            alloc(total_size);
+
+            // [INTENT: Enforce network byte order (Big Endian)]
+            uint32_t net_id = (std::endian::native == std::endian::big)
+                                  ? msg_id
+                                  : __builtin_bswap32(msg_id);
+            std::memcpy(data_, &net_id, kPacketMsgHeader);
+
+            if (body_size > 0)
+            {
+                msg.SerializeToArray(data_ + kPacketMsgHeader, static_cast<int>(body_size));
+            }
+        }
+
+        // [STATE_MUTATION: Reclaim memory; reset to SBO state]
+        void reset();
+
+    private:
+        // [STATE: SBO hot memory tier]
+        alignas(std::max_align_t) char stack_buf_[kSmallBufferSize];
+
+        // [STATE: SBO cold memory tier]
+        char *heap_buf_ = nullptr;
+
+        // [STATE: Active tier pointer alias]
+        char *data_ = stack_buf_;
+
+        size_t size_ = 0;
+        size_t capacity_ = kSmallBufferSize;
+
+        // [STATE_MUTATION: Heap allocation/expansion]
+        void grow(size_t new_cap);
+        void free_heap();
+        void copy_from(const Packet &other);
+        void move_from(Packet &&other);
+    };
+
+} // namespace aegis::net-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/net/dispatcher.h ---
+#pragma once
+
+#include <functional>
+#include <unordered_map>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <concepts>
+
+#include "aegis/core/task.h"       // [DEPENDENCY: aegis::core::Task]
+#include "aegis/core/actor.h"      // [DEPENDENCY: aegis::core::Actor]
+#include "aegis/net/packet.h"      // [DEPENDENCY: aegis::net::Packet]
+#include "aegis/common/aegisLog.h" // [DEPENDENCY: aegis::Log]
+
+namespace aegis::net
+{
+    // [CONSTRAINT: Structural conformance to Protobuf ParseFromArray]
+    template <typename T>
+    concept ProtobufMessage = requires(T t, const void *data, int len) {
+        { t.ParseFromArray(data, len) } -> std::convertible_to<bool>;
+    };
+
+    // [INTENT: Singleton async message router for Net/Protobuf and Local/RPC payloads]
+    class Dispatcher
+    {
+    public:
+        // [STATE: Type-erased coroutine wrapper for raw byte streams]
+        using NetHandler = std::function<core::Task<void>(core::Actor *, const char *, size_t)>;
+
+        // [STATE: Type-erased coroutine wrapper for in-memory object pointers]
+        using RpcHandler = std::function<core::Task<void>(core::Actor *, const void *)>;
+
+        static Dispatcher &instance()
+        {
+            static Dispatcher inst;
+            return inst;
+        }
+
+        // [STATE_MUTATION: Inject deserializing closure into Net routing table]
+        template <typename ProtoMsg, typename Func>
+            requires ProtobufMessage<ProtoMsg>
+        void register_handler(uint32_t msg_id, Func &&func)
+        {
+            NetHandler wrapper = [func = std::forward<Func>(func), msg_id](core::Actor *actor, const char *data, size_t len) -> core::Task<void>
+            {
+                ProtoMsg msg;
+                // [INTENT: Hydrate Protobuf object before dispatch]
+                if (!msg.ParseFromArray(data, static_cast<int>(len)))
+                {
+                    aegis::Log::instance().warn("Dispatcher: Parse failed. MsgID: {}", msg_id);
+                    co_return;
+                }
+                co_await func(actor, msg);
+            };
+
+            net_handlers_[msg_id] = std::move(wrapper);
+        }
+
+        // [STATE_MUTATION: Inject zero-copy static_cast closure into RPC routing table]
+        template <typename RpcMsgType, typename Func>
+        void register_rpc(uint32_t msg_id, Func &&func)
+        {
+            RpcHandler wrapper = [func = std::forward<Func>(func)](core::Actor *actor, const void *msg_ptr) -> core::Task<void>
+            {
+                // [INTENT: Safe downcast reliant on msg_id correlation]
+                const auto *msg = static_cast<const RpcMsgType *>(msg_ptr);
+                co_await func(actor, *msg);
+            };
+
+            rpc_handlers_[msg_id] = std::move(wrapper);
+        }
+
+        // [INTENT: Demultiplex raw network packet by msg_id]
+        core::Task<void> dispatch(core::Actor *actor, const Packet &pkt)
+        {
+            uint32_t msg_id = pkt.msg_id();
+            auto it = net_handlers_.find(msg_id);
+            if (it != net_handlers_.end())
+            {
+                co_await it->second(actor, static_cast<const char *>(pkt.data() + kPacketMsgHeader), pkt.size() - kPacketMsgHeader);
+            }
+            else
+            {
+                aegis::Log::instance().warn("Dispatcher: No NetHandler for MsgID: {}", msg_id);
+            }
+        }
+
+        // [INTENT: Demultiplex type-erased RPC pointer by msg_id]
+        core::Task<void> dispatch_rpc(core::Actor *actor, uint32_t msg_id, const void *msg_ptr)
+        {
+            auto it = rpc_handlers_.find(msg_id);
+            if (it != rpc_handlers_.end())
+            {
+                co_await it->second(actor, msg_ptr);
+            }
+            else
+            {
+                aegis::Log::instance().error("Dispatcher: No RpcHandler for MsgID: {}", msg_id);
+            }
+        }
+
+    private:
+        Dispatcher() = default;
+
+        // [STATE: O(1) routing tables]
+        std::unordered_map<uint32_t, NetHandler> net_handlers_;
+        std::unordered_map<uint32_t, RpcHandler> rpc_handlers_;
+    };
+
+} // namespace aegis::net-e 
+
+

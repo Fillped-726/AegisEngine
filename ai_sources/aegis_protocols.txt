@@ -1,0 +1,109 @@
+// --- SOURCE_FILE: ./shared/proto/common.proto ---
+syntax = "proto3";
+package aegis.common; // 修改包名，更清晰
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/common"; 
+
+// 基础 3D 向量 (复用性设计)
+message PBVector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+// 完整的玩家快照信息
+message PBPlayerInfo {
+  uint64 entity_id = 1;
+  PBVector3 pos = 2;
+  float direction = 3;
+  string name = 4;
+  int32 skin_id = 5;
+  int32 hp = 6;
+}-e 
+
+
+// --- SOURCE_FILE: ./shared/proto/cs_battle.proto ---
+syntax = "proto3";
+package aegis.cs.battle;
+
+import "common.proto"; // 引用 common
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/cs_battle";
+
+// [CS] 请求移动
+message CSMoveReq {
+  aegis.common.PBVector3 target_pos = 1;
+  float direction = 2;
+  int64 timestamp = 3;
+}
+
+// [SC] 移动通知
+
+message SCMoveNtfBatch {
+  message MoveInfo {
+    uint64 entity_id = 1;
+    aegis.common.PBVector3 pos = 2;
+    float direction = 3;
+  }
+  repeated MoveInfo moves = 1; // 一次下发视野内所有移动的玩家
+}
+
+// [SC] 进入视野
+message SCEnterViewNtf {
+  repeated aegis.common.PBPlayerInfo entities = 1;
+}
+
+// [SC] 离开视野
+message SCLeaveViewNtf {
+  repeated uint64 entity_ids = 1;
+}-e 
+
+
+// --- SOURCE_FILE: ./shared/proto/ids.proto ---
+syntax = "proto3";
+package aegis.ids;
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/ids";
+
+enum MsgID {
+    UNKNOWN = 0;
+    
+    // 1000-1999: Lobby 
+    CS_LOGIN_REQ = 1001;
+    SC_LOGIN_RES = 1002;
+    
+    // 2000-2999: Battle 
+    CS_PING      = 2001; 
+    SC_PONG      = 2002;
+    CS_MOVE_REQ  = 2003;
+    SC_MOVE_NTF  = 2004;
+    SC_ENTER_VIEW = 2005;
+    SC_LEAVE_VIEW = 2006;
+
+    SS_CREATE_ROOM_REQ    = 3001; // CreateRoomMsg
+    SS_TERMINATE_ROOM_REQ = 3002; // TerminateRoomMsg
+}-e 
+
+
+// --- SOURCE_FILE: ./shared/proto/cs_lobby.proto ---
+syntax = "proto3";
+package aegis.cs.lobby;
+
+import "common.proto";
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/cs_lobby";
+
+// 登录请求
+message LoginReq {
+    int32 uid = 1;
+    string token = 2;
+}
+
+message LoginRes {
+    int32 ret_code = 1; 
+    string msg = 2;
+    uint64 entity_id = 3;       
+    aegis.common.PBVector3 pos = 4; 
+}-e 
+
+

@@ -125,41 +125,26 @@ namespace aegis::net
         if (!packet)
             return;
 
-        {
-            std::lock_guard<aegis::common::SpinLock> lock(outbox_.lock);
-            outbox_.buffer.push_back(std::move(packet));
-        }
+        outbox_.buffer.push_back(std::move(packet));
 
-        // 【核心变化】自注册 + 唤醒
-        // 检查我是否已经在 Env 的脏名单里了？
         bool expected = false;
-        if (in_pending_queue_.compare_exchange_strong(expected, true))
+        if (!is_flushing_)
         {
-            // 1. 把自己加入全局脏名单
-            // (假设 Env 加了 pending_conns_ 成员)
-            core::Env::instance().add_pending_connection(weak_from_this());
-
-            // 2. 按门铃唤醒 Env (如果它在睡)
-            core::Env::instance().wake_up();
+            flush();
         }
     }
 
     void Connection::flush()
     {
-        // 1. 重置标志
-        in_pending_queue_.store(false, std::memory_order_relaxed);
 
-        bool expected = false;
-        if (!is_flushing_.compare_exchange_strong(expected, true))
+        if (is_flushing_)
         {
-            return; // 已经有人在干活了，撤退
+            return; // 已经有协程在后台干活了，撤退
         }
 
-        // 4. 【核心】发射协程！
-        // 这里的 batch 会被 move 进协程帧里，自动保活！
-        send_batch_coro(shared_from_this());
+        is_flushing_ = true;
 
-        // flush 函数结束，协程在后台挂起，等待 io_uring 完成
+        send_batch_coro(shared_from_this());
     }
 
     core::DetachedTask Connection::send_batch_coro(std::shared_ptr<Connection> self)
@@ -168,19 +153,19 @@ namespace aegis::net
 
         while (true)
         {
+            // 【极速无锁化】干掉所有的 lock_guard
+            if (self->outbox_.buffer.empty())
             {
-                std::lock_guard<aegis::common::SpinLock> lock(self->outbox_.lock);
-                if (self->outbox_.buffer.empty())
-                {
-                    // 没有数据了，释放 flush 锁，结束协程
-                    self->is_flushing_.store(false, std::memory_order_release);
-
-                    co_return;
-                }
-                batch.swap(self->outbox_.buffer);
+                // 没有数据了，修改普通 bool 标志，结束协程
+                self->is_flushing_ = false;
+                co_return;
             }
+
+            // 直接 swap，零锁开销
+            batch.swap(self->outbox_.buffer);
+
             // 1. 准备 iovecs
-            size_t count = batcher_.prepare_batch(batch);
+            size_t count = self->batcher_.prepare_batch(batch);
 
             while (!self->batcher_.is_empty())
             {
@@ -188,7 +173,8 @@ namespace aegis::net
                 int res = -1;
                 try
                 {
-                    // co_await returns actual bytes sent
+                    // 【暗流涌动】：这里的 socket_.send 底层现在会通过 TLS 获取当前 Worker 的 io_uring
+                    // 然后挂起当前协程，将控制权交还回 Worker 的 Event Loop
                     res = co_await self->socket_.send(iovs);
                 }
                 catch (const std::exception &e)
@@ -201,11 +187,11 @@ namespace aegis::net
                 {
                     // Fatal error
                     self->socket_.close();
-                    self->is_flushing_.store(false, std::memory_order_release);
+                    self->is_flushing_ = false;
                     co_return;
                 }
 
-                // [Fix] Advance the batcher cursor by bytes sent
+                // Advance the batcher cursor by bytes sent
                 self->batcher_.advance(static_cast<size_t>(res));
             }
             batch.clear();

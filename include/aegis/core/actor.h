@@ -8,6 +8,7 @@
 // 仅保留必需的头文件，日志和异常等依赖移交 cpp
 #include "aegis/net/packet.h"
 #include "aegis/core/message.h"
+#include "aegis/core/hierarchy_timer.h"
 
 // 适配不同编译器的缓存行大小获取
 #ifdef __cpp_lib_hardware_interference_size
@@ -29,6 +30,7 @@ namespace aegis::core
     // --- 3. 核心 Actor 引擎 (MPSC Lock-Free) ---
     class Actor
     {
+        uint64_t magic_ = 0xDEADC0DECAFEBABEL; // 防止误用或内存泄漏的魔数
     public:
         Actor(uint64_t parent_id = 0);
         virtual ~Actor();
@@ -50,6 +52,12 @@ namespace aegis::core
         template <typename T>
         bool push(T *msg)
         {
+            if (magic_ != 0xDEADC0DECAFEBABEL)
+            {
+                // 如果魔数不对，说明有人在尝试往一个已销毁的 Actor 里推包
+                Log::instance().error("CRITICAL: Pushing msg to a DEAD actor!");
+                abort();
+            }
             static_assert(std::is_base_of<ActorMessage, T>::value, "Msg must derive from ActorMessage");
 
             // 1. 初始化新节点
@@ -63,7 +71,7 @@ namespace aegis::core
 
             // 4. 调度逻辑 (状态机翻转)
             bool expected = false;
-            return in_global_queue_.compare_exchange_strong(expected, true, std::memory_order_acq_rel);
+            return is_scheduled_.compare_exchange_strong(expected, true, std::memory_order_acq_rel);
         }
 
         // --- Consumer API (Worker Thread Only) ---
@@ -72,6 +80,9 @@ namespace aegis::core
         // --- 上下文管理 (Thread Local Context) ---
         static Actor *current();
         static void set_current(Actor *actor);
+        int worker_id() const { return worker_id_; }
+        void set_worker_id(int id) { worker_id_ = id; }
+        TimerId schedule_timer(uint32_t delay_ms, std::function<void()> cb);
 
         static void free_message(ActorMessage *msg);
 
@@ -89,7 +100,10 @@ namespace aegis::core
         alignas(kCacheLine) std::atomic<ActorMessage *> tail_;
 
         // 调度状态
-        alignas(kCacheLine) std::atomic<bool> in_global_queue_{false};
+        alignas(kCacheLine) std::atomic<bool> is_scheduled_{false};
+
+        // 调度器分配的 Worker ID
+        int worker_id_{-1};
 
         // 父子关系
         ActorID id_;

@@ -1,0 +1,1184 @@
+// --- SOURCE_FILE: ./include/aegis/core/task.h ---
+#pragma once
+
+#include <coroutine>
+#include <exception>
+#include <utility> // for std::move, std::exchange
+#include <cassert>
+#include <type_traits>
+
+#include "aegis/common/aegisLog.h" // 统一日志出口
+
+namespace aegis::core
+{
+
+    template <typename T>
+    struct Promise;
+
+    // 前置声明 Task
+    template <typename T = void>
+    struct Task;
+
+    // ==========================================
+    // 1. PromiseBase (提取公共逻辑)
+    // ==========================================
+    struct PromiseBase
+    {
+        std::exception_ptr exception_;
+        std::coroutine_handle<> continuation_; // 等待者
+
+        // 1. Initial Suspend: 总是挂起，等待 co_await
+        std::suspend_always initial_suspend() noexcept { return {}; }
+
+        // 2. Unhandled Exception: 统一捕获
+        void unhandled_exception() { exception_ = std::current_exception(); }
+
+        // 3. Final Awaiter: 统一处理对称转移
+        struct FinalAwaiter
+        {
+            bool await_ready() const noexcept { return false; }
+
+            // 关键点：使用模板适配 Promise<T> 和 Promise<void>
+            // 当协程结束时，h 是当前协程的 handle
+            template <typename PromiseType>
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseType> h) noexcept
+            {
+                // 通过 h.promise() 访问继承自 PromiseBase 的 continuation_
+                auto &promise = h.promise();
+
+                // 如果有等待者，跳转执行等待者；否则执行 noop (销毁或结束)
+                return promise.continuation_ ? promise.continuation_ : std::noop_coroutine();
+            }
+
+            void await_resume() noexcept {}
+        };
+
+        FinalAwaiter final_suspend() noexcept { return {}; }
+    };
+
+    // ==========================================
+    // 2. Promise<T> (继承 Base)
+    // ==========================================
+    template <typename T>
+    struct Promise : public PromiseBase
+    {
+        T value_;
+
+        Task<T> get_return_object() noexcept;
+
+        // 特有逻辑：处理返回值
+        template <typename U>
+        void return_value(U &&v)
+        {
+            value_ = std::forward<U>(v);
+        }
+    };
+
+    // ==========================================
+    // 3. Promise<void> (继承 Base)
+    // ==========================================
+    template <>
+    struct Promise<void> : public PromiseBase
+    {
+        Task<void> get_return_object() noexcept;
+
+        // 特有逻辑：void 返回
+        void return_void() {}
+    };
+
+    // ==========================================
+    // 4. Task<T> 实现
+    // ==========================================
+    template <typename T>
+    struct [[nodiscard("Task must be co_awaited")]] Task
+    {
+        using promise_type = Promise<T>;
+        using handle_type = std::coroutine_handle<promise_type>;
+
+        handle_type handle_;
+
+        explicit Task(handle_type h) noexcept : handle_(h) {}
+
+        Task(Task &&other) noexcept : handle_(std::exchange(other.handle_, nullptr)) {}
+
+        Task &operator=(Task &&other) noexcept
+        {
+            if (this != &other)
+            {
+                if (handle_)
+                    handle_.destroy();
+                handle_ = std::exchange(other.handle_, nullptr);
+            }
+            return *this;
+        }
+
+        ~Task()
+        {
+            if (handle_)
+                handle_.destroy();
+        }
+
+        // 禁用拷贝
+        Task(const Task &) = delete;
+        Task &operator=(const Task &) = delete;
+
+        // --- Awaiter 接口 ---
+        bool await_ready() const noexcept { return false; }
+
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller) noexcept
+        {
+            // 访问 Base 中的 continuation_
+            handle_.promise().continuation_ = caller;
+            return handle_;
+        }
+
+        T await_resume()
+        {
+            // 访问 Base 中的 exception_
+            if (handle_.promise().exception_)
+                std::rethrow_exception(handle_.promise().exception_);
+
+            if constexpr (!std::is_void_v<T>)
+            {
+                return std::move(handle_.promise().value_);
+            }
+        }
+    };
+
+    // ==========================================
+    // 5. 延迟实现的 get_return_object
+    // ==========================================
+    // 必须在 Task 定义完整后实现，因为 Promise 需要构造 Task
+    template <typename T>
+    Task<T> Promise<T>::get_return_object() noexcept
+    {
+        return Task<T>{std::coroutine_handle<Promise<T>>::from_promise(*this)};
+    }
+
+    inline Task<void> Promise<void>::get_return_object() noexcept
+    {
+        return Task<void>{std::coroutine_handle<Promise<void>>::from_promise(*this)};
+    }
+
+    /**
+     * @brief "Fire-and-Forget" 任务
+     * @details
+     * 用于 Actor 的入口函数。它立即执行 (Eager)，并且自己管理生命周期。
+     * 遇到异常时，因为没人 await 它，只能打日志兜底。
+     */
+    struct DetachedTask
+    {
+        struct promise_type
+        {
+            // 1. Eager Execution: 创建即运行，无需 co_await
+            std::suspend_never initial_suspend() noexcept { return {}; }
+
+            // 2. Auto Destroy: 执行完立即销毁协程帧
+            std::suspend_never final_suspend() noexcept { return {}; }
+
+            void return_void() {}
+
+            DetachedTask get_return_object() { return {}; }
+
+            // 3. 异常兜底
+            void unhandled_exception()
+            {
+                try
+                {
+                    std::rethrow_exception(std::current_exception());
+                }
+                catch (const std::exception &e)
+                {
+                    // [Fix] 路由到 Aegis Log 系统
+                    aegis::Log::instance().error("[DetachedTask] Uncaught exception in actor/task: {}", e.what());
+                }
+                catch (...)
+                {
+                    aegis::Log::instance().error("[DetachedTask] Unknown exception caught.");
+                }
+            }
+        };
+    };
+
+    class MoveOnlyTask
+    {
+        struct Base
+        {
+            virtual ~Base() = default;
+            virtual void call() = 0;
+        };
+
+        template <typename F>
+        struct Derived : Base
+        {
+            F f;
+            Derived(F &&func) : f(std::forward<F>(func)) {}
+            void call() override { f(); }
+        };
+
+        std::unique_ptr<Base> ptr_;
+
+    public:
+        MoveOnlyTask() = default;
+
+        template <typename F>
+        MoveOnlyTask(F &&f) : ptr_(std::make_unique<Derived<std::decay_t<F>>>(std::forward<F>(f))) {}
+
+        void operator()()
+        {
+            if (ptr_)
+                ptr_->call();
+        }
+
+        // 禁止拷贝
+        MoveOnlyTask(const MoveOnlyTask &) = delete;
+        MoveOnlyTask &operator=(const MoveOnlyTask &) = delete;
+
+        // 允许移动
+        MoveOnlyTask(MoveOnlyTask &&) noexcept = default;
+        MoveOnlyTask &operator=(MoveOnlyTask &&) noexcept = default;
+
+        explicit operator bool() const { return !!ptr_; }
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/sleep.h ---
+#pragma once
+
+#include <coroutine>
+#include <memory>
+#include "aegis/core/actor.h"
+#include "aegis/core/hierarchy_timer.h"
+#include "aegis/core/scheduler.h"
+
+namespace aegis::core
+{
+    struct sleep
+    {
+        uint32_t delay_ms_;
+
+        explicit sleep(uint32_t ms) : delay_ms_(ms) {}
+
+        bool await_ready() const { return false; }
+
+        void await_suspend(std::coroutine_handle<> h)
+        {
+            // 1. 计算 tick
+            uint32_t ticks = (delay_ms_ + 9) / 10;
+            if (ticks == 0)
+                ticks = 1;
+
+            // 2. 获取当前环境 (谁在调用 sleep?)
+            // 如果是在 Worker 线程中运行的 Actor，这里会返回非空
+            Actor *owner_ptr = Actor::current();
+
+            // 3. 尝试获取强引用 (Shared Ptr)
+            // 这是一个保护措施，防止定时器触发时 Actor 已经被销毁
+            std::shared_ptr<Actor> owner;
+
+            // 4. 注册定时器
+            // 注意：这个 Lambda 会被拷贝到堆上，作为 TimerNode 的一部分
+            HierarchicalTimeWheel::instance().add_timer(ticks, [h, owner]() mutable
+                                                        {
+                
+                // --- 以下代码将在 IO 线程 (Timer 线程) 执行 ---
+
+                if (owner)
+                {
+                    // [Case A: Actor 环境]
+                    // 我们不能在 IO 线程直接 resume，必须把协程送回 Actor
+                    
+                    // 1. 构造唤醒消息
+                    auto msg = new CoroutineWakeupMsg(h);
+                    
+                    // 2. 投递到 Actor 的无锁邮箱 (Thread-Safe)
+                    owner->push(msg);
+                    
+                    // 3. 告诉 Scheduler 这个 Actor 有新消息了，需要被调度执行
+                    // 这样 Worker 线程稍后会取出这个 Actor，处理 WakeupMsg，并在那里 resume
+                    Scheduler::instance().dispatch(owner.get());
+                }
+                else
+                {
+                    // [Case B: 裸环境] (例如 main 函数里的测试协程)
+                    // 没有 Actor 依附，直接原地恢复
+                    // 风险提示：这意味着协程剩下的代码会在 IO 线程跑
+                    h.resume();
+                } });
+        }
+
+        void await_resume() const noexcept {}
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/awaiter.h ---
+#pragma once
+#include <coroutine>
+
+namespace aegis::core
+{
+    // 所有异步操作的基类
+    struct BaseAwaiter
+    {
+        int result = 0;
+        std::coroutine_handle<> handle;
+
+        ~BaseAwaiter() = default;
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/worker.h ---
+#pragma once
+
+#include <liburing.h>
+#ifdef BLOCK_SIZE
+#undef BLOCK_SIZE
+#endif
+#include <thread>
+#include <atomic>
+#include <vector>
+#include <memory>
+#include <deque>
+#include <sys/eventfd.h>
+#include <unistd.h>
+#include "functional"
+#include "aegis/core/task.h"
+#include "aegis/core/hierarchy_timer.h"
+
+// Third-party
+#include "concurrentqueue.h"
+
+// 假设这些前置声明存在
+namespace aegis::core
+{
+    class Actor;
+    union ActorID;
+}
+namespace aegis::net
+{
+    class Connection;
+}
+
+using SchedulerTask = aegis::core::Actor *;
+
+namespace aegis::core
+{
+    extern thread_local int t_worker_id;
+    // ===================================================================
+    // Thread-per-Core 的核心引擎：Worker
+    // 集 IO 轮询、协程恢复、Actor 状态机调度于一身
+    // ===================================================================
+    class Worker
+    {
+    public:
+        Worker(int worker_id);
+        ~Worker();
+
+        // 启动 Event Loop (将被 Scheduler 在新线程中调用)
+        void run();
+
+        // 停止当前 Worker
+        void stop();
+
+        // [线程安全] 供其他 Worker 调用的跨核通信接口
+        void post_cross_core_task(SchedulerTask task);
+
+        // [线程安全] 供其他模块调用的自定义任务接口
+        void post_custom_task(MoveOnlyTask task);
+
+        void dispatch_local(SchedulerTask task); // 本地极速派发
+
+        // [线程安全] 唤醒该 Worker 的 io_uring (基于 eventfd)
+        void wake_up();
+
+        static int get_current_id()
+        {
+            return t_worker_id;
+        }
+
+        int id() const { return worker_id_; }
+
+        io_uring *ring() { return &ring_; }
+
+        HierarchicalTimeWheel &time_wheel() { return time_wheel_; }
+
+    private:
+        // --- 初始化相关 ---
+        void init_io_uring();
+        void arm_wakeup();
+
+        // --- Event Loop 的三大阶段 ---
+        void process_io(bool wait_for_events, uint32_t ms_to_next_tick);
+        void process_local_tasks();
+        void process_cross_core_messages();
+
+        // --- 从 Scheduler 迁移过来的执行逻辑 ---
+        void execute_actor(SchedulerTask task);
+
+        int worker_id_;
+        std::atomic<bool> is_running_{false};
+
+        // --- I/O 模块 (原 Env 逻辑) ---
+        struct io_uring ring_;
+        bool is_uring_initialized_ = false;
+        int wakeup_fd_ = -1;
+        uint64_t wakeup_buf_ = 0;
+        static inline void *const kEventToken = reinterpret_cast<void *>(0xBEEF);
+
+        // --- 定时器模块 (Phase 1 & 2) ---
+        HierarchicalTimeWheel time_wheel_;
+
+        // 【面试亮点】：使用标志位合并高频唤醒，避免 eventfd 风暴
+        std::atomic<bool> is_waking_up_{false};
+
+        // --- 计算模块 (原 Scheduler 逻辑) ---
+        // 本地待执行队列 (当前线程私有，无锁！普通 deque 即可)
+        std::deque<SchedulerTask> local_run_queue_;
+
+        // 跨核消息接收队列 (多生产者，单消费者，Lock-free)
+        moodycamel::ConcurrentQueue<SchedulerTask> cross_core_queue_;
+        std::unique_ptr<moodycamel::ConsumerToken> cross_core_cons_token_;
+
+        // --- 自定义任务队列 (供其他模块投递的非 Actor 任务) ---
+        moodycamel::ConcurrentQueue<MoveOnlyTask> custom_task_queue_;
+    };
+
+    extern thread_local Worker *t_current_worker;
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/scheduler.h ---
+#pragma once
+
+#include <vector>
+#include <thread>
+#include <atomic>
+#include <memory>
+
+// Aegis
+#include "aegis/core/worker.h"
+
+// 前置声明
+namespace aegis::core
+{
+    class Actor;
+}
+using SchedulerTask = aegis::core::Actor *;
+
+namespace aegis::core
+{
+    // ===================================================================
+    // Thread-per-Core 架构下的 Scheduler (控制面)
+    // 仅负责 Worker 的生命周期管理与初始负载均衡，不再参与具体调度
+    // ===================================================================
+    class Scheduler
+    {
+    public:
+        static Scheduler &instance();
+
+        // 启动指定数量的 Worker 线程 (通常 = CPU 核心数)
+        void start(int num_workers);
+
+        // 安全停止所有 Worker
+        void stop();
+
+        // 【核心入口】将一个全新的 Actor 或任务分配给某个 Worker
+        // 采用 Round-Robin (轮询) 策略实现基础负载均衡
+        void dispatch(SchedulerTask task);
+
+        // 获取当前线程所在的 Worker ID
+        static int current_worker_id();
+
+        // 获取特定 Worker 的指针 (用于跨核通信时的精确投递)
+        Worker *get_worker(int id);
+
+    private:
+        Scheduler() = default;
+        ~Scheduler();
+
+        std::atomic<bool> running_{false};
+
+        // Worker 实例数组 (生命周期与 Scheduler 绑定)
+        std::vector<std::unique_ptr<Worker>> workers_;
+
+        // 实际执行的系统线程
+        std::vector<std::thread> threads_;
+
+        // 用于 Round-Robin 分发的原子计数器
+        std::atomic<uint64_t> rr_counter_{0};
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./include/aegis/core/hierarchy_timer.h ---
+#pragma once
+
+#include "aegis/common/objectPool.h"
+#include "aegis/common/intrusive_list.h" // [Require] 必须引入侵入式链表
+
+#include <functional>
+#include <cstdint>
+#include <unordered_map>
+
+namespace aegis::core
+{
+    // 核心参数常量
+    constexpr int TVR_BITS = 8;
+    constexpr int TVN_BITS = 6;
+    constexpr int TVR_SIZE = 1 << TVR_BITS; // 256
+    constexpr int TVN_SIZE = 1 << TVN_BITS; // 64
+
+    constexpr int TVR_MASK = TVR_SIZE - 1;
+    constexpr int TVN_MASK = TVN_SIZE - 1;
+
+    constexpr uint32_t TICK_MS = 50;
+
+    using TimerCallback = std::function<void()>;
+    using TimerId = uint64_t;
+
+    struct TimerNode : public aegis::common::IntrusiveListNode
+    {
+        uint64_t expires;
+        TimerCallback cb;
+        TimerId id = 0;
+
+        void reset();
+    };
+
+    // 定义 Pool 类型
+    using TimerNodePool = aegis::core::ObjectPool<TimerNode, 100000, 128>;
+
+    class HierarchicalTimeWheel
+    {
+    public:
+        HierarchicalTimeWheel() = default;
+        ~HierarchicalTimeWheel() = default;
+
+        /**
+         * @brief 初始化 timerfd
+         */
+        void init();
+
+        /**
+         * @brief 添加定时器 (线程安全)
+         */
+        TimerId add_timer(uint32_t delay, TimerCallback cb);
+
+        void cancel_timer(TimerId id);
+
+        /**
+         * @brief 驱动函数 (由 IO 线程调用)
+         */
+        void tick();
+
+    private:
+        void add_timer_internal(TimerNode *node);
+
+        // [Fix] 零拷贝级联
+        int cascade(aegis::common::IntrusiveList<TimerNode> &list);
+
+        void cascade_timers();
+
+        uint64_t current_tick_ = 0;
+        uint64_t next_timer_id_ = 1;
+
+        std::unordered_map<TimerId, TimerNode *> timer_map_;
+
+        // [Fix] 使用侵入式链表，而不是 std::list
+        aegis::common::IntrusiveList<TimerNode> tv1_[TVR_SIZE];
+        aegis::common::IntrusiveList<TimerNode> tv2_[TVN_SIZE];
+        aegis::common::IntrusiveList<TimerNode> tv3_[TVN_SIZE];
+        aegis::common::IntrusiveList<TimerNode> tv4_[TVN_SIZE];
+        aegis::common::IntrusiveList<TimerNode> tv5_[TVN_SIZE];
+    };
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/hierarchy_timer.cpp ---
+#include "aegis/core/hierarchy_timer.h"
+#include "aegis/common/aegisLog.h"
+
+#include <mutex>         // for std::lock_guard
+#include <sys/timerfd.h> // for timerfd
+#include <unistd.h>      // for close
+
+namespace aegis::core
+{
+
+    void TimerNode::reset()
+    {
+        expires = 0;
+        cb = nullptr;
+        id = 0;
+        prev = nullptr;
+        next = nullptr;
+    }
+
+    TimerId HierarchicalTimeWheel::add_timer(uint32_t delay_ms, TimerCallback cb)
+    {
+        // 1. 将物理毫秒转换为逻辑 Tick 数 (向上取整，不足1个tick算1个)
+        uint32_t delay_ticks = delay_ms / TICK_MS;
+        if (delay_ticks == 0)
+            delay_ticks = 1;
+
+        // 2. 申请节点 (直接复用你的 ObjectPool)
+        auto node = TimerNodePool::instance().acquire().release();
+        node->reset();
+        node->cb = std::move(cb);
+        node->id = next_timer_id_++;
+        node->expires = current_tick_ + delay_ticks; // 直接计算绝对过期 Tick
+
+        // 3. 直接存入 Map 和 时间轮 (完全无锁，无需 pending 缓冲！)
+        timer_map_[node->id] = node;
+        add_timer_internal(node);
+
+        return node->id;
+    }
+
+    void HierarchicalTimeWheel::cancel_timer(TimerId id)
+    {
+        auto it = timer_map_.find(id);
+        if (it != timer_map_.end())
+        {
+            it->second->cb = nullptr;
+            timer_map_.erase(it);
+        }
+    }
+
+    void HierarchicalTimeWheel::tick()
+    {
+        // 【重构重点】：删除了极其昂贵的锁等待和双缓冲 Swap 逻辑！
+        // 代码变得纯粹、极致的高效
+
+        int index = current_tick_ & TVR_MASK;
+
+        if (index == 0 && current_tick_ > 0)
+        {
+            cascade_timers();
+        }
+
+        auto &list = tv1_[index];
+        while (TimerNode *node = list.pop_front())
+        {
+            if (node->cb)
+            {
+                node->cb(); // 极其安全的直接调用！因为我们在同一个 Worker 线程！
+                timer_map_.erase(node->id);
+            }
+
+            TimerNodePool::instance().release(node);
+        }
+
+        current_tick_++;
+    }
+
+    void HierarchicalTimeWheel::add_timer_internal(TimerNode *node)
+    {
+        uint64_t expires = node->expires;
+        // 容错：如果已经过期，强制设为当前时间+1，或者立即执行
+        // 这里为了简单，假设总是未来时间。如果是过去时间，会落入错误的 slot，需要额外判断
+        if (expires <= current_tick_)
+            expires = current_tick_;
+
+        uint64_t idx = expires - current_tick_;
+        int i = 0;
+
+        if (idx < TVR_SIZE)
+        {
+            i = expires & TVR_MASK;
+            tv1_[i].push_back(node);
+        }
+        else if (idx < (1ULL << (TVR_BITS + TVN_BITS)))
+        {
+            i = (expires >> TVR_BITS) & TVN_MASK;
+            tv2_[i].push_back(node);
+        }
+        else if (idx < (1ULL << (TVR_BITS + 2 * TVN_BITS)))
+        {
+            i = (expires >> (TVR_BITS + TVN_BITS)) & TVN_MASK;
+            tv3_[i].push_back(node);
+        }
+        else if (idx < (1ULL << (TVR_BITS + 3 * TVN_BITS)))
+        {
+            i = (expires >> (TVR_BITS + 2 * TVN_BITS)) & TVN_MASK;
+            tv4_[i].push_back(node);
+        }
+        else
+        {
+            i = (expires >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK;
+            tv5_[i].push_back(node);
+        }
+    }
+
+    int HierarchicalTimeWheel::cascade(aegis::common::IntrusiveList<TimerNode> &list)
+    {
+        int count = 0;
+        while (TimerNode *node = list.pop_front())
+        {
+            add_timer_internal(node);
+            count++;
+        }
+        return count;
+    }
+
+    void HierarchicalTimeWheel::cascade_timers()
+    {
+        uint64_t ct = current_tick_;
+        int i2 = (ct >> TVR_BITS) & TVN_MASK;
+        cascade(tv2_[i2]);
+        if (i2 == 0)
+        {
+            int i3 = (ct >> (TVR_BITS + TVN_BITS)) & TVN_MASK;
+            cascade(tv3_[i3]);
+            if (i3 == 0)
+            {
+                int i4 = (ct >> (TVR_BITS + 2 * TVN_BITS)) & TVN_MASK;
+                cascade(tv4_[i4]);
+                if (i4 == 0)
+                {
+                    int i5 = (ct >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK;
+                    cascade(tv5_[i5]);
+                }
+            }
+        }
+    }
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/scheduler.cpp ---
+#include "aegis/core/scheduler.h"
+#include "aegis/common/aegisLog.h"
+#include "aegis/core/actor.h"
+#include "aegis/common/tools.h" // 假设里面有 bind_to_core 等工具函数
+
+#ifdef __linux__
+#include <pthread.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#endif
+
+namespace aegis::core
+{
+    // 在 Worker.cpp 中定义的 TLS 变量，在这里声明 extern 以便提供访问
+    extern thread_local int t_worker_id;
+
+    Scheduler &Scheduler::instance()
+    {
+        static Scheduler inst;
+        return inst;
+    }
+
+    Scheduler::~Scheduler() { stop(); }
+
+    void Scheduler::start(int num_workers)
+    {
+        if (running_)
+            return;
+        running_ = true;
+
+        aegis::Log::instance().info("Scheduler (Thread-per-Core Mode) starting with {} workers...", num_workers);
+
+        workers_.reserve(num_workers);
+        threads_.reserve(num_workers);
+
+        // 1. 先创建所有的 Worker 实例
+        for (int i = 0; i < num_workers; ++i)
+        {
+            workers_.push_back(std::make_unique<Worker>(i));
+        }
+
+        // 2. 启动系统线程，拉起 Event Loop
+        for (int i = 0; i < num_workers; ++i)
+        {
+            threads_.emplace_back([this, i]()
+                                  {
+                // 绑核操作 (如果你之前实现了的话，这里极其关键！)
+                // Thread-per-Core 必须严格绑核，防止 OS 调度器把线程切到别的核导致 L1/L2 Cache 全量失效
+                bind_to_core(i);
+
+#ifdef __linux__
+                std::string name = "Aegis-W-" + std::to_string(i);
+                pthread_setname_np(pthread_self(), name.c_str());
+#endif
+                // 进入死循环，接管当前 CPU 核心
+                workers_[i]->run(); });
+        }
+    }
+
+    void Scheduler::stop()
+    {
+        if (!running_)
+            return;
+        running_ = false;
+
+        // 1. 通知所有 Worker 停止循环
+        for (auto &worker : workers_)
+        {
+            if (worker)
+                worker->stop();
+        }
+
+        // 2. 等待线程安全退出
+        for (auto &t : threads_)
+        {
+            if (t.joinable())
+                t.join();
+        }
+
+        threads_.clear();
+        workers_.clear();
+
+        aegis::Log::instance().info("Scheduler completely stopped.");
+    }
+
+    void Scheduler::dispatch(SchedulerTask task)
+    {
+        if (!task || workers_.empty())
+            return;
+
+        // 【负载均衡】：简单的 Round-Robin 算法
+        // 由于没有了全局队列，新建的 Actor 必须在这里决定它的终身归宿
+        uint64_t idx = rr_counter_.fetch_add(1, std::memory_order_relaxed);
+        int target_worker_id = idx % workers_.size();
+
+        // 投递给目标 Worker 的私有跨核队列
+        workers_[target_worker_id]->post_cross_core_task(task);
+    }
+
+    int Scheduler::current_worker_id()
+    {
+        return t_worker_id;
+    }
+
+    Worker *Scheduler::get_worker(int id)
+    {
+        if (id >= 0 && id < static_cast<int>(workers_.size()))
+        {
+            return workers_[id].get();
+        }
+        return nullptr;
+    }
+
+} // namespace aegis::core-e 
+
+
+// --- SOURCE_FILE: ./src/core/worker.cpp ---
+#include "aegis/core/worker.h"
+#include "aegis/core/actor.h"
+#include "aegis/core/actor_registry.h"
+#include "aegis/core/awaiter.h" // 假设存在
+#include "aegis/common/aegisLog.h"
+#include "aegis/common/time_utils.h"
+#include <cstring>
+#include <stdexcept>
+
+using TimeUtil = aegis::common::TimeUtil;
+
+namespace aegis::core
+{
+    // TLS 变量，绑定当前线程对应的 Worker ID
+    thread_local Worker *t_current_worker = nullptr;
+    thread_local int t_worker_id = -1;
+
+    Worker::Worker(int worker_id) : worker_id_(worker_id)
+    {
+        cross_core_cons_token_ = std::make_unique<moodycamel::ConsumerToken>(cross_core_queue_);
+    }
+
+    Worker::~Worker()
+    {
+        stop();
+        if (is_uring_initialized_)
+        {
+            io_uring_queue_exit(&ring_);
+            if (wakeup_fd_ >= 0)
+                close(wakeup_fd_);
+        }
+    }
+
+    void Worker::init_io_uring()
+    {
+        // 1. 创建私有 eventfd，用于接收跨核事件唤醒
+        wakeup_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+        if (wakeup_fd_ < 0)
+        {
+            throw std::runtime_error("Worker failed to create eventfd");
+        }
+
+        // 2. 初始化 io_uring
+        // 【注意】：在 Thread-per-Core 下，我们通常不再使用 SQPOLL！
+        // 因为 Worker 线程本身就是个永不停歇的轮询器，开 SQPOLL 会多出一个内核线程，
+        // 导致 1核2线程 的资源浪费，这违背了 Share-Nothing 的极致亲和性原则。
+        struct io_uring_params params;
+        memset(&params, 0, sizeof(params));
+        // 取消 IORING_SETUP_SQPOLL，回归普通模式，由当前 Worker 自己 submit
+
+        int ring_depth = 4096;
+        if (io_uring_queue_init_params(ring_depth, &ring_, &params) < 0)
+        {
+            close(wakeup_fd_);
+            throw std::runtime_error("Worker failed to init io_uring");
+        }
+
+        is_uring_initialized_ = true;
+        arm_wakeup();
+        io_uring_submit(&ring_); // 提交第一次的门铃监听
+    }
+
+    void Worker::arm_wakeup()
+    {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(&ring_);
+        if (!sqe)
+            return; // 真实环境需要处理 SQ 满的情况
+        io_uring_prep_read(sqe, wakeup_fd_, &wakeup_buf_, sizeof(wakeup_buf_), 0);
+        io_uring_sqe_set_data(sqe, kEventToken);
+    }
+
+    void Worker::wake_up()
+    {
+        // 优化：只有在没有正在唤醒的情况下，才去发起 syscall
+        bool expected = false;
+        if (is_waking_up_.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
+        {
+            Log::instance().debug("Worker {} is being kicked!", worker_id_);
+            uint64_t one = 1;
+            ::write(wakeup_fd_, &one, sizeof(one));
+        }
+    }
+
+    void Worker::post_cross_core_task(SchedulerTask task)
+    {
+        // 其他线程调用的接口
+        cross_core_queue_.enqueue(task);
+        wake_up(); // 敲响目标 Worker 的门铃
+    }
+
+    void Worker::dispatch_local(SchedulerTask task)
+    {
+        // 【极速派发】：毫无竞争，直接塞入本地双端队列尾部
+        local_run_queue_.push_back(task);
+    }
+
+    void Worker::run()
+    {
+        t_worker_id = worker_id_;
+        t_current_worker = this;
+        init_io_uring();
+
+        aegis::Log::instance().info("Worker {} EventLoop started.", worker_id_);
+        is_running_.store(true, std::memory_order_relaxed);
+
+        uint64_t last_tick_time_ms = TimeUtil::get_now_ms();
+
+        while (is_running_.load(std::memory_order_acquire))
+        {
+            // 阶段 1：处理跨核消息 (优先级最高，里面可能有新的 Actor/Connection 转移过来)
+            process_cross_core_messages();
+
+            // 阶段 2：处理本地 Actor 计算
+            process_local_tasks();
+
+            uint64_t now_ms = TimeUtil::get_now_ms();
+
+            while (now_ms >= last_tick_time_ms + TICK_MS)
+            {
+                time_wheel_.tick();           // 拨动齿轮，触发定时回调
+                last_tick_time_ms += TICK_MS; // 严格按照 20ms 对齐推进
+            }
+
+            // 阶段 3：处理网络 I/O
+            bool wait_for_events = local_run_queue_.empty();
+            uint32_t ms_to_next_tick = (last_tick_time_ms + TICK_MS) - TimeUtil::get_now_ms();
+            if (ms_to_next_tick > TICK_MS)
+                ms_to_next_tick = 0;
+            process_io(wait_for_events, ms_to_next_tick);
+        }
+    }
+
+    void Worker::process_cross_core_messages()
+    {
+        // 1. 消费 Actor 任务 (原有的)
+        SchedulerTask task;
+        while (cross_core_queue_.try_dequeue(*cross_core_cons_token_, task))
+        {
+            dispatch_local(task);
+        }
+
+        // 2. 消费通用闭包任务
+        MoveOnlyTask custom_task;
+        while (custom_task_queue_.try_dequeue(custom_task))
+        {
+            custom_task();
+        }
+    }
+
+    void Worker::process_local_tasks()
+    {
+        // 为了防止 Actor 饥饿，我们每一轮只处理当前快照数量的任务，或者限制固定 Batch
+        size_t task_count = local_run_queue_.size();
+        for (size_t i = 0; i < task_count; ++i)
+        {
+            SchedulerTask task = std::move(local_run_queue_.front());
+            local_run_queue_.pop_front();
+
+            execute_actor(task); // 执行该 Actor 的状态机
+        }
+    }
+
+    void Worker::process_io(bool wait_for_events, uint32_t ms_to_next_tick)
+    {
+        struct io_uring_cqe *cqe;
+
+        if (wait_for_events)
+        {
+            // 修正：将计算出的 ms_to_next_tick 转换为 io_uring 的超时结构
+            struct __kernel_timespec ts;
+            ts.tv_sec = ms_to_next_tick / 1000;
+            ts.tv_nsec = (ms_to_next_tick % 1000) * 1000000;
+
+            // 使用支持超时的等待接口，确保定时器不会饥饿
+            // 注意：这里需要 liburing 较新版本的支持
+            io_uring_submit_and_wait_timeout(&ring_, &cqe, 1, &ts, nullptr);
+        }
+        else
+        {
+            io_uring_submit(&ring_);
+        }
+
+        // 消费 CQE (这一段与原 Env 基本一致)
+        unsigned head;
+        unsigned count = 0;
+        io_uring_for_each_cqe(&ring_, head, cqe)
+        {
+            count++;
+            void *user_data = io_uring_cqe_get_data(cqe);
+
+            if (user_data == kEventToken)
+            {
+                // 门铃响了，清除唤醒标志，重新监听
+                is_waking_up_.store(false, std::memory_order_release);
+                arm_wakeup();
+            }
+            else if (user_data)
+            {
+                // 处理真实的 IO (恢复协程等)
+                auto *awaiter = reinterpret_cast<BaseAwaiter *>(user_data);
+                awaiter->result = cqe->res;
+                if (awaiter->handle)
+                {
+                    try
+                    {
+                        awaiter->handle.resume();
+                    }
+                    catch (const std::exception &e)
+                    { /* Handle IO Coroutine Error */
+                        aegis::Log::instance().error("IO Coroutine Error: {}", e.what());
+                    }
+                }
+            }
+        }
+        if (count > 0)
+        {
+            io_uring_cq_advance(&ring_, count);
+        }
+    }
+
+    // ==========================================================
+    // 从 Scheduler 1:1 迁移过来的 Actor 状态机流转核心逻辑
+    // ==========================================================
+    void Worker::execute_actor(SchedulerTask actor)
+    {
+        Actor::set_current(actor);
+        ActorState state = ActorState::Active;
+        int death_reason = 0;
+
+        try
+        {
+            state = actor->process_batch(100);
+        }
+        catch (const std::exception &e)
+        {
+            aegis::Log::instance().error("Actor {} crashed: {}", actor->id().raw, e.what());
+            state = ActorState::Dead;
+            death_reason = 1;
+        }
+        catch (...)
+        {
+            aegis::Log::instance().error("Actor {} crashed with unknown exception", actor->id().raw);
+            state = ActorState::Dead;
+            death_reason = 1;
+        }
+
+        Actor::set_current(nullptr);
+
+        switch (state)
+        {
+        case ActorState::Active:
+            // 继续活跃，直接用无锁接口放回本地队列末尾
+            dispatch_local(actor);
+            break;
+
+        case ActorState::Idle:
+            // 挂起，等待其他 Actor push 消息或 IO 唤醒
+            break;
+
+        case ActorState::Dead:
+            // --- 死亡逻辑不变，直接复用你之前的完美设计 ---
+            ActorID my_id = actor->id();
+            ActorID supervisor_id = actor->parent_id();
+            ActorRegistry::instance().remove(my_id);
+
+            if (supervisor_id.raw != 0)
+            {
+                Actor *supervisor = ActorRegistry::instance().get(supervisor_id);
+                if (supervisor)
+                {
+                    auto *msg = new ActorDiedMsg(my_id, death_reason);
+                    if (!supervisor->push(msg))
+                    {
+                        delete msg;
+                    }
+                    else
+                    {
+                        // 【重大细节】：如果父亲也在本 Worker，其实可以直接调度它；
+                        // 如果不在本 Worker，在 Actor::push 内部判断后，需要调用
+                        // target_worker->post_cross_core_task(supervisor)
+                        // 这一步之后在重构 Actor::push 逻辑时处理。
+                    }
+                }
+            }
+            actor->finalize();
+            break;
+        }
+    }
+
+    void Worker::stop()
+    {
+        is_running_.store(false, std::memory_order_release);
+        wake_up(); // 防止卡在 io_uring_submit_and_wait 里
+    }
+
+    void Worker::post_custom_task(MoveOnlyTask task)
+    {
+        custom_task_queue_.enqueue(std::move(task));
+        wake_up(); // 敲响目标核的门铃
+    }
+
+    int aegis::core::ActorRegistry::get_current_worker_id()
+    {
+        return (t_current_worker != nullptr) ? t_current_worker->id() : -1;
+    }
+
+} // namespace aegis::core-e 
+
+

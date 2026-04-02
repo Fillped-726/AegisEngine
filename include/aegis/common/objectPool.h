@@ -1,3 +1,4 @@
+// include/aegis/common/objectPool.h
 #pragma once
 
 #include <cstddef>
@@ -7,22 +8,25 @@
 #include <type_traits>
 #include <concepts>
 #include <new>
-#include <atomic> // 恢复 atomic
+#include <atomic>
 
-#include "concurrentqueue.h"
+#include "concurrentqueue.h" // [DEPENDENCY: moodycamel::ConcurrentQueue]
 #include "aegisLog.h"
 
 namespace aegis::core
 {
+    // [CONSTRAINT: T implements reset(Args...)]
     template <typename T, typename... Args>
     concept Resettable = requires(T t, Args &&...args) {
         t.reset(std::forward<Args>(args)...);
     };
 
+    // [INTENT: Lock-free 2-tier object pool (Thread-Local L1 + Global L2)]
     template <typename T, size_t GlobalMaxSize = 100000, size_t LocalBatchSize = 128>
     class ObjectPool
     {
     public:
+        // [INTENT: Proxy functor for unique_ptr custom deleter]
         struct Deleter
         {
             void operator()(T *ptr) const
@@ -40,14 +44,13 @@ namespace aegis::core
             return inst;
         }
 
-        // 禁止拷贝和移动
         ObjectPool(const ObjectPool &) = delete;
         ObjectPool &operator=(const ObjectPool &) = delete;
 
+        // [STATE_MUTATION: Extract from L1 -> L2 -> Heap; Reinitialize state]
         template <typename... Args>
         Ptr acquire(Args &&...args)
         {
-            // 防御：程序退出阶段直接 new，避免访问已销毁的队列
             if (!is_active_.load(std::memory_order_acquire)) [[unlikely]]
             {
                 return Ptr(new T(std::forward<Args>(args)...));
@@ -56,16 +59,14 @@ namespace aegis::core
             T *ptr = nullptr;
             auto &local = GetLocalCache();
 
-            // 1. L1 Cache Hit
             if (!local.ptrs.empty())
             {
                 ptr = local.ptrs.back();
                 local.ptrs.pop_back();
             }
-            // 2. L1 Miss -> L2 (Global)
             else
             {
-                // 注意：这里使用 local.bulk_buffer，保证缓存局部性
+                // [STATE_MUTATION: Bulk dequeue from L2 to L1 buffer]
                 size_t count = global_queue_.try_dequeue_bulk(local.cons_token, local.bulk_buffer, LocalBatchSize);
                 if (count > 0)
                 {
@@ -77,7 +78,6 @@ namespace aegis::core
                 }
             }
 
-            // 3. Alloc New (Cold Path)
             if (!ptr) [[unlikely]]
             {
                 ptr = new T(std::forward<Args>(args)...);
@@ -90,12 +90,12 @@ namespace aegis::core
             return Ptr(ptr);
         }
 
+        // [STATE_MUTATION: Return to L1 -> Evict half to L2 if L1 full -> Delete if L2 full]
         void release(T *ptr)
         {
             if (!ptr)
                 return;
 
-            // 防御：程序退出中，直接析构，不回全局
             if (!is_active_.load(std::memory_order_acquire)) [[unlikely]]
             {
                 delete ptr;
@@ -104,27 +104,16 @@ namespace aegis::core
 
             auto &local = GetLocalCache();
 
-            // 1. Push to local
             local.ptrs.push_back(ptr);
 
-            // 2. Watermark check (Version B's tuned logic)
             if (local.ptrs.size() >= LocalBatchSize)
             {
-                // 仅搬运一半，留一半热数据
                 const size_t move_count = LocalBatchSize / 2;
-
-                // 优化：将 vector 尾部的数据搬运到 buffer
-                // 虽然 vector 尾部是热数据，但为了 vector 操作的 O(1)，我们通常只能切尾部
                 auto start_it = local.ptrs.end() - move_count;
-
-                // 直接使用 copy 到 bulk_buffer，这比迭代器范围直接塞给 queue 可能稍微慢一点点拷贝，
-                // 但 concurrentqueue 的 enqueue_bulk 原生支持迭代器，所以可以直接传迭代器。
-                // 不过，为了兼容性，我们还是用 bulk_buffer 做中转（因为 try_dequeue_bulk 必须用 buffer）
-                // 这里直接传迭代器给 global_queue 也是可以的，省一次拷贝到 buffer
 
                 if (global_queue_.size_approx() < GlobalMaxSize)
                 {
-                    // Moodycamel queue supports iterator traits
+                    // [STATE_MUTATION: Bulk enqueue iterators to L2]
                     global_queue_.enqueue_bulk(local.prod_token, start_it, move_count);
                 }
                 else
@@ -138,8 +127,10 @@ namespace aegis::core
         }
 
     private:
+        // [STATE_MUTATION: Set guard active]
         ObjectPool() { is_active_.store(true, std::memory_order_release); }
 
+        // [STATE_MUTATION: Set guard inactive; drain L2 queue]
         ~ObjectPool()
         {
             is_active_.store(false, std::memory_order_release);
@@ -148,7 +139,7 @@ namespace aegis::core
                 delete ptr;
         }
 
-        // 统一封装 Reset 逻辑，包含异常安全处理
+        // [INTENT: Transparent state re-init; handles exception-safe placement new]
         template <typename... Args>
         void construct_or_reset(T *ptr, Args &&...args)
         {
@@ -168,17 +159,17 @@ namespace aegis::core
                 }
                 catch (...)
                 {
-                    ::operator delete(ptr); // 重要：释放裸内存
+                    ::operator delete(ptr);
                     throw;
                 }
             }
         }
 
-        // 把 buffer 放回 struct 以利用 Cache Locality
+        // [STATE: L1 Cache; Aligned to prevent false sharing cache line invalidation]
         struct alignas(std::hardware_destructive_interference_size) ThreadLocalCache
         {
             std::vector<T *> ptrs;
-            T *bulk_buffer[LocalBatchSize]; // Cache Friendly: 紧挨着 ptrs
+            T *bulk_buffer[LocalBatchSize];
 
             moodycamel::ProducerToken prod_token;
             moodycamel::ConsumerToken cons_token;
@@ -197,9 +188,12 @@ namespace aegis::core
             }
         };
 
+        // [STATE: L2 Queue]
         moodycamel::ConcurrentQueue<T *> global_queue_;
-        std::atomic<bool> is_active_{false}; // 生命周期守卫
+        // [STATE: Process teardown guard]
+        std::atomic<bool> is_active_{false};
 
+        // [INTENT: Thread-local singleton accessor]
         static ThreadLocalCache &GetLocalCache()
         {
             static thread_local ThreadLocalCache local_cache_;

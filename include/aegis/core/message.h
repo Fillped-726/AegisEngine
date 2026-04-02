@@ -31,6 +31,9 @@ namespace aegis::core
         // --- RPC ---
         MSG_TYPE_RPC_CREATE_ROOM = 50,
         MSG_TYPE_RPC_TERMINATE_ROOM = 51,
+
+        // ---业务转发---
+        MSG_TYPE_FORWARD_PACKET = 60
     };
 
     // --- 1. 基础消息头 (保持不变) ---
@@ -113,9 +116,10 @@ namespace aegis::core
         uint64_t player_id; // 业务 ID (UID)
         uint32_t aoi_grid_index;
         float newX, newY;
+        uint8_t direction;
 
-        SceneMoveMsg(core::ActorID id, uint64_t uid, uint32_t grid_index, float nx, float ny)
-            : actor_id(id), player_id(uid), aoi_grid_index(grid_index), newX(nx), newY(ny)
+        SceneMoveMsg(core::ActorID id, uint64_t uid, uint32_t grid_index, float nx, float ny, uint8_t dir)
+            : actor_id(id), player_id(uid), aoi_grid_index(grid_index), newX(nx), newY(ny), direction(dir)
         {
             type_id = MSG_TYPE_SCENE_MOVE;
         }
@@ -131,6 +135,15 @@ namespace aegis::core
             : deceased_id(id), reason(r)
         {
         }
+    };
+
+    struct ForwardPacketMsg : public aegis::core::BasicMessage<ForwardPacketMsg, MSG_TYPE_FORWARD_PACKET>
+    {
+        uint32_t msg_id;
+        std::shared_ptr<std::string> shared_buf;
+
+        ForwardPacketMsg(uint32_t id, std::shared_ptr<std::string> buf)
+            : msg_id(id), shared_buf(std::move(buf)) {}
     };
 
     // 销毁消息

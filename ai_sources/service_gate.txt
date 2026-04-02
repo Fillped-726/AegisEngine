@@ -1,0 +1,551 @@
+// --- SOURCE_FILE: ./services/gate/include/gate_server.h ---
+#pragma once
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include "aegis/core/task.h"
+#include "aegis/core/actor_registry.h"
+#include "aegis/net/socket.h"
+
+namespace aegis::core
+{
+    class Actor;
+    class ActorMessage;
+}
+
+namespace aegis::gate
+{
+    // 会话上下文
+    struct ClientSession
+    {
+        // ActorID (对应 Registry 中的 ID)
+        core::ActorID actor_id;
+        bool logged_in = false;
+    };
+    class GateServer
+    {
+    public:
+        GateServer() = default;
+        ~GateServer();
+
+        // 禁止拷贝
+        GateServer(const GateServer &) = delete;
+        GateServer &operator=(const GateServer &) = delete;
+
+        // 初始化：加载配置、场景、逻辑、线程池
+        void init(const std::string &config_path, int num_workers = 0);
+
+        // 运行：启动主 IO 循环 (阻塞)
+        void run(int port);
+
+        // 停止：优雅退出
+        void stop();
+
+        inline static core::ActorID g_DefaultSceneID;
+
+    private:
+        // --- 协程循环 ---
+        aegis::core::DetachedTask accept_loop(int port);
+        aegis::core::DetachedTask handle_session(net::Socket client_socket);
+        void dispatch_to_actor(core::Actor *actor, core::ActorMessage *msg);
+
+    private:
+        core::ActorID room_manager_id_;
+    };
+}-e 
+
+
+// --- SOURCE_FILE: ./services/gate/src/logic/handler_loader.h ---
+#pragma once
+
+#include <memory>
+
+// 前向声明
+namespace aegis::core
+{
+    class SceneActor;
+}
+
+namespace aegis::gate
+{
+    /**
+     * @brief 加载所有的业务消息处理器 (Login, Move, etc.)
+     * @param global_scene 传递场景指针，供逻辑层操作
+     */
+    void load_handlers();
+}-e 
+
+
+// --- SOURCE_FILE: ./services/gate/src/logic/handler_loader.cpp ---
+#include "handler_loader.h"
+
+// 引入必要的库
+#include "gate_server.h" // [重要] 需要访问 GateServer::g_DefaultSceneID
+#include "aegis/net/dispatcher.h"
+#include "aegis/core/playerActor.h"
+#include "aegis/core/scene_actor.h"
+#include "aegis/core/scheduler.h"
+#include "aegis/core/actor_registry.h" // [重要] 引入 Registry
+#include "aegis/common/aegisLog.h"
+#include "aegis/core/message.h" // 引入刚才定义的消息
+#include "aegis/core/worker.h"
+#include "aegis/common/actor_utils.h" // 引入 dispatch_msg 函数
+
+// 引入 Protocol Buffers
+#include "cs_lobby.pb.h"
+#include "cs_battle.pb.h"
+#include "ids.pb.h"
+
+using namespace aegis::cs::lobby;
+using namespace aegis::cs::battle;
+using namespace aegis::ids;
+using namespace aegis::core;
+
+namespace aegis::gate
+{
+    void load_handlers()
+    {
+        auto &d = aegis::net::Dispatcher::instance();
+
+        // ==========================================================
+        // Handler 1: Login (登录并进入主城)
+        // ==========================================================
+        d.register_handler<LoginReq>(
+            // [建议] 使用 ids.pb.h 里的枚举，不要硬编码数字，防止对不上
+            ids::CS_LOGIN_REQ,
+            [](aegis::core::Actor *actor, const LoginReq &req) -> aegis::core::Task<void>
+            {
+                // 使用 dynamic_cast 更安全，防止非法 Actor 调用
+                auto player = dynamic_cast<aegis::core::PlayerActor *>(actor);
+                if (!player) [[unlikely]]
+                {
+                    Log::instance().error("[Logic] Handler called with invalid actor type");
+                    co_return;
+                }
+
+                uint64_t uid = req.uid();
+
+                // 1. [核心修复] 必须给 PlayerActor 设置业务 ID (UID)
+                // 之前就是因为缺了这行，导致 PlayerActor 里的 playerId_ 是 0
+                player->set_player_id(uid);
+
+                Log::instance().info("[Logic] Login Request | UID: {} -> ActorID: {}", uid, player->id().raw);
+
+                // 2. 出生点计算
+                float spawnX = 100.0f;
+                float spawnY = 100.0f;
+                float spawnZ = 0.0f;
+
+                player->SetPos(spawnX, spawnY);
+
+                // 3. 发送登录回包
+                LoginRes res;
+                res.set_ret_code(0);
+                res.set_msg("Welcome to Aegis World!");
+                res.set_entity_id(player->id().raw);
+                auto *pos = res.mutable_pos();
+                pos->set_x(spawnX);
+                pos->set_y(spawnY);
+                pos->set_z(spawnZ);
+
+                player->send_packet(ids::SC_LOGIN_RES, res);
+
+                // 4. 获取主城 Scene
+                ActorID scene_id = GateServer::g_DefaultSceneID;
+                auto *scene = ActorRegistry::instance().get(scene_id);
+
+                if (scene)
+                {
+
+                    player->set_parent_id(scene_id);
+
+                    auto *msg = new SceneEnterMsg(player->id(), uid, spawnX, spawnY);
+
+                    // 压入消息队列
+                    if (scene->push(msg))
+                    {
+                        // [核心修复]：拒绝 Round-Robin，定向投递回它出生的 Worker
+                        auto *target_worker = aegis::core::Scheduler::instance().get_worker(scene->worker_id());
+
+                        // 如果当前就在这个 Worker，直接进快轨；否则走跨核队列
+                        if (aegis::core::Worker::get_current_id() == scene->worker_id())
+                        {
+                            target_worker->dispatch_local(scene);
+                        }
+                        else
+                        {
+                            target_worker->post_cross_core_task(scene);
+                        }
+
+                        Log::instance().info("[Login] Player {} dispatched to Scene {} on Worker {}",
+                                             uid, scene_id.raw, scene->worker_id());
+                    }
+                }
+                else
+                {
+                    Log::instance().error("[Login] CRITICAL: Main City Scene not found! ID: {}", scene_id.raw);
+                    // 实际生产中这里应该断开客户端连接或者返回错误码
+                }
+
+                co_return;
+            });
+
+        // ==========================================================
+        // Handler 2: Movement (转发给 Scene)
+        // ==========================================================
+        d.register_handler<CSMoveReq>(
+            CS_MOVE_REQ,
+            [](aegis::core::Actor *actor, const CSMoveReq &req) -> aegis::core::Task<void>
+            {
+                auto player = static_cast<aegis::core::PlayerActor *>(actor);
+
+                // 1. 获取父亲 (场景)
+                ActorID scene_id = player->parent_id();
+                auto *scene = ActorRegistry::instance().get(scene_id);
+
+                if (scene)
+                {
+                    float newX = req.target_pos().x();
+                    float newY = req.target_pos().y();
+
+                    float oldX = player->GetX();
+                    float oldY = player->GetY();
+                    unsigned direction = 0;
+                    if (newX != oldX || newY != oldY)
+                    {
+                        direction |= PlayerActor::DIRTY_POS;
+                    }
+
+                    // 2. 更新玩家自身数据 (乐观更新)
+                    player->SetPos(newX, newY);
+
+                    // 3. [修复] 构造正确的参数顺序: id, uid, oldGridIndex, newX, newY
+                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), player->get_aoi_grid_index(), newX, newY, direction);
+
+                    dispatch_msg(scene, msg);
+                }
+                else
+                {
+                    // 日志需要访问 .raw
+                    Log::instance().warn("[Move] Player {} has no valid scene supervisor.", player->id().raw);
+                }
+
+                co_return;
+            });
+
+        Log::instance().info("[System] Logic Handlers Loaded.");
+    }
+}-e 
+
+
+// --- SOURCE_FILE: ./services/gate/src/main.cpp ---
+#include <iostream>
+#include <csignal>
+#include "gate_server.h"
+
+int main()
+{
+    try
+    {
+        // 实例化门面
+        aegis::gate::GateServer server;
+
+        if (std::signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+        {
+            // 理论上不会失败，但严谨起见可以处理
+            return 1;
+        }
+
+        // 1. 初始化 (日志、调度器、IO环)
+        // 参数可以从命令行解析，这里先硬编码
+        server.init("logs/gate_server.log", 4);
+
+        // 2. 运行 (启动监听、定时器，阻塞住)
+        server.run(8888);
+
+        // run() 内部是 while(true)，除非抛出异常，否则不会走到这里
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "!!! FATAL ERROR !!! " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}-e 
+
+
+// --- SOURCE_FILE: ./services/gate/src/gate_server.cpp ---
+#include "gate_server.h"
+
+#include <iostream>
+#include <thread>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#include <stdexcept>
+#include <sys/resource.h>
+
+// Core Framework
+#include "aegis/core/worker.h"
+#ifdef BLOCK_SIZE
+#undef BLOCK_SIZE
+#endif
+#include "aegis/core/scheduler.h"
+#include "aegis/net/socket.h"
+#include "aegis/net/connection.h"
+#include "aegis/common/aegisLog.h"
+#include "aegis/core/hierarchy_timer.h"
+#include "aegis/net/packetPool.h"
+#include "handler_loader.h"
+#include "aegis/net/acceptor.h"
+
+// Business Logic
+#include "aegis/core/playerActor.h"
+#include "aegis/core/scene_actor.h" // [New]
+#include "ids.pb.h"
+#include "cs_battle.pb.h" // [New]
+#include "aegis/core/room_manager.h"
+#include "aegis/common/tools.h"
+
+using namespace aegis;
+
+namespace aegis::core
+{
+    extern thread_local core::Worker *t_current_worker;
+}
+
+namespace aegis::gate
+{
+
+    void tune_fd_limit()
+    {
+        struct rlimit rl;
+        // 获取当前限制
+        if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
+        {
+            perror("getrlimit");
+            return;
+        }
+
+        // 将软限制提升至硬限制的水平（即 1048576）
+        rl.rlim_cur = rl.rlim_max;
+
+        if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
+        {
+            perror("setrlimit"); // 如果失败，通常是因为尝试超过硬限制
+        }
+        else
+        {
+            std::cout << "Successfully raised FD limit to: " << rl.rlim_cur << std::endl;
+        }
+    }
+
+    GateServer::~GateServer()
+    {
+        stop();
+    }
+
+    void GateServer::init(const std::string &config_path, int num_workers)
+    {
+        tune_fd_limit();
+
+        // 1. 初始化日志
+        Log::instance().init_config(config_path, "Gate");
+        Log::instance().set_level(spdlog::level::debug); // 默认错误级别，后续可通过配置调整
+
+        // 1. 【Bootstrap】创建全局 RoomManager
+        room_manager_id_ = core::ActorRegistry::instance().create_actor<core::RoomManager>();
+        Log::instance().info("[Init] RoomManager Created. ID: {}", room_manager_id_.raw);
+
+        // 2. 直接同步创建默认场景 (主城)
+        auto scene_id = core::ActorRegistry::instance().create_actor<core::SceneActor>(500.0f, 500.0f, 10.0f);
+
+        auto *scene = core::ActorRegistry::instance().get(scene_id);
+        if (scene)
+        {
+            scene->set_worker_id(3);
+        }
+
+        if (scene_id.is_valid())
+        {
+            // A. 保存到全局变量，供 Handler 使用
+            g_DefaultSceneID = scene_id;
+
+            // B. 手动认父 (Supervision)
+            // 让 RoomManager 成为它的监管者，负责崩溃重启
+            auto *scene = core::ActorRegistry::instance().get(scene_id);
+            if (scene)
+            {
+                scene->set_parent_id(room_manager_id_);
+            }
+
+            Log::instance().info("[Init] Main City (Scene) Created. ID: {}", scene_id.raw);
+        }
+        else
+        {
+            Log::instance().critical("[Init] Failed to create Main City!");
+            throw std::runtime_error("Scene creation failed");
+        }
+
+        // 3. 注入业务逻辑 [Critical Step]
+        // 将 scene_ 传递给逻辑层，实现了 GateServer 与 具体逻辑 的解耦
+        load_handlers();
+
+        // 4. 启动调度器
+        if (num_workers <= 0)
+        {
+            num_workers = std::thread::hardware_concurrency();
+            if (num_workers < 1)
+                num_workers = 1;
+        }
+        Log::instance().info("[Init] Starting Scheduler with {} workers...", num_workers);
+        core::Scheduler::instance().start(num_workers);
+    }
+
+    void GateServer::run(int port)
+    {
+        try
+        {
+            Log::instance().info("[Gate] Dispatching Acceptor to Worker 0...");
+
+            auto *worker0 = core::Scheduler::instance().get_worker(0);
+            worker0->post_custom_task([this, port]()
+                                      { this->accept_loop(port); });
+
+            // 主线程化身为守护者，仅仅阻塞防止程序退出
+            Log::instance().info("[Gate] Main thread entering wait state.");
+            while (true)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
+        catch (const std::exception &e)
+        {
+            Log::instance().critical("Exception in GateServer::run: {}", e.what());
+            throw;
+        }
+    }
+
+    void GateServer::stop()
+    {
+        Log::instance().info("[Shutdown] Stopping Scheduler...");
+        core::Scheduler::instance().stop();
+    }
+
+    core::DetachedTask GateServer::handle_session(net::Socket client_socket)
+    {
+        // 【此时此刻的震撼】：
+        // 这行代码执行时，我们已经身处 target_worker_id 对应的线程里了！
+        // 接下来所有的 IO、Actor 计算，全部在这个 L1 Cache 极度亲和的核心里打转！
+
+        auto client_fd = client_socket.native_handle();
+        auto conn = std::make_shared<net::Connection>(std::move(client_socket));
+
+        core::ActorID player_id = core::ActorRegistry::instance().create_actor<core::PlayerActor>(conn);
+
+        if (!player_id.is_valid())
+        {
+            Log::instance().error("Failed to create actor for fd: {}", client_fd);
+            co_return;
+        }
+
+        try
+        {
+            while (true)
+            {
+                // 这里的 co_await 会毫无阻碍地使用当前 Worker 的 io_uring
+                auto packet = co_await conn->read_packet();
+                if (!packet)
+                    break;
+
+                auto *target_actor = core::ActorRegistry::instance().get(player_id);
+                if (target_actor)
+                {
+                    auto msg = core::NetworkMessagePool::instance().acquire(std::move(packet), client_fd);
+
+                    dispatch_to_actor(target_actor, msg.release());
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        catch (const std::exception &e)
+        {
+            Log::instance().error("[Gate] Error: {}", e.what());
+        }
+
+        // 断开处理
+        auto *target_actor = core::ActorRegistry::instance().get(player_id);
+        if (target_actor)
+        {
+            dispatch_to_actor(target_actor, new core::SessionClosedMsg(0));
+        }
+
+        Log::instance().info("[Gate] Connection Closed: {}", client_fd);
+    }
+
+    // 监听协程 (基本未变，只是日志移到了 Log 库)
+    core::DetachedTask GateServer::accept_loop(int port)
+    {
+        try
+        {
+            net::Acceptor acceptor(port);
+            uint64_t connection_counter = 0;
+
+            Log::instance().info("[Acceptor] Start listening on port {} (Running on Worker 0)", port);
+
+            while (true)
+            {
+                net::Socket client_socket = co_await acceptor.accept();
+
+                if (client_socket.is_valid())
+                {
+                    // 【核心巨变：跨核 Socket 移交】
+                    int total_workers = 4;
+                    int target_worker_id = (connection_counter++) % total_workers;
+
+                    auto *target_worker = core::Scheduler::instance().get_worker(target_worker_id);
+
+                    // 把 Socket 转移(move)给目标 Worker，让他在自己的核上拉起协程！
+                    target_worker->post_custom_task([this, s = std::move(client_socket)]() mutable
+                                                    { this->handle_session(std::move(s)); });
+                }
+                else if (errno == EMFILE || errno == ENFILE)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+            }
+        }
+        catch (const std::exception &e)
+        {
+            Log::instance().critical("Accept Loop Fatal Error: {}", e.what());
+        }
+    }
+
+    void GateServer::dispatch_to_actor(core::Actor *actor, core::ActorMessage *msg)
+    {
+        if (!actor || !msg)
+            return;
+
+        if (actor->push(msg))
+        {
+            if (actor->worker_id() == core::t_current_worker->id())
+            {
+                core::t_current_worker->dispatch_local(actor);
+            }
+            else
+            {
+                core::Scheduler::instance().get_worker(actor->worker_id())->post_cross_core_task(actor);
+            }
+        }
+    }
+
+} // namespace aegis::gate-e 
+
+

@@ -9,6 +9,7 @@
 #include "aegis/core/aoi_grid.h"
 #include "aegis/core/message.h"
 #include "aegis/core/playerActor.h"
+#include "aegis/core/sync_manager.h"
 
 namespace aegis::core
 {
@@ -20,8 +21,8 @@ namespace aegis::core
         SceneActor(ActorID self_id, float width, float height, float cellSize);
         ~SceneActor() = default;
 
-        // 核心：处理收到的消息
         void handle_message(ActorMessage *msg) override;
+        void OnTick();
 
     private:
         // 内部处理逻辑 (串行执行，无需加锁)
@@ -29,20 +30,26 @@ namespace aegis::core
         void OnHandleLeave(SceneLeaveMsg *msg);
         void OnHandleMove(SceneMoveMsg *msg);
 
+        void ProcessAoiEnterLeave(PlayerActor *mover,
+                                  const std::vector<uint64_t> &enterIds,
+                                  const std::vector<uint64_t> &leaveIds);
+
         // 辅助函数
         PlayerActor *GetPlayer(uint64_t actorId) const;
 
         template <typename T>
         void SendPacket(uint64_t targetId, uint32_t msgId, const T &proto);
 
-        void SendBuffer(uint64_t targetId, uint32_t msgId, const std::string &buffer);
+        void SendSharedBuffer(uint64_t targetId, uint32_t msgId, std::shared_ptr<std::string> sharedBuf);
 
         void reset(ActorID self_id, float width, float height, float cellSize);
 
     private:
+        bool is_ticking_ = false; // 场景是否已开始 Tick 驱动
         AOIGrid aoi_;
-        // 改为持有 shared_ptr，保证玩家生命周期安全
         std::unordered_map<uint64_t, PlayerActor *> actors_;
+
+        SyncManager sync_mgr_;
 
         // 缓存复用 (在 Actor 模型下单线程访问，安全)
         std::vector<uint64_t> cachedEnterIds_;

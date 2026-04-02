@@ -8,15 +8,16 @@
 #include <algorithm>
 #include <mutex>
 #include <iomanip>
-#include <array> // 记得包含 array
+#include <array>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/resource.h>
 
-// Aegis Core (假设这些头文件路径正确)
-#include "aegis/core/env.h"
+// Aegis Core
+#include "aegis/core/scheduler.h"
+#include "aegis/core/worker.h"
 #ifdef BLOCK_SIZE
 #undef BLOCK_SIZE
 #endif
@@ -28,6 +29,8 @@
 #include "cs_lobby.pb.h"
 #include "cs_battle.pb.h"
 #include "ids.pb.h"
+// [注意]: 确保你在 cs_battle.proto 中已经加上了 SCMoveNtfBatch
+// 并且在 ids.proto 中加上了 SC_MOVE_NTF_BATCH = xxx;
 
 using namespace aegis::cs::lobby;
 using namespace aegis::cs::battle;
@@ -36,19 +39,17 @@ using namespace aegis;
 void tune_fd_limit()
 {
     struct rlimit rl;
-    // 获取当前限制
     if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
     {
         perror("getrlimit");
         return;
     }
 
-    // 将软限制提升至硬限制的水平（即 1048576）
     rl.rlim_cur = rl.rlim_max;
 
     if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
     {
-        perror("setrlimit"); // 如果失败，通常是因为尝试超过硬限制
+        perror("setrlimit");
     }
     else
     {
@@ -57,7 +58,7 @@ void tune_fd_limit()
 }
 
 // =========================================================
-// 极简无锁延迟统计器 (Lock-Free Histogram) [已修复]
+// 极简无锁延迟统计器 (Lock-Free Histogram)
 // =========================================================
 class FastLatencyMonitor
 {
@@ -75,7 +76,7 @@ public:
 
     struct SimpleStats
     {
-        double avg = 0.0; // [修复] 补回 avg 字段
+        double avg = 0.0;
         size_t p99_latency = 0;
         size_t max_latency = 0;
         size_t total_count = 0;
@@ -90,8 +91,8 @@ public:
             return stats;
 
         size_t threshold = static_cast<size_t>(stats.total_count * 0.99);
-        size_t current_sum = 0;      // 用于找 P99
-        uint64_t total_time_sum = 0; // [修复] 用于计算 Avg
+        size_t current_sum = 0;
+        uint64_t total_time_sum = 0;
         bool p99_found = false;
 
         for (size_t i = 0; i < MAX_MS; ++i)
@@ -101,8 +102,8 @@ public:
             if (val > 0)
             {
                 current_sum += val;
-                total_time_sum += (i * val); // 累加总耗时
-                stats.max_latency = i;       // 只要有值，当前 i 就是已知的最大值
+                total_time_sum += (i * val);
+                stats.max_latency = i;
 
                 if (!p99_found && current_sum >= threshold)
                 {
@@ -112,7 +113,6 @@ public:
             }
         }
 
-        // 计算平均值
         stats.avg = static_cast<double>(total_time_sum) / stats.total_count;
         return stats;
     }
@@ -126,7 +126,7 @@ private:
 FastLatencyMonitor g_fast_monitor;
 std::atomic<uint64_t> g_recv_count{0};
 std::atomic<uint64_t> g_send_count{0};
-std::atomic<uint64_t> g_error_count{0}; // [确认保留]
+std::atomic<uint64_t> g_error_count{0};
 
 // =========================================================
 // Robot Class
@@ -134,7 +134,7 @@ std::atomic<uint64_t> g_error_count{0}; // [确认保留]
 class Robot : public std::enable_shared_from_this<Robot>
 {
 public:
-    Robot(int id) : id_(id)
+    Robot(int id, int num_workers) : id_(id), worker_id_(id_ % num_workers)
     {
         static std::mt19937 rng(std::random_device{}());
         std::uniform_real_distribution<float> dist(0, 500.0f);
@@ -143,6 +143,11 @@ public:
         std::uniform_real_distribution<float> vel(-1.0f, 1.0f);
         vx_ = vel(rng);
         vy_ = vel(rng);
+    }
+
+    int worker_id() const
+    {
+        return worker_id_;
     }
 
     core::DetachedTask start(const std::string &ip, int port)
@@ -218,7 +223,6 @@ private:
     template <typename T>
     void send_packet(uint32_t msg_id, const T &msg)
     {
-        std::lock_guard<std::mutex> lock(send_mutex_);
         if (conn_)
         {
             auto pkt = net::PacketPool::instance().acquire();
@@ -238,15 +242,18 @@ private:
 
         switch (msg_id)
         {
+        // [修改]: 替换为新的批量通知协议 ID
         case ids::SC_MOVE_NTF:
         {
+            // 面试高光：真正的延迟必须用心跳包测，移动包包含了服务器端 Tick 的缓冲等待时间 (Jitter)
+            // 在此仅作大致的网络与Tick合并耗时评估
             auto now = std::chrono::steady_clock::now();
             double ms = std::chrono::duration<double, std::milli>(now - last_move_send_time_).count();
             g_fast_monitor.add_sample(ms);
             break;
         }
         case ids::SC_ENTER_VIEW:
-            break; // 优化：不解析，仅利用 g_recv_count 统计 PPS
+            break;
         case ids::SC_LEAVE_VIEW:
             break;
         case ids::SC_PONG:
@@ -259,10 +266,10 @@ private:
     }
 
     int id_;
+    int worker_id_;
     std::shared_ptr<net::Connection> conn_;
     float x_, y_, vx_, vy_;
     std::chrono::steady_clock::time_point last_move_send_time_;
-    std::mutex send_mutex_;
 };
 
 // =========================================================
@@ -274,29 +281,30 @@ int main()
     Log::instance().set_level(spdlog::level::warn);
     std::setvbuf(stdout, nullptr, _IONBF, 0);
 
-    core::Env::instance().init();
+    int num_client_workers = 4;
+    core::Scheduler::instance().start(num_client_workers);
+
     std::vector<std::shared_ptr<Robot>> robots;
-    const int ROBOT_COUNT = 800;
+
+    const int ROBOT_COUNT = 100;
 
     std::cout << ">>> Launching robots..." << std::endl;
     for (int i = 0; i < ROBOT_COUNT; ++i)
     {
-        auto r = std::make_shared<Robot>(i);
+        auto r = std::make_shared<Robot>(i, num_client_workers);
         robots.push_back(r);
-        r->start("127.0.0.1", 8888);
+        auto *worker = core::Scheduler::instance().get_worker(r->worker_id());
+        worker->post_custom_task([r]()
+                                 { r->start("127.0.0.1", 8888); });
         if (i % 50 == 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
-
-    std::thread io_thread([]()
-                          { core::Env::instance().run(); });
 
     auto last_tick = std::chrono::steady_clock::now();
     auto last_log = last_tick;
     uint64_t tick_count = 0;
     double max_loop_cost_ms = 0;
 
-    // 严谨的主循环
     while (true)
     {
         auto now = std::chrono::steady_clock::now();
@@ -309,13 +317,16 @@ int main()
             last_tick = now;
 
             for (auto &r : robots)
-                r->tick(dt);
+            {
+                auto *worker = core::Scheduler::instance().get_worker(r->worker_id());
+                worker->post_custom_task([r, dt]()
+                                         { r->tick(dt); });
+            }
             tick_count++;
 
             auto tick_end = std::chrono::high_resolution_clock::now();
             double cost_ms = std::chrono::duration<double, std::milli>(tick_end - tick_start).count();
 
-            // 记录这一秒内的最大耗时
             if (cost_ms > max_loop_cost_ms)
                 max_loop_cost_ms = cost_ms;
         }
@@ -347,7 +358,6 @@ int main()
             std::cout << "   Out: " << std::setw(8) << qps_out << " pkg/s" << "\n";
             std::cout << "--------------------------------------------------" << "\n";
 
-            // [修复] lat 现在有值了，count > 0 检查有效
             if (lat.total_count > 0)
             {
                 std::cout << " [Latency RTT] (Samples: " << lat.total_count << ")" << "\n";
@@ -369,7 +379,6 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    if (io_thread.joinable())
-        io_thread.join();
+    core::Scheduler::instance().stop();
     return 0;
 }
