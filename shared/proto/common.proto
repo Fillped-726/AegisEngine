@@ -10,6 +10,13 @@ message PBVector3 {
   float z = 3;
 }
 
+enum PlayerState {
+    IDLE = 0;
+    MOVE = 1;
+    ATTACK = 2;
+    DEAD = 3;
+}
+
 // 完整的玩家快照信息
 message PBPlayerInfo {
   uint64 entity_id = 1;
@@ -18,4 +25,6 @@ message PBPlayerInfo {
   string name = 4;
   int32 skin_id = 5;
   int32 hp = 6;
+  PlayerState state = 7;
+  uint32 entity_type = 8;// 0: Player, 1: NPC, 2: Monster, 3: Boss
 }

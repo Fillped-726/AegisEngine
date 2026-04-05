@@ -1,15 +1,28 @@
 #include <vector>
+#include <iostream>
+#include <algorithm>
 using namespace std;
 
-
-int jump(int n){
-    vector<int> dp(n+1, 0);
-    dp[0] = 1;
-    dp[1] = 1;
-    dp[2]= 2;
-    dp[3] = 4;
-    for(int i=4;i<=n;i++){
-        dp[i]=dp[i-1]+dp[i-2]+dp[i-3];
+int main()
+{
+    int t;
+    cin >> t;
+    for (int i = 0; i < t; i++)
+    {
+        int n;
+        cin >> n;
+        string s;
+        cin >> s;
+        string temp;
+        for (int i = 0; i < s.size(); i++)
+        {
+            if (s[i] == ' ')
+            {
+                continue;
+            }
+            temp.push_back(s[i]);
+        }
+        sort(temp.begin(), temp.end());
+        cout << temp << endl;
     }
-    return dp[n];
 }

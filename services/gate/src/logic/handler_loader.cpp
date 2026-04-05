@@ -9,6 +9,7 @@
 #include "aegis/core/actor_registry.h" // [重要] 引入 Registry
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/message.h" // 引入刚才定义的消息
+#include "aegis/core/GameMessage.h"
 #include "aegis/core/worker.h"
 #include "aegis/common/actor_utils.h" // 引入 dispatch_msg 函数
 
@@ -53,9 +54,8 @@ namespace aegis::gate
                 Log::instance().info("[Logic] Login Request | UID: {} -> ActorID: {}", uid, player->id().raw);
 
                 // 2. 出生点计算
-                float spawnX = 100.0f;
-                float spawnY = 100.0f;
-                float spawnZ = 0.0f;
+                float spawnX = 250.0f;
+                float spawnY = 250.0f;
 
                 player->SetPos(spawnX, spawnY);
 
@@ -67,7 +67,6 @@ namespace aegis::gate
                 auto *pos = res.mutable_pos();
                 pos->set_x(spawnX);
                 pos->set_y(spawnY);
-                pos->set_z(spawnZ);
 
                 player->send_packet(ids::SC_LOGIN_RES, res);
 
@@ -151,6 +150,45 @@ namespace aegis::gate
                     Log::instance().warn("[Move] Player {} has no valid scene supervisor.", player->id().raw);
                 }
 
+                co_return;
+            });
+
+        d.register_handler<CSUpdateStateReq>(
+            ids::CS_UPDATE_STATE_REQ,
+            [](aegis::core::Actor *actor, const CSUpdateStateReq &req) -> aegis::core::Task<void>
+            {
+                auto player = static_cast<aegis::core::PlayerActor *>(actor);
+
+                aegis::common::PlayerState new_state = req.state();
+
+                player->SetState(new_state);
+
+                Log::instance().debug("[State] Player {} state changed to {}", player->id().raw, (int)new_state);
+
+                co_return;
+            });
+
+        // ==========================================================
+        // Handler 4: Skill Cast (客户端请求释放技能)
+        // ==========================================================
+        d.register_handler<CSSkillCastReq>(
+            ids::CS_SKILL_CAST_REQ,
+            [](aegis::core::Actor *actor, const CSSkillCastReq &req) -> aegis::core::Task<void>
+            {
+                auto player = static_cast<aegis::core::PlayerActor *>(actor);
+                ActorID scene_id = player->parent_id();
+                auto *scene = ActorRegistry::instance().get(scene_id);
+
+                if (scene)
+                {
+                    // 提取目标位置
+                    float tx = req.target_pos().x();
+                    float ty = req.target_pos().y();
+
+                    // 打包投递给 SceneActor 的无锁 Tick 队列
+                    auto *msg = new SceneSkillCastMsg(player->id(), req.skill_id(), req.target_id(), tx, ty);
+                    dispatch_msg(scene, msg);
+                }
                 co_return;
             });
 

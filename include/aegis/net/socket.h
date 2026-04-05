@@ -1,3 +1,4 @@
+// socket.h
 #pragma once
 
 #include <liburing.h> // [DEPENDENCY: Linux io_uring]

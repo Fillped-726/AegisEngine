@@ -38,6 +38,7 @@ endif()
 # ==========================================
 # 核心原则：只负责“找”，不负责“下”和“编”
 
+find_package(behaviortree_cpp CONFIG REQUIRED)
 # --- Log & Format ---
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)

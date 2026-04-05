@@ -1,3 +1,4 @@
+// scene_actor.h
 #pragma once
 
 #include <unordered_map>
@@ -8,7 +9,9 @@
 #include "aegis/core/actor_traits.h"
 #include "aegis/core/aoi_grid.h"
 #include "aegis/core/message.h"
+#include "aegis/core/GameMessage.h"
 #include "aegis/core/playerActor.h"
+#include "aegis/core/npc_actor.h"
 #include "aegis/core/sync_manager.h"
 
 namespace aegis::core
@@ -24,18 +27,21 @@ namespace aegis::core
         void handle_message(ActorMessage *msg) override;
         void OnTick();
 
+        void AddNpc(NpcActor *npc);
+        void RemoveNpc(uint64_t raw_id);
+        const AOIGrid &GetAoi() const { return aoi_; }
+        PlayerActor *GetPlayer(uint64_t actorId) const;
+
     private:
         // 内部处理逻辑 (串行执行，无需加锁)
         void OnHandleEnter(SceneEnterMsg *msg);
         void OnHandleLeave(SceneLeaveMsg *msg);
         void OnHandleMove(SceneMoveMsg *msg);
+        void OnHandleSkillCast(SceneSkillCastMsg *msg);
 
         void ProcessAoiEnterLeave(PlayerActor *mover,
                                   const std::vector<uint64_t> &enterIds,
                                   const std::vector<uint64_t> &leaveIds);
-
-        // 辅助函数
-        PlayerActor *GetPlayer(uint64_t actorId) const;
 
         template <typename T>
         void SendPacket(uint64_t targetId, uint32_t msgId, const T &proto);
@@ -48,6 +54,7 @@ namespace aegis::core
         bool is_ticking_ = false; // 场景是否已开始 Tick 驱动
         AOIGrid aoi_;
         std::unordered_map<uint64_t, PlayerActor *> actors_;
+        std::unordered_map<uint64_t, NpcActor *> npcs_;
 
         SyncManager sync_mgr_;
 

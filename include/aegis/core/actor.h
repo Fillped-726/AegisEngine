@@ -90,6 +90,9 @@ namespace aegis::core
         // 子类实现具体的业务逻辑
         virtual void handle_message(ActorMessage *msg) = 0;
 
+        ActorID id_;
+        ActorID parent_id_;
+
     private:
         static constexpr size_t kCacheLine = hardware_constructive_interference_size;
 
@@ -104,9 +107,5 @@ namespace aegis::core
 
         // 调度器分配的 Worker ID
         int worker_id_{-1};
-
-        // 父子关系
-        ActorID id_;
-        ActorID parent_id_;
     };
 } // namespace aegis::core

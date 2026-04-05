@@ -286,7 +286,7 @@ int main()
 
     std::vector<std::shared_ptr<Robot>> robots;
 
-    const int ROBOT_COUNT = 100;
+    const int ROBOT_COUNT = 1000;
 
     std::cout << ">>> Launching robots..." << std::endl;
     for (int i = 0; i < ROBOT_COUNT; ++i)

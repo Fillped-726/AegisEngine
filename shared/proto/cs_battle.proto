@@ -32,3 +32,36 @@ message SCEnterViewNtf {
 message SCLeaveViewNtf {
   repeated uint64 entity_ids = 1;
 }
+
+// [CS] 请求更新状态
+message CSUpdateStateReq {
+  aegis.common.PlayerState state = 1;
+}
+
+// [SC] 状态更新
+message SCStateUpdateBatch {
+  message StateUpdateInfo {
+    uint64 entity_id = 1;
+    aegis.common.PlayerState state = 2;
+  }
+  repeated StateUpdateInfo updates = 1;
+}
+
+// [CS] 请求释放技能
+message CSSkillCastReq {
+  uint32 skill_id = 1;
+  uint64 target_id = 2; // 如果是无锁定技能（如发波），可传 0
+  aegis.common.PBVector3 target_pos = 3; // 施法朝向或目标点
+  float direction = 4;
+}
+
+// [SC] 伤害事件广播 (用于客户端飘字、受击/死亡表现)
+// 注意：伤害是事件流(Event)，不是状态流(State)，必须独立发包保证不丢飘字
+message SCDamageNtf {
+  uint64 attacker_id = 1;
+  uint64 target_id = 2;
+  uint32 skill_id = 3;
+  int32 damage = 4;      // 造成的伤害数值
+  int32 current_hp = 5;  // 扣减后的剩余血量
+  bool is_crit = 6;      // 是否暴击 (预留表现位)
+}

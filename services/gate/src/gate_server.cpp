@@ -26,6 +26,7 @@
 
 // Business Logic
 #include "aegis/core/playerActor.h"
+#include "aegis/core/npc_actor.h"
 #include "aegis/core/scene_actor.h" // [New]
 #include "ids.pb.h"
 #include "cs_battle.pb.h" // [New]
@@ -76,7 +77,7 @@ namespace aegis::gate
 
         // 1. 初始化日志
         Log::instance().init_config(config_path, "Gate");
-        Log::instance().set_level(spdlog::level::debug); // 默认错误级别，后续可通过配置调整
+        Log::instance().set_level(spdlog::level::debug);
 
         // 1. 【Bootstrap】创建全局 RoomManager
         room_manager_id_ = core::ActorRegistry::instance().create_actor<core::RoomManager>();
@@ -102,6 +103,23 @@ namespace aegis::gate
             if (scene)
             {
                 scene->set_parent_id(room_manager_id_);
+
+                // 【新增：强转为 SceneActor 以便调用 AddNpc】
+                auto *concrete_scene = static_cast<core::SceneActor *>(scene);
+
+                // 【新增：在场景中央 (250, 250) 附近刷 3 个测试 NPC】
+                for (int i = 0; i < 3; ++i)
+                {
+                    auto npc_id = core::ActorRegistry::instance().create_actor<core::NpcActor>(); // 注意之前改的带参构造
+                    if (npc_id.is_valid())
+                    {
+                        auto *npc = static_cast<core::NpcActor *>(core::ActorRegistry::instance().get(npc_id));
+                        npc->reset(npc_id, 250.0f + i * 5.0f, 250.0f + i * 5.0f);
+                        concrete_scene->AddNpc(npc);
+                        Log::instance().info("[Init] Spawned Test NPC {} at ({}, {})", npc_id.raw, npc->GetX(), npc->GetY());
+                    }
+                }
+                Log::instance().info("[Init] Main City (Scene) Created. ID: {}", scene_id.raw);
             }
 
             Log::instance().info("[Init] Main City (Scene) Created. ID: {}", scene_id.raw);

@@ -19,6 +19,7 @@
     "jemalloc",
     "concurrentqueue",
     "gtest",
-    "benchmark"
+    "benchmark",
+    "behaviortree-cpp"
   ]
 }

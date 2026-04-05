@@ -22,6 +22,7 @@ target_link_libraries(AegisEngine PUBLIC
     AegisProto # 链接上面定义的协议库
     moodycamel::ConcurrentQueue
     common_jemalloc # 链接上面定义的 jemalloc 接口库
+    BT::behaviortree_cpp
 )
 
 # 链接 liburing 的头文件路径 (如果是 pkg-config 找出来的)

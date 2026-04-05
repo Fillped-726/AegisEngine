@@ -1,3 +1,4 @@
+// actor_registry.cpp
 #include "aegis/core/actor_registry.h"
 #include "aegis/core/actor.h"
 #include "aegis/common/aegisLog.h"

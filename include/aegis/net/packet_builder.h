@@ -1,5 +1,5 @@
+// packet_builder.h
 #pragma once
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,6 +14,7 @@ namespace aegis::net
         uint64_t uid;
         float x;
         float y;
+        uint32_t entity_type; // 0: Player, 1: NPC, 2: Monster, 3: boss
     };
 
     // [INTENT: Stateless factory for Protobuf serialization; yields immutable shared network buffers for broadcast]
