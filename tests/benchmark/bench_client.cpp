@@ -24,10 +24,10 @@ using namespace aegis;
 // --- 压测配置参数 ---
 const std::string TARGET_IP = "127.0.0.1";
 const int TARGET_PORT = 8888;
-const int CONCURRENCY = 16;    // 并发连接数
-const int PAYLOAD_SIZE = 32;   // 报文体大小
-const int DURATION_SEC = 10;   // 压测持续时间
-const int PIPELINE_DEPTH = 64; // 【核心】每个连接保持在飞行状态(In-flight)的包数量
+const int CONCURRENCY = 16;   // 并发连接数
+const int PAYLOAD_SIZE = 32;  // 报文体大小
+const int DURATION_SEC = 10;  // 压测持续时间
+const int PIPELINE_DEPTH = 1; // 【核心】每个连接保持在飞行状态(In-flight)的包数量
 
 std::atomic<bool> g_running{true};
 std::atomic<uint64_t> g_total_reqs{0};

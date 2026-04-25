@@ -1,6 +1,6 @@
 // include/aegis/common/tools.h
 #pragma once
-#include <pthread.h>      // [DEPENDENCY: POSIX threads]
+#include <pthread.h> // [DEPENDENCY: POSIX threads]
 #include <sys/resource.h> // [DEPENDENCY: POSIX resource limits]
 #include <iostream>
 #include <cstdio>
@@ -28,7 +28,7 @@ void tune_fd_limit()
 
     if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
     {
-        perror("setrlimit");
+        perror("setrlimit"); 
     }
     else
     {

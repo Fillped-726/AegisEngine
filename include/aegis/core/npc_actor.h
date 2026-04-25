@@ -1,3 +1,4 @@
+// npc_actor.h
 #pragma once
 
 #include "aegis/core/actor_traits.h"
@@ -34,6 +35,8 @@ namespace aegis::core
         void SetScene(SceneActor *scene) { scene_ = scene; }
         SceneActor *GetScene() const { return scene_; }
         bool IsAiActive() const { return is_ai_active_; }
+
+        // 行为树相关
         BT::Tree &GetBehaviorTree() { return tree_; }
         SceneActor *scene_ = nullptr;
 

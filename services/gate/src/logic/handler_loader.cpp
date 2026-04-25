@@ -54,8 +54,8 @@ namespace aegis::gate
                 Log::instance().info("[Logic] Login Request | UID: {} -> ActorID: {}", uid, player->id().raw);
 
                 // 2. 出生点计算
-                float spawnX = 250.0f;
-                float spawnY = 250.0f;
+                float spawnX = 0.0f;
+                float spawnY = 0.0f;
 
                 player->SetPos(spawnX, spawnY);
 

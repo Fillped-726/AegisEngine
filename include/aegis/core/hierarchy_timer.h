@@ -42,11 +42,6 @@ namespace aegis::core
         ~HierarchicalTimeWheel() = default;
 
         /**
-         * @brief 初始化 timerfd
-         */
-        void init();
-
-        /**
          * @brief 添加定时器 (线程安全)
          */
         TimerId add_timer(uint32_t delay, TimerCallback cb);

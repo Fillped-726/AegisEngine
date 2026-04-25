@@ -1,3 +1,5 @@
+// room_manager.cpp
+
 #include "aegis/core/room_manager.h"
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/scene_actor.h"

@@ -1,3 +1,4 @@
+// actor_registry.h
 #pragma once
 
 #include <atomic>

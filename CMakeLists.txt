@@ -134,6 +134,13 @@ add_subdirectory(shared)
 add_subdirectory(src)         
 add_subdirectory(services)    
 
+# 可选: Envoy 网关模块（用于 CI/CD 中验证 Envoy 配置）
+# 需要启用 ENVOY_GATEWAY 选项: cmake -DENVOY_GATEWAY=ON ..
+option(ENVOY_GATEWAY "Build and validate Envoy gateway configuration" OFF)
+if(ENVOY_GATEWAY)
+    add_subdirectory(gateways)
+endif()
+
 # ==========================================
 # 4. 测试模块
 # ==========================================
