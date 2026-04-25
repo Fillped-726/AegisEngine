@@ -8,8 +8,7 @@
 #include "aegis/core/scheduler.h"
 #include "aegis/core/actor_registry.h" // [重要] 引入 Registry
 #include "aegis/common/aegisLog.h"
-#include "aegis/core/message.h" // 引入刚才定义的消息
-#include "aegis/core/GameMessage.h"
+#include "aegis/core/message/message.h" // 引入刚才定义的消息
 #include "aegis/core/worker.h"
 #include "aegis/common/actor_utils.h" // 引入 dispatch_msg 函数
 

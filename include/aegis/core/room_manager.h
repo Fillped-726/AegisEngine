@@ -6,7 +6,7 @@
 
 #include <unordered_map>
 #include "aegis/core/actor_traits.h" // 包含 SimpleActor
-#include "aegis/core/message.h"
+#include "aegis/core/message/message_rpc.h"
 #include "aegis/core/actor_registry.h"
 #include "cs_battle.pb.h" // 你的 Protobuf 定义
 
@@ -14,7 +14,7 @@ namespace aegis::core
 {
     /**
      * @brief Room lifecycle manager.
-     * 
+     *
      * Creates and terminates game rooms (scenes). Maintains bidirectional
      * O(1) mapping between room IDs and scene ActorIDs.
      * Monitors scene health via on_scene_died callback.

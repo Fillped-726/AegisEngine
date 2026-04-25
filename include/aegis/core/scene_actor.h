@@ -11,8 +11,7 @@
 
 #include "aegis/core/actor_traits.h"
 #include "aegis/core/aoi_grid.h"
-#include "aegis/core/message.h"
-#include "aegis/core/GameMessage.h"
+#include "aegis/core/message/message.h"
 #include "aegis/core/playerActor.h"
 #include "aegis/core/npc_actor.h"
 #include "aegis/core/sync_manager.h"
@@ -23,7 +22,7 @@ namespace aegis::core
     // --- SceneActor ---
     /**
      * @brief Scene actor managing a game map instance.
-     * 
+     *
      * Owns AOI grid, player map, NPC map, and SyncManager.
      * Handles scene enter/leave/move/skill_cast messages.
      * Drives SyncManager::Tick() for state broadcast.

@@ -2,7 +2,6 @@
 #include "aegis/core/scene_actor.h"
 #include "aegis/core/npc_actor.h"
 #include "aegis/core/playerActor.h"
-#include "aegis/core/GameMessage.h"
 #include "aegis/core/actor_traits.h"
 
 using namespace aegis::core;

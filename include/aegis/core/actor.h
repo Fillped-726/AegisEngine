@@ -1,7 +1,7 @@
 /**
  * @file actor.h
  * @brief Core Actor base class definition
- * 
+ *
  * Defines the base Actor class with lock-free message queue,
  * state machine (Active/Idle/Dead), and caching line alignment.
  */
@@ -14,7 +14,7 @@
 
 // 仅保留必需的头文件，日志和异常等依赖移交 cpp
 #include "aegis/net/packet.h"
-#include "aegis/core/message.h"
+#include "aegis/core/message/message.h"
 #include "aegis/core/hierarchy_timer.h"
 
 // 适配不同编译器的缓存行大小获取
@@ -37,10 +37,10 @@ namespace aegis::core
     // --- 3. 核心 Actor 引擎 (MPSC Lock-Free) ---
     /**
      * @brief Base class for all actors in the AegisEngine.
-     * 
+     *
      * Provides lock-free message enqueueing, worker binding, state machine
      * (Active/Idle/Dead), and caching-line alignment for false-sharing prevention.
-     * 
+     *
      * Subclasses must implement finalize(). Lifecycle strategy is chosen via
      * SimpleActor (new/delete) or PooledActor (ObjectPool) CRTP wrappers.
      */
