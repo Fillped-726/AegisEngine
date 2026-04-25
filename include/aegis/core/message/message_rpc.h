@@ -1,6 +1,9 @@
 #pragma once
 #include <future>
+#include <string>
+#include <cstdint>
 #include "aegis/core/message/message_base.h"
+#include "aegis/core/actor_registry.h"
 #include "ss_bridge.pb.h"
 
 namespace aegis::core
@@ -31,4 +34,32 @@ namespace aegis::core
         aegis::ss::bridge::TerminateRoomReq,
         aegis::ss::bridge::TerminateRoomRes,
         MSG_TYPE_RPC_TERMINATE_ROOM>;
+
+    // ==========================================================
+    // 内部营地分配 RPC (Module C)
+    // ==========================================================
+
+    // AssignCampReq: PlayerActor → RoomManager 请求分配一个营地
+    struct AssignCampReq
+    {
+        uint64_t player_uid = 0;       // 请求者的 UID
+        ActorID player_actor_id;       // 请求者的 ActorID
+        std::string camp_name;         // 营地名 (创建时使用)
+        bool is_create = false;        // true = 创建新营地, false = 加入已有营地
+        uint64_t target_scene_id = 0;  // 加入目标营地 (is_create=false 时有效)
+    };
+
+    // AssignCampRes: RoomManager → PlayerActor 回复分配结果
+    struct AssignCampRes
+    {
+        int32_t ret_code = 0;
+        ActorID scene_actor_id;        // 分配到的 SceneActor ID
+        std::string camp_name;
+        std::string err_msg;
+    };
+
+    using RPCAssignCampMsg = RpcMessage<
+        AssignCampReq,
+        AssignCampRes,
+        MSG_TYPE_RPC_ASSIGN_CAMP>;
 }

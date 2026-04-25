@@ -1,28 +1,31 @@
 #include <iostream>
 #include <csignal>
 #include "gate_server.h"
+#include "aegis/core/game_app.h"
 
 int main()
 {
     try
     {
-        // 实例化门面
+        // 1. 实例化网关 (纯网络层)
         aegis::gate::GateServer server;
 
         if (std::signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         {
-            // 理论上不会失败，但严谨起见可以处理
             return 1;
         }
 
-        // 1. 初始化 (日志、调度器、IO环)
-        // 参数可以从命令行解析，这里先硬编码
+        // 2. 初始化网关 (日志、调度器、tune_fd_limit)
+        //    内部会先 load_handlers() 注册所有业务处理器
         server.init("logs/gate_server.log", 4);
 
-        // 2. 运行 (启动监听、定时器，阻塞住)
+        // 3. 启动业务层 (GameApp 接管 RoomManager、主城创建、NPC 刷怪)
+        aegis::core::GameApp::instance().init();
+
+        // 4. 运行网关 (accept 循环 + 事件驱动，阻塞)
         server.run(8888);
 
-        // run() 内部是 while(true)，除非抛出异常，否则不会走到这里
+        // run() 会阻塞，除非异常不会走到这里
     }
     catch (const std::exception &e)
     {

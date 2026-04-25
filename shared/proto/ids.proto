@@ -6,24 +6,31 @@ option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/ids";
 enum MsgID {
     UNKNOWN = 0;
     
-    // 1000-1999: Lobby 
+    // 1000-1999: Lobby / Login
     CS_LOGIN_REQ = 1001;
     SC_LOGIN_RES = 1002;
     
-    // 2000-2999: Battle 
-    CS_PING      = 2001; 
-    SC_PONG      = 2002;
-    CS_MOVE_REQ  = 2003;
-    SC_MOVE_NTF  = 2004;
-    SC_ENTER_VIEW = 2005;
-    SC_LEAVE_VIEW = 2006;
+    // 1100-1199: Camp (动态营地创建与加入)
+    C2S_CREATE_CAMP_REQ = 1101;  // 玩家请求创建营地
+    S2C_CREATE_CAMP_RES = 1102;  // 创建结果
+    C2S_JOIN_CAMP_REQ   = 1103;  // 玩家请求加入营地
+    S2C_JOIN_CAMP_RES   = 1104;  // 加入结果
+    S2C_CAMP_SNAPSHOT   = 1105;  // 营地快照补帧
+    
+    // 2000-2999: Battle / Gameplay
+    CS_PING          = 2001; 
+    SC_PONG          = 2002;
+    CS_MOVE_REQ      = 2003;
+    SC_MOVE_NTF      = 2004;
+    SC_ENTER_VIEW    = 2005;
+    SC_LEAVE_VIEW    = 2006;
     CS_UPDATE_STATE_REQ = 2007;
     SC_STATE_UPDATE_BATCH = 2008;
     SC_MOVE_NTF_BATCH = 2009;
     CS_SKILL_CAST_REQ = 2010;
-    SC_DAMAGE_NTF = 2011;
+    SC_DAMAGE_NTF    = 2011;
     
-
-    SS_CREATE_ROOM_REQ    = 3001; // CreateRoomMsg
-    SS_TERMINATE_ROOM_REQ = 3002; // TerminateRoomMsg
+    // 3000-3999: Server-to-Server
+    SS_CREATE_ROOM_REQ    = 3001;
+    SS_TERMINATE_ROOM_REQ = 3002;
 }

@@ -22,6 +22,14 @@ namespace aegis::gate
         core::ActorID actor_id;
         bool logged_in = false;
     };
+
+    /**
+     * @brief Pure Gateway — only responsible for network I/O and session management.
+     *
+     * No business logic includes (SceneActor, NpcActor, RoomManager).
+     * init() sets up Log, Scheduler, and fd limit only.
+     * handle_session() binds a Socket to a new PlayerActor.
+     */
     class GateServer
     {
     public:
@@ -32,7 +40,7 @@ namespace aegis::gate
         GateServer(const GateServer &) = delete;
         GateServer &operator=(const GateServer &) = delete;
 
-        // 初始化：加载配置、场景、逻辑、线程池
+        // 初始化：仅拉起 Log、Scheduler、tune_fd_limit
         void init(const std::string &config_path, int num_workers = 0);
 
         // 运行：启动主 IO 循环 (阻塞)
@@ -41,15 +49,11 @@ namespace aegis::gate
         // 停止：优雅退出
         void stop();
 
-        inline static core::ActorID g_DefaultSceneID;
-
     private:
         // --- 协程循环 ---
         aegis::core::DetachedTask accept_loop(int port);
         aegis::core::DetachedTask handle_session(net::Socket client_socket);
         void dispatch_to_actor(core::Actor *actor, core::ActorMessage *msg);
-
-    private:
-        core::ActorID room_manager_id_;
     };
-}
+
+} // namespace aegis::gate

@@ -21,11 +21,12 @@ namespace aegis::core
         MSG_TYPE_ACTOR_DIED = 21,
         MSG_TYPE_POISON_PILL = 22,
 
+        // RPCs (Module C)
         MSG_TYPE_RPC_CREATE_ROOM = 50,
         MSG_TYPE_RPC_TERMINATE_ROOM = 51,
+        MSG_TYPE_RPC_ASSIGN_CAMP = 52,  // 玩家请求分配/创建营地
 
         MSG_TYPE_FORWARD_PACKET = 60,
         MSG_TYPE_REBIND_CONNECTION = 61
-
     };
 }

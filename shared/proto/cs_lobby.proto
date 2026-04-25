@@ -28,3 +28,31 @@ message S2C_CampSnapshotPush {
     uint64 scene_actor_id = 1;
     repeated aegis.common.PBPlayerInfo players = 2; // 包含位置、HP等全量状态
 }
+
+// ==========================================================
+// 动态营地创建与加入 (Module C)
+// ==========================================================
+
+// 玩家请求创建营地
+message C2S_CreateCampReq {
+    string camp_name = 1;    // 营地名称 (可选，空则使用默认名)
+    uint32 map_id = 2;       // 地图ID (预留，不同地图类型)
+}
+
+message S2C_CreateCampRes {
+    int32 ret_code = 1;
+    string msg = 2;
+    uint64 scene_actor_id = 3;  // 创建的营地 Scene Actor ID
+    string camp_name = 4;
+}
+
+// 玩家请求加入营地
+message C2S_JoinCampReq {
+    uint64 scene_actor_id = 1;  // 要加入的营地 Scene Actor ID
+}
+
+message S2C_JoinCampRes {
+    int32 ret_code = 1;
+    string msg = 2;
+    uint64 scene_actor_id = 3;
+}

@@ -14,7 +14,6 @@ namespace aegis::core
         // 1. 创建房间请求 (RPC)
         case MSG_TYPE_RPC_CREATE_ROOM:
         {
-            // 强转为具体类型
             auto *real_msg = static_cast<RPCCreateRoomMsg *>(msg);
             on_create_room(*real_msg);
             break;
@@ -28,12 +27,19 @@ namespace aegis::core
             break;
         }
 
-        // 3. 【核心】监管：收到子节点死亡通知
-        case MSG_TYPE_ACTOR_DIED: // 请确保这个枚举值和你定义的一致
+        // 3. 监管：收到子节点死亡通知
+        case MSG_TYPE_ACTOR_DIED:
         {
             auto *real_msg = static_cast<ActorDiedMsg *>(msg);
             on_scene_died(real_msg->deceased_id.parts.index, real_msg->reason);
-            // 同样，如果是 new 出来的消息，外层 Actor::process_batch 会调用 destroy_message
+            break;
+        }
+
+        // 4. 营地分配请求 (Module C)
+        case MSG_TYPE_RPC_ASSIGN_CAMP:
+        {
+            auto *real_msg = static_cast<RPCAssignCampMsg *>(msg);
+            on_assign_camp(*real_msg);
             break;
         }
 
@@ -59,9 +65,7 @@ namespace aegis::core
             return;
         }
 
-        // 2. 【核心】孵化 SceneActor
-        // [修改点 1] 不要传 this->id() 了，因为 SceneActor 的构造函数只接受 (ActorID, w, h, s)
-        // Registry 会自动生成新 ID 并传给 SceneActor
+        // 2. 孵化 SceneActor
         ActorID scene_id = ActorRegistry::instance().create_actor<SceneActor>(500.0f, 500.0f, 10.0f);
 
         if (!scene_id.is_valid())
@@ -72,17 +76,14 @@ namespace aegis::core
             return;
         }
 
-        // 3. 【核心】认父 (Set Supervisor)
-        // [修改点 2] 创建成功后，获取对象指针，显式设置我是它的父亲
+        // 3. 认父
         auto *scene = ActorRegistry::instance().get(scene_id);
         if (scene)
         {
-            // 绑定父子关系：如果有未捕获异常导致 Scene 崩溃，消息会发给 RoomManager
             scene->set_parent_id(this->id());
         }
         else
         {
-            // 极少见的情况：刚创建完就拿不到（除非多线程竞态极高导致被回收），防一手
             res.mutable_header()->set_code(3);
             res.mutable_header()->set_msg("System Error: Scene created but not found");
             msg.Reply(res);
@@ -93,16 +94,11 @@ namespace aegis::core
         room_id_to_actor_[room_id] = scene_id.raw;
         actor_to_room_id_[scene_id.raw] = room_id;
 
-        // 这里的日志可以用 scene_id.raw 打印
         aegis::Log::instance().info("[RoomMgr] Created Room {} -> SceneActor {}", room_id, scene_id.raw);
 
         // 5. 回复 RPC
         res.mutable_header()->set_code(0);
         res.set_room_id(room_id);
-
-        // 如果是直连模式，这里通常还要返回 token, ip, port
-        // res.set_token(...);
-
         msg.Reply(res);
     }
 
@@ -117,19 +113,12 @@ namespace aegis::core
         {
             uint32_t scene_actor_id = it->second;
 
-            // 1. 逻辑移除 (防止后续请求进来)
             room_id_to_actor_.erase(it);
             actor_to_room_id_.erase(scene_actor_id);
 
-            // 2. 赐死 (让 Scene 自杀)
-            // Scene 收到后会处理后事，然后 finalize，最后发 DiedMsg 回来
             auto *scene_ptr = ActorRegistry::instance().get(scene_actor_id);
             if (scene_ptr)
             {
-                // 发送毒药丸 (你需要定义这个消息，或者复用 SessionClosed/Destroy)
-                // scene_ptr->push(new PoisonPillMsg());
-
-                // 如果没有毒药丸消息，暂时用这个代替测试
                 scene_ptr->push(new ActorDestroyMsg());
             }
 
@@ -148,28 +137,101 @@ namespace aegis::core
     {
         uint32_t actor_id = static_cast<uint32_t>(deceased_id);
 
-        // 查反向表：谁死了？
         auto it = actor_to_room_id_.find(actor_id);
         if (it != actor_to_room_id_.end())
         {
             uint32_t room_id = it->second;
 
-            // 彻底清理
-            // 注意：如果在 on_terminate_room 里已经清理过了，这里可能找不到，是正常的
-            // 这里主要处理"Scene 意外崩溃"的情况
             room_id_to_actor_.erase(room_id);
             actor_to_room_id_.erase(it);
 
             if (reason != 0)
             {
                 aegis::Log::instance().error("[RoomMgr] Room {} (Scene {}) CRASHED! Reason: {}", room_id, actor_id, reason);
-                // TODO: 可以在这里实现重启策略 (Restart Strategy)
             }
             else
             {
                 aegis::Log::instance().info("[RoomMgr] Room {} (Scene {}) stopped normally.", room_id, actor_id);
             }
         }
+
+        // 也清理营地表
+        camp_scenes_.erase(deceased_id);
+    }
+
+    void RoomManager::on_assign_camp(const RPCAssignCampMsg &msg)
+    {
+        const auto &req = msg.req;
+        AssignCampRes res;
+
+        if (req.is_create)
+        {
+            // --------------------------------------------------
+            // 创建新营地
+            // --------------------------------------------------
+            ActorID camp_id = ActorRegistry::instance().create_actor<SceneActor>(500.0f, 500.0f, 10.0f);
+            if (!camp_id.is_valid())
+            {
+                res.ret_code = 1;
+                res.err_msg = "Failed to create camp scene";
+                msg.Reply(res);
+                return;
+            }
+
+            auto *scene = ActorRegistry::instance().get(camp_id);
+            if (scene)
+            {
+                scene->set_parent_id(this->id());
+            }
+
+            // 记录营地
+            std::string name = req.camp_name.empty() ? "Camp_" + std::to_string(camp_id.raw) : req.camp_name;
+            camp_scenes_[camp_id.raw] = name;
+
+            res.ret_code = 0;
+            res.scene_actor_id = camp_id;
+            res.camp_name = name;
+
+            aegis::Log::instance().info("[Camp] Player {} created camp '{}' -> SceneActor {}",
+                                        req.player_uid, name, camp_id.raw);
+        }
+        else
+        {
+            // --------------------------------------------------
+            // 加入已有营地
+            // --------------------------------------------------
+            uint64_t target_scene = req.target_scene_id;
+
+            // 验证存在
+            auto it = camp_scenes_.find(target_scene);
+            if (it != camp_scenes_.end())
+            {
+                auto *scene = ActorRegistry::instance().get(target_scene);
+                if (scene)
+                {
+                    res.ret_code = 0;
+                    res.scene_actor_id = ActorID(target_scene);
+                    res.camp_name = it->second;
+
+                    aegis::Log::instance().info("[Camp] Player {} joining camp '{}' (SceneActor {})",
+                                                req.player_uid, it->second, target_scene);
+                }
+                else
+                {
+                    // 营地已销毁但记录还在，清理并报错
+                    camp_scenes_.erase(it);
+                    res.ret_code = 2;
+                    res.err_msg = "Camp scene no longer exists";
+                }
+            }
+            else
+            {
+                res.ret_code = 3;
+                res.err_msg = "Camp not found";
+            }
+        }
+
+        msg.Reply(res);
     }
 
 } // namespace aegis::core
