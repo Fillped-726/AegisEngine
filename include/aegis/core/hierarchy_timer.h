@@ -1,3 +1,10 @@
+/**
+ * @file hierarchy_timer.h
+ * @brief 5-level hierarchical time wheel for O(1) timer operations.
+ * 
+ * Uses intrusive lists for zero-copy cascade between wheel levels.
+ * TimerNode allocated from ObjectPool. Tick driven at TICK_MS=50 interval.
+ */
 #pragma once
 
 #include "aegis/common/objectPool.h"
@@ -35,6 +42,16 @@ namespace aegis::core
     // 定义 Pool 类型
     using TimerNodePool = aegis::core::ObjectPool<TimerNode, 100000, 128>;
 
+    /**
+     * @brief 5-level hierarchical time wheel timer manager.
+     * 
+     * Level 1: 256 slots (TICK_MS=50ms each = ~12.8s range)
+     * Levels 2-5: 64 slots each (cascading)
+     * Total range: ~36 hours at 50ms tick.
+     * 
+     * All operations O(1). Cascade uses IntrusiveList splice
+     * for zero-copy timer migration between levels.
+     */
     class HierarchicalTimeWheel
     {
     public:

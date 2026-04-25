@@ -1,9 +1,16 @@
-// aegis/core/actor_traits.h
+/**
+ * @file actor_traits.h
+ * @brief CRTP wrappers SimpleActor<T> and PooledActor<T> for object lifecycle management.
+ */
 #pragma once
 
 #include "aegis/core/actor.h"
 #include "aegis/common/objectPool.h" // 确保包含你的 ObjectPool 头文件
 
+/**
+ * @namespace aegis::core
+ * @brief Core engine namespace containing Actor system, scheduling, and game logic.
+ */
 namespace aegis::core
 {
     // ========================================================

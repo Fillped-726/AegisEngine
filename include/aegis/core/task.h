@@ -1,3 +1,10 @@
+/**
+ * @file task.h
+ * @brief C++20 coroutine task types: Task<T>, DetachedTask, MoveOnlyTask.
+ * 
+ * Implements promise_type-based coroutine infrastructure with eager start,
+ * symmetric transfer, exception propagation, and fire-and-forget semantics.
+ */
 #pragma once
 
 #include <coroutine>

@@ -1,4 +1,10 @@
-// message.h
+/**
+ * @file message.h
+ * @brief Actor message definitions with intrusive linked-list base.
+ * 
+ * Defines all message type IDs (MSG_TYPE_*) and message structs:
+ * NetworkMessage, ForwardPacketMsg, SessionClosedMsg, and BasicMessage CRTP.
+ */
 #pragma once
 #include <atomic>
 #include <coroutine>

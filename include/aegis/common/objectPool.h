@@ -1,4 +1,9 @@
-// include/aegis/common/objectPool.h
+/**
+ * @file objectPool.h
+ * @brief TLS-cached object pool with lock-free hot path.
+ * 
+ * Two-tier architecture: thread-local batch (lock-free) + global pool (ConcurrentQueue).
+ */
 #pragma once
 
 #include <cstddef>

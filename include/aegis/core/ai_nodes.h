@@ -1,4 +1,7 @@
-// ai_nodes.h
+/**
+ * @file ai_nodes.h
+ * @brief BehaviorTree.CPP v4 custom node definitions for NPC AI behaviors.
+ */
 #pragma once
 
 #include <behaviortree_cpp/behavior_tree.h>

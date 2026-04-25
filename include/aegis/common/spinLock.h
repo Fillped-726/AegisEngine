@@ -1,4 +1,7 @@
-// include/aegis/common/spinLock.h
+/**
+ * @file spinLock.h
+ * @brief Busy-wait spinlock for low-contention critical sections.
+ */
 #pragma once
 
 #include <atomic>

@@ -943,3 +943,29 @@
 [2026-04-25 20:50:49.880] [t:101865] [debug] [playerActor.h:222] [Trace] PlayerActor Recv Msg. TypeID: 3
 [2026-04-25 20:50:49.880] [t:101865] [info] [playerActor.h:281] [PlayerActor] Session Closed | ID: 1 | Reason: 0
 [2026-04-25 20:50:49.880] [t:101865] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-25 21:33:19.142] [t:124736] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-25 21:33:19.142] [t:124736] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-25 21:33:19.142] [t:124736] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-25 21:33:19.142] [t:124736] [info] [gate_server.cpp:84] [Init] RoomManager Created. ID: 4294967296
+[2026-04-25 21:33:19.143] [t:124736] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-25 21:33:19.143] [t:124736] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-25 21:33:19.143] [t:124736] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:119] [Init] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-25 21:33:19.145] [t:124736] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:119] [Init] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-25 21:33:19.145] [t:124736] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:119] [Init] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:122] [Init] Main City (Scene) Created. ID: 4294967297
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:125] [Init] Main City (Scene) Created. ID: 4294967297
+[2026-04-25 21:33:19.145] [t:124736] [info] [handler_loader.cpp:195] [System] Logic Handlers Loaded.
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:144] [Init] Starting Scheduler with 4 workers...
+[2026-04-25 21:33:19.145] [t:124736] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:152] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-25 21:33:19.145] [t:124736] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-25 21:33:19.145] [t:124736] [info] [gate_server.cpp:159] [Gate] Main thread entering wait state.
+[2026-04-25 21:33:19.145] [t:124738] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-25 21:33:19.145] [t:124741] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-25 21:33:19.145] [t:124740] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-25 21:33:19.147] [t:124739] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-25 21:33:19.157] [t:124738] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-25 21:33:19.157] [t:124738] [info] [gate_server.cpp:240] [Acceptor] Start listening on port 8888 (Running on Worker 0)

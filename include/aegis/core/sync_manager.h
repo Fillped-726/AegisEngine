@@ -1,4 +1,7 @@
-// sync_manager.h
+/**
+ * @file sync_manager.h
+ * @brief Dirty-driven state sync with AOI cross-grid detection and batch broadcast.
+ */
 #pragma once
 
 #include <vector>
@@ -14,6 +17,15 @@
 
 namespace aegis::core
 {
+    /**
+     * @brief Dirty-driven state synchronization engine.
+     * 
+     * Tracks dirty players, computes AOI cross-grid changes (enter/leave),
+     * aggregates per-receiver SCMoveNtfBatch protobuf messages,
+     * and invokes callbacks for batched broadcast delivery.
+     * 
+     * Template Tick() decouples sync logic from delivery mechanism.
+     */
     class SyncManager
     {
     public:

@@ -1,3 +1,7 @@
+/**
+ * @file awaiter.h
+ * @brief Base awaiter class for all io_uring coroutine awaitable operations.
+ */
 #pragma once
 #include <coroutine>
 

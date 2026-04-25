@@ -1,3 +1,7 @@
+/**
+ * @file worker.h
+ * @brief Per-thread worker with io_uring event loop, coroutine execution, and actor message draining.
+ */
 #pragma once
 
 #include <liburing.h>
@@ -38,6 +42,14 @@ namespace aegis::core
     // Thread-per-Core 的核心引擎：Worker
     // 集 IO 轮询、协程恢复、Actor 状态机调度于一身
     // ===================================================================
+    /**
+     * @brief Per-thread worker executing the main run loop.
+     * 
+     * Each worker owns an io_uring instance and alternates between:
+     * 1. Polling io_uring completion queue (CQE)
+     * 2. Resuming completed coroutines
+     * 3. Draining actor message queues assigned to this worker
+     */
     class Worker
     {
     public:

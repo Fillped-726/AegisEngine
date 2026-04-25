@@ -1,3 +1,7 @@
+/**
+ * @file scheduler.h
+ * @brief Worker pool manager. Creates N workers, each with its own io_uring instance.
+ */
 #pragma once
 
 #include <vector>
@@ -21,6 +25,11 @@ namespace aegis::core
     // Thread-per-Core 架构下的 Scheduler (控制面)
     // 仅负责 Worker 的生命周期管理与初始负载均衡，不再参与具体调度
     // ===================================================================
+    /**
+     * @brief Worker pool manager.
+     * Creates N workers (configurable), each with its own io_uring instance.
+     * Workers are started and joined by the scheduler.
+     */
     class Scheduler
     {
     public:

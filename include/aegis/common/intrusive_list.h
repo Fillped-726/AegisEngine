@@ -1,6 +1,17 @@
-// include/aegis/common/intrusive_list.h
+/**
+ * @file intrusive_list.h
+ * @brief Lock-free intrusive linked list for zero-overhead actor message queues and timer wheels.
+ */
 #pragma once
-
+/**
+ * @file intrusive_list.h
+ * @brief Lock-free intrusive linked list for zero-overhead actor message queues and timer wheels.
+ */
+/**
+ * @file intrusive_list.h
+ * @brief Lock-free intrusive linked list for zero-overhead actor message queues and timer wheels.
+ */
+#pragma once
 #include <cstddef>
 #include <iterator>
 #include <concepts>

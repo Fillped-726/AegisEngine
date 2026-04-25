@@ -1,4 +1,7 @@
-// playerActor.h
+/**
+ * @file playerActor.h
+ * @brief Pooled player actor with network connection, dirty flags, and proto serialization.
+ */
 #pragma once
 #include <atomic>
 #include "aegis/common/spinLock.h"
@@ -18,6 +21,16 @@ namespace aegis::common
 
 namespace aegis::core
 {
+    /**
+     * @brief Pooled player actor representing a connected game client.
+     * 
+     * Has a shared_ptr<Connection> for network I/O, dirty flags for
+     * incremental state sync, atomic coordinates for cross-thread reads,
+     * and template send_packet/send_buffer methods for protobuf delivery.
+     * 
+     * Messages dispatched via Dispatcher, coroutine handlers launched
+     * as DetachedTask.
+     */
     class PlayerActor : public PooledActor<PlayerActor>
     {
     public:

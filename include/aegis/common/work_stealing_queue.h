@@ -1,3 +1,7 @@
+/**
+ * @file work_stealing_queue.h
+ * @brief Lock-free work-stealing deque for coroutine scheduling across workers.
+ */
 #pragma once
 
 #include <atomic>

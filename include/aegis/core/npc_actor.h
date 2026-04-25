@@ -1,4 +1,7 @@
-// npc_actor.h
+/**
+ * @file npc_actor.h
+ * @brief Pooled NPC actor with BehaviorTree.CPP v4 AI integration.
+ */
 #pragma once
 
 #include "aegis/core/actor_traits.h"
@@ -8,6 +11,13 @@ namespace aegis::core
 {
     class SceneActor;
     // 基础 NPC Actor，支持内存池复用
+    /**
+     * @brief Pooled NPC actor with BehaviorTree.CPP AI.
+     * 
+     * AI is active only when players are within AOI range of the NPC.
+     * SceneActor drives OnTick(), which triggers BT tick.
+     * Pooled with 256 capacity, 64 batch size.
+     */
     class NpcActor : public PooledActor<NpcActor, 256, 64>
     {
     public:

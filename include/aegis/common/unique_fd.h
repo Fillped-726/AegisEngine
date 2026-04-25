@@ -1,4 +1,7 @@
-// include/aegis/common/unique_fd.h
+/**
+ * @file unique_fd.h
+ * @brief RAII POSIX file descriptor wrapper.
+ */
 #pragma once
 
 #include <unistd.h> // [DEPENDENCY: POSIX unistd (close)]

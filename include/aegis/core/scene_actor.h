@@ -1,4 +1,7 @@
-// scene_actor.h
+/**
+ * @file scene_actor.h
+ * @brief Scene actor managing AOI grid, players, NPCs, and state sync.
+ */
 #pragma once
 
 #include <unordered_map>
@@ -18,6 +21,14 @@ namespace aegis::core
 {
 
     // --- SceneActor ---
+    /**
+     * @brief Scene actor managing a game map instance.
+     * 
+     * Owns AOI grid, player map, NPC map, and SyncManager.
+     * Handles scene enter/leave/move/skill_cast messages.
+     * Drives SyncManager::Tick() for state broadcast.
+     * NPCs are only ticked when players are in AOI range.
+     */
     class SceneActor : public PooledActor<SceneActor, 128, 32>
     {
     public:

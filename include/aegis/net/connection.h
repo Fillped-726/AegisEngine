@@ -1,4 +1,7 @@
-// connection.h
+/**
+ * @file connection.h
+ * @brief Single-threaded async TCP peer with coroutine-based read and zero-copy writev send.
+ */
 #pragma once
 
 #include <vector>
@@ -17,6 +20,16 @@ namespace aegis::net
 {
     // [INTENT: Single-threaded async TCP peer state machine]
     // [STATE: Shared ownership lifecycle for safe coroutine capture]
+    /**
+     * @brief Single-threaded async TCP peer state machine.
+     * 
+     * Handles coroutine-based packet assembly (read_packet),
+     * outbox queuing (send), and zero-copy writev flush (flush).
+     * Owns Socket and OutboxBatcher for egress.
+     * 
+     * Shared ownership (enable_shared_from_this) ensures safe
+     * coroutine capture across async boundaries.
+     */
     class Connection : public std::enable_shared_from_this<Connection>
     {
     public:

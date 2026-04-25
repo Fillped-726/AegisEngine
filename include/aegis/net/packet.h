@@ -1,4 +1,10 @@
-// packet.h
+/**
+ * @file packet.h
+ * @brief SBO-backed network packet container with big-endian wire protocol.
+ * 
+ * Wire format: [4B Length BigEndian][4B MsgID BigEndian][Protobuf Body]
+ * Length = 4 + BodySize. SBO threshold = 1024 bytes.
+ */
 #pragma once
 
 #include <cstdint>
@@ -31,6 +37,13 @@ namespace aegis::net
     static constexpr size_t kMaxRetainSize = 64 * 1024;
 
     // [INTENT: SBO-backed network payload container; minimizes heap allocations]
+    /**
+     * @brief SBO-backed network packet container.
+     * 
+     * Wire protocol: [4B BigEndian Length][4B BigEndian MsgID][Protobuf Body]
+     * Small Buffer Optimization: 1024B stack buffer, heap fallback for larger payloads.
+     * Thread-safe design for pooled allocation (ObjectPool<Packet>).
+     */
     class Packet
     {
     public:

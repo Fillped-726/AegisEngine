@@ -1,3 +1,7 @@
+/**
+ * @file aoi_grid.h
+ * @brief Grid-based Area of Interest (AOI) management with 9-cell neighbor traversal.
+ */
 #pragma once
 
 #include <vector>
@@ -25,7 +29,11 @@ namespace aegis::core
     };
 
     /**
-     * @brief 基于网格的高性能 AOI 管理器
+     * @brief Grid-based Area of Interest (AOI) spatial partitioning.
+     * 
+     * Entities are mapped to grid cells by coordinate. 9-cell neighbor
+     * traversal via ForEachNeighborIndex template. Supports Add/Move/Remove
+     * with enter/leave change detection vectors.
      */
     class AOIGrid
     {

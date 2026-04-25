@@ -1,4 +1,7 @@
-// GameMessage.h
+/**
+ * @file GameMessage.h
+ * @brief Game-specific message type definitions (SceneSkillCast etc.).
+ */
 #pragma once
 #include "aegis/core/message.h"
 

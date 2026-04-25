@@ -1,4 +1,10 @@
-// actor_registry.h
+/**
+ * @file actor_registry.h
+ * @brief Actor Registry with 64-bit Handle (index+version) and lock-free O(1) lookup.
+ * 
+ * Provides global singleton ActorRegistry with template-based actor creation,
+ * ABA-proof ActorID, and concurrent queue for free index management.
+ */
 #pragma once
 
 #include <atomic>
@@ -46,6 +52,12 @@ namespace aegis::core
     /**
      * @brief Actor 注册中心 (Registry)
      * 管理全局 Actor 的生命周期映射，提供基于 ID 的 O(1) 无锁查询
+     */
+    /**
+     * @brief Global singleton registry managing Actor lifecycle and O(1) lock-free lookup.
+     * 
+     * Uses std::array<atomic<Actor*>, 65536> for concurrent get() access without locks.
+     * Version counters prevent ABA problems when indices are recycled.
      */
     class ActorRegistry
     {

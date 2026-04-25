@@ -1,4 +1,7 @@
-// include/aegis/common/tools.h
+/**
+ * @file tools.h
+ * @brief Miscellaneous utility functions (fd helpers, string ops, time).
+ */
 #pragma once
 #include <pthread.h> // [DEPENDENCY: POSIX threads]
 #include <sys/resource.h> // [DEPENDENCY: POSIX resource limits]

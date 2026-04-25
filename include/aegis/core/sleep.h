@@ -1,3 +1,7 @@
+/**
+ * @file sleep.h
+ * @brief Coroutine-based sleep awaiter using HierarchicalTimeWheel.
+ */
 #pragma once
 
 #include <coroutine>

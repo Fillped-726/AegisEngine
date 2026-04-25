@@ -1,4 +1,7 @@
-// room_manager.h
+/**
+ * @file room_manager.h
+ * @brief Room manager for create/terminate room lifecycle and scene supervision.
+ */
 #pragma once
 
 #include <unordered_map>
@@ -9,6 +12,13 @@
 
 namespace aegis::core
 {
+    /**
+     * @brief Room lifecycle manager.
+     * 
+     * Creates and terminates game rooms (scenes). Maintains bidirectional
+     * O(1) mapping between room IDs and scene ActorIDs.
+     * Monitors scene health via on_scene_died callback.
+     */
     class RoomManager : public SimpleActor<RoomManager>
     {
     public:

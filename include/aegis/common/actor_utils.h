@@ -1,6 +1,7 @@
-// include/aegis/common/actor_utils.h
-#pragma once
-
+/**
+ * @file actor_utils.h
+ * @brief Cross-worker actor message forwarding utilities.
+ */
 #pragma once
 
 namespace aegis::core

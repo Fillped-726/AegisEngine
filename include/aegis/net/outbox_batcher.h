@@ -1,4 +1,7 @@
-// outbox_batcher.h
+/**
+ * @file outbox_batcher.h
+ * @brief Zero-copy scatter-gather writev view builder with partial write support.
+ */
 #pragma once
 
 #include <vector>
@@ -12,6 +15,13 @@
 namespace aegis::net
 {
     // [INTENT: Zero-copy scatter-gather (writev) view builder; manages transient header lifecycle]
+    /**
+     * @brief Zero-copy writev view builder for batched egress.
+     * 
+     * Constructs iovec arrays from Packet queue, prepending big-endian
+     * frame headers. Supports partial write (advance()) via cursor tracking.
+     * Max batch: 64 packets (IOV_MAX-safe guard).
+     */
     class OutboxBatcher
     {
     public:

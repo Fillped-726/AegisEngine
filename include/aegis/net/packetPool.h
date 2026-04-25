@@ -1,4 +1,7 @@
-// packetPool.h
+/**
+ * @file packetPool.h
+ * @brief ObjectPool specialization for Packet, plus RAII PooledPacket alias.
+ */
 #pragma once
 #include "aegis/common/objectPool.h" // [DEPENDENCY: aegis::core::ObjectPool]
 #include "aegis/net/packet.h"        // [DEPENDENCY: aegis::net::Packet]

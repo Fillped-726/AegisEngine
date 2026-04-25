@@ -1,4 +1,7 @@
-// include/aegis/common/aegisLog.h
+/**
+ * @file aegisLog.h
+ * @brief Singleton logging facade wrapping spdlog.
+ */
 #pragma once
 
 #include <string>

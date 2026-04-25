@@ -1,4 +1,7 @@
-// acceptor.h
+/**
+ * @file acceptor.h
+ * @brief Async TCP listener with RAII lifecycle and coroutine-based accept().
+ */
 #pragma once
 
 #include "aegis/core/task.h"  // [DEPENDENCY: aegis::core::Task]

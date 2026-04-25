@@ -1,4 +1,11 @@
 // socket.h
+/**
+ * @file socket.h
+ * @brief io_uring async I/O facade via C++20 coroutines.
+ * 
+ * Defines awaitable types for read/write/readv/writev/accept operations,
+ * all backed by io_uring SQE/CQE lifecycle.
+ */
 #pragma once
 
 #include <liburing.h> // [DEPENDENCY: Linux io_uring]
@@ -15,6 +22,13 @@ namespace aegis::net
     using UniqueFd = aegis::common::UniqueFd;
 
     // [INTENT: io_uring async IO facade via C++20 coroutines]
+    /**
+     * @brief RAII io_uring async I/O facade.
+     * 
+     * Provides awaitable types (AsyncRead/Wait/ReadV/WriteV/Accept)
+     * that submit io_uring SQEs and suspend the calling coroutine
+     * until the CQE completes.
+     */
     class Socket
     {
     public:

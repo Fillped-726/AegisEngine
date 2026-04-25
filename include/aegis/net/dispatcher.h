@@ -1,4 +1,7 @@
-// dispatcher.h
+/**
+ * @file dispatcher.h
+ * @brief Singleton msg_id-based router for Net (protobuf-deserializing) and RPC dispatch.
+ */
 #pragma once
 
 #include <functional>
@@ -22,6 +25,13 @@ namespace aegis::net
     };
 
     // [INTENT: Singleton async message router for Net/Protobuf and Local/RPC payloads]
+    /**
+     * @brief Singleton message router dispatching by msg_id.
+     * 
+     * Supports two dispatch modes:
+     * - Net: deserializes protobuf from raw packet data
+     * - RPC: zero-cost static_cast from type-erased pointer
+     */
     class Dispatcher
     {
     public:

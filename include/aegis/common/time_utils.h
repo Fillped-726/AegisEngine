@@ -1,4 +1,7 @@
-// include/aegis/common/time_utils.h
+/**
+ * @file time_utils.h
+ * @brief Timestamp conversion and time formatting utilities.
+ */
 #pragma once
 
 #include <chrono> // [DEPENDENCY: std::chrono]

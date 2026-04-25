@@ -1,4 +1,7 @@
-// packet_builder.h
+/**
+ * @file packet_builder.h
+ * @brief Stateless factory for AOI enter/leave protobuf serialization.
+ */
 #pragma once
 #include <memory>
 #include <string>

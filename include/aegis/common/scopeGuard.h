@@ -1,4 +1,7 @@
-// include/aegis/common/scopeGuard.h
+/**
+ * @file scopeGuard.h
+ * @brief RAII scope guard macro for exception-safe cleanup.
+ */
 #pragma once
 
 // [INTENT: RAII wrapper for deterministic deferred execution/scope cleanup]
