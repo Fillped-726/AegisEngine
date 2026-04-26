@@ -995,3 +995,796 @@
 [2026-04-26 00:43:20.569] [t:46390] [info] [worker.cpp:103] Worker 3 EventLoop started.
 [2026-04-26 00:43:20.580] [t:46387] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
 [2026-04-26 00:43:20.580] [t:46387] [info] [gate_server.cpp:240] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 19:31:15.065] [t:115016] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 19:31:15.065] [t:115016] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 19:31:15.065] [t:115016] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 19:31:15.065] [t:115016] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 19:31:15.065] [t:115016] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 19:31:15.066] [t:115016] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 19:31:15.066] [t:115016] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 19:31:15.066] [t:115021] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 19:31:15.066] [t:115019] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 19:31:15.067] [t:115020] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 19:31:15.067] [t:115016] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 19:31:15.067] [t:115016] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 19:31:15.067] [t:115016] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 19:31:15.067] [t:115022] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 19:31:15.067] [t:115016] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 19:31:15.070] [t:115016] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 19:31:15.070] [t:115016] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 19:31:15.070] [t:115016] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 19:31:15.070] [t:115016] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 19:31:15.070] [t:115016] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 19:31:15.070] [t:115016] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 19:31:15.070] [t:115016] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 19:31:15.070] [t:115016] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 19:31:15.070] [t:115016] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 19:31:15.072] [t:115019] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 19:31:15.072] [t:115019] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 19:31:20.983] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:50492
+[2026-04-26 19:31:20.983] [t:115019] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 19:31:20.983] [t:115019] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:31:54.314] [t:115019] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:31:54.314] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:31:54.314] [t:115019] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 0 | Reason: 0
+[2026-04-26 19:31:54.314] [t:115019] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:33:14.698] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:60906
+[2026-04-26 19:33:14.698] [t:115019] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 19:33:14.699] [t:115020] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:33:17.647] [t:115020] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:33:17.647] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:33:17.647] [t:115020] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 0 | Reason: 0
+[2026-04-26 19:33:17.647] [t:115020] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:38:52.123] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:61036
+[2026-04-26 19:38:52.123] [t:115019] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:38:52.123] [t:115021] [debug] [actor_registry.h:135] Actor created. ID: 4294967303, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:38:52.127] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 19:38:52.127] [t:115021] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967303
+[2026-04-26 19:38:52.127] [t:115021] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 19:38:52.127] [t:115021] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 19:38:52.127] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 19:38:52.128] [t:115022] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 19:39:50.496] [t:115021] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:39:50.496] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:39:50.496] [t:115021] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 19:39:50.496] [t:115021] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:47:19.943] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:64784
+[2026-04-26 19:47:19.946] [t:115019] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 19:47:19.954] [t:115022] [debug] [actor_registry.h:135] Actor created. ID: 4294967304, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:47:19.955] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 19:47:19.957] [t:115022] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967304
+[2026-04-26 19:47:19.958] [t:115022] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 19:47:19.959] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 19:47:19.962] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:47:19.962] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:47:19.962] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:47:31.347] [t:115022] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:47:31.347] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:47:31.347] [t:115022] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 19:47:31.347] [t:115022] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:50:26.239] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:47976
+[2026-04-26 19:50:26.239] [t:115019] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 19:50:26.240] [t:115019] [debug] [actor_registry.h:135] Actor created. ID: 4294967305, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:50:26.241] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 19:50:26.243] [t:115019] [warning] [dispatcher.h:61] Dispatcher: Parse failed. MsgID: 1001
+[2026-04-26 19:50:31.740] [t:115019] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:50:31.740] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:50:31.740] [t:115019] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 0 | Reason: 0
+[2026-04-26 19:50:31.740] [t:115019] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:52:44.421] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:46810
+[2026-04-26 19:52:44.421] [t:115019] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 19:52:44.423] [t:115020] [debug] [actor_registry.h:135] Actor created. ID: 4294967306, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:52:44.425] [t:115020] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:52:44.425] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:52:44.425] [t:115020] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 0 | Reason: 0
+[2026-04-26 19:52:44.425] [t:115020] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:52:58.284] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:46174
+[2026-04-26 19:52:58.284] [t:115019] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:52:58.285] [t:115021] [debug] [actor_registry.h:135] Actor created. ID: 4294967307, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:52:58.285] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 19:52:58.285] [t:115021] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967307
+[2026-04-26 19:52:58.285] [t:115021] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 19:52:58.285] [t:115021] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 19:52:58.285] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 19:52:58.285] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:52:58.285] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:52:58.286] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:52:58.286] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:52:58.286] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:53:03.294] [t:115021] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:53:03.294] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:53:03.294] [t:115021] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 19:53:03.294] [t:115021] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 19:55:43.446] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:53859
+[2026-04-26 19:55:43.446] [t:115019] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 19:55:43.446] [t:115022] [debug] [actor_registry.h:135] Actor created. ID: 4294967308, Type: N5aegis4core11PlayerActorE
+[2026-04-26 19:55:43.455] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 19:55:43.455] [t:115022] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967308
+[2026-04-26 19:55:43.455] [t:115022] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 19:55:43.455] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 19:55:43.455] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 19:55:43.455] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:55:43.455] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:55:43.455] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:55:43.455] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 19:55:56.069] [t:115022] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 19:55:56.069] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 19:55:56.069] [t:115022] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 19:55:56.069] [t:115022] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:00:30.512] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:54422
+[2026-04-26 20:00:30.512] [t:115019] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:00:30.512] [t:115019] [debug] [actor_registry.h:135] Actor created. ID: 4294967309, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:00:30.516] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:00:30.516] [t:115019] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967309
+[2026-04-26 20:00:30.516] [t:115019] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:00:30.516] [t:115019] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:00:30.516] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:00:30.516] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:00:30.516] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:00:30.516] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:30.516] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:30.516] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:30.516] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:30.516] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:34.375] [t:115019] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:00:34.375] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:00:34.375] [t:115019] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:00:34.375] [t:115019] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:00:52.816] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:54467
+[2026-04-26 20:00:52.816] [t:115019] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:00:52.816] [t:115020] [debug] [actor_registry.h:135] Actor created. ID: 4294967310, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:00:52.824] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:00:52.824] [t:115020] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967310
+[2026-04-26 20:00:52.824] [t:115020] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:00:52.824] [t:115020] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:00:52.824] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:00:52.824] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:00:52.824] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:00:52.824] [t:115022] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:00:52.824] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:52.824] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:52.824] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:52.824] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:52.824] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:00:52.824] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:01.849] [t:115020] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:03:01.849] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:03:01.849] [t:115020] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:03:01.849] [t:115020] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:03:12.904] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:63244
+[2026-04-26 20:03:12.904] [t:115019] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:03:12.905] [t:115021] [debug] [actor_registry.h:135] Actor created. ID: 4294967311, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:03:12.912] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:03:12.912] [t:115021] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967311
+[2026-04-26 20:03:12.913] [t:115021] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:03:12.913] [t:115021] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:03:12.913] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:03:12.913] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:03:12.913] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:03:12.913] [t:115022] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:03:12.913] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:12.913] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:16.237] [t:115021] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:03:16.237] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:03:16.237] [t:115021] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:03:16.237] [t:115021] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:03:41.608] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:63311
+[2026-04-26 20:03:41.608] [t:115019] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:03:41.608] [t:115022] [debug] [actor_registry.h:135] Actor created. ID: 4294967312, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:03:41.616] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:03:41.616] [t:115022] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967312
+[2026-04-26 20:03:41.616] [t:115022] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:03:41.616] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:03:41.616] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:03:41.616] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:03:41.616] [t:115022] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:03:41.616] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:41.616] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:44.038] [t:115022] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:03:44.038] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:03:44.038] [t:115022] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:03:44.038] [t:115022] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:03:51.784] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:63345
+[2026-04-26 20:03:51.784] [t:115019] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:03:51.784] [t:115019] [debug] [actor_registry.h:135] Actor created. ID: 4294967313, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:03:51.791] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:03:51.791] [t:115019] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967313
+[2026-04-26 20:03:51.791] [t:115019] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:03:51.791] [t:115019] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:03:51.792] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:03:51.792] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:03:51.792] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:03:51.792] [t:115022] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:03:51.792] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:03:51.792] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:51.792] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:03:55.606] [t:115019] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:03:55.606] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:03:55.606] [t:115019] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:03:55.606] [t:115019] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:11:27.385] [t:115019] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:57050
+[2026-04-26 20:11:27.385] [t:115019] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:11:27.385] [t:115020] [debug] [actor_registry.h:135] Actor created. ID: 4294967314, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:11:27.392] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:11:27.392] [t:115020] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967314
+[2026-04-26 20:11:27.393] [t:115020] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:11:27.393] [t:115020] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:11:27.393] [t:115022] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:11:27.393] [t:115022] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:11:27.393] [t:115022] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:11:27.393] [t:115022] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:11:27.393] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115022] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115019] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:27.393] [t:115021] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:11:29.710] [t:115020] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:11:29.710] [t:115020] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:11:29.710] [t:115020] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:11:29.710] [t:115020] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:11:57.634] [t:134052] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:11:57.634] [t:134052] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:11:57.634] [t:134052] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:11:57.634] [t:134052] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:11:57.635] [t:134055] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:11:57.635] [t:134056] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:11:57.635] [t:134054] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:11:57.635] [t:134052] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:11:57.635] [t:134052] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:11:57.635] [t:134052] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:11:57.635] [t:134052] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:11:57.635] [t:134052] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:11:57.635] [t:134052] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:11:57.635] [t:134052] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:11:57.637] [t:134052] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:11:57.637] [t:134052] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:11:57.637] [t:134052] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:11:57.637] [t:134052] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:11:57.637] [t:134052] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:11:57.637] [t:134052] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:11:57.637] [t:134052] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:11:57.637] [t:134052] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:11:57.637] [t:134052] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:11:57.637] [t:134057] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:11:57.639] [t:134054] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:11:57.639] [t:134054] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:12:14.072] [t:134054] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:55091
+[2026-04-26 20:12:14.073] [t:134054] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:12:14.073] [t:134054] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:12:14.077] [t:134054] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:12:14.077] [t:134054] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:12:14.077] [t:134054] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:12:14.077] [t:134054] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:12:14.077] [t:134057] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:12:14.077] [t:134057] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:14:09.335] [t:134054] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:14:09.335] [t:134054] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:14:09.335] [t:134054] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:14:09.335] [t:134054] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:14:20.570] [t:134054] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:55148
+[2026-04-26 20:14:20.570] [t:134054] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:14:20.570] [t:134055] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:14:20.573] [t:134055] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:14:20.573] [t:134055] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967302
+[2026-04-26 20:14:20.573] [t:134055] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:14:20.573] [t:134055] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:14:20.574] [t:134057] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:14:20.574] [t:134057] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:14:20.574] [t:134057] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:14:20.574] [t:134054] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:14:20.574] [t:134055] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:15:10.047] [t:134055] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:15:10.047] [t:134055] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:15:10.047] [t:134055] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:15:10.047] [t:134055] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:15:10.047] [t:134055] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:15:18.828] [t:135669] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:15:18.828] [t:135669] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:15:18.828] [t:135669] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:15:18.828] [t:135669] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:15:18.828] [t:135673] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:15:18.828] [t:135671] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:15:18.828] [t:135674] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:15:18.829] [t:135669] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:15:18.829] [t:135669] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:15:18.829] [t:135669] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:15:18.829] [t:135669] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:15:18.829] [t:135669] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:15:18.829] [t:135669] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:15:18.829] [t:135669] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:15:18.829] [t:135669] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:15:18.829] [t:135669] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:15:18.829] [t:135669] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:15:18.829] [t:135669] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:15:18.830] [t:135672] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:15:18.831] [t:135671] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:15:18.831] [t:135671] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:16:15.587] [t:135671] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:59570
+[2026-04-26 20:16:15.587] [t:135671] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:16:15.587] [t:135671] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:16:15.594] [t:135671] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:16:15.594] [t:135671] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:16:15.594] [t:135671] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:16:15.594] [t:135671] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:16:15.594] [t:135674] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:16:15.594] [t:135674] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:16:40.017] [t:135671] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:16:40.017] [t:135671] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:16:40.017] [t:135671] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:16:40.017] [t:135671] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:16:40.017] [t:135671] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:19:16.299] [t:137656] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:19:16.299] [t:137656] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:19:16.299] [t:137656] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:19:16.299] [t:137656] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:19:16.300] [t:137659] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:19:16.300] [t:137660] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:19:16.300] [t:137658] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:19:16.300] [t:137656] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:19:16.300] [t:137656] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:19:16.300] [t:137656] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:19:16.300] [t:137656] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:19:16.300] [t:137656] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:19:16.300] [t:137656] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:19:16.300] [t:137656] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:19:16.301] [t:137656] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:19:16.301] [t:137656] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:19:16.301] [t:137656] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:19:16.301] [t:137656] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:19:16.301] [t:137656] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:19:16.301] [t:137656] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:19:16.301] [t:137656] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:19:16.301] [t:137656] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:19:16.301] [t:137656] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:19:16.301] [t:137661] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:19:16.304] [t:137658] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:19:16.304] [t:137658] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:19:21.045] [t:137658] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:56334
+[2026-04-26 20:19:21.045] [t:137658] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:19:21.045] [t:137658] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:19:21.052] [t:137658] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:19:21.052] [t:137658] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:19:21.053] [t:137658] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:19:21.053] [t:137658] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:19:21.053] [t:137661] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:19:21.053] [t:137661] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:19:47.097] [t:137658] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:19:47.097] [t:137658] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:19:47.097] [t:137658] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:19:47.097] [t:137658] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:19:47.097] [t:137658] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:27:23.701] [t:140754] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:27:23.701] [t:140754] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:27:23.701] [t:140754] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:27:23.701] [t:140754] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:27:23.701] [t:140758] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:27:23.701] [t:140759] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:27:23.701] [t:140757] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:27:23.702] [t:140754] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:27:23.702] [t:140754] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:27:23.702] [t:140754] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:27:23.702] [t:140754] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:27:23.702] [t:140754] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:27:23.702] [t:140754] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:27:23.702] [t:140754] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:27:23.703] [t:140754] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:27:23.703] [t:140754] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:27:23.703] [t:140754] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:27:23.703] [t:140754] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:27:23.703] [t:140754] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:27:23.703] [t:140754] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:27:23.703] [t:140754] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:27:23.703] [t:140754] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:27:23.703] [t:140754] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:27:23.703] [t:140760] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:27:23.704] [t:140757] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:27:23.704] [t:140757] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:27:28.541] [t:140757] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:62119
+[2026-04-26 20:27:28.541] [t:140757] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:27:28.541] [t:140757] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:27:28.549] [t:140757] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:27:28.549] [t:140757] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:27:28.549] [t:140757] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:27:28.549] [t:140757] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:27:28.549] [t:140760] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:27:28.549] [t:140760] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:28:50.200] [t:140757] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:28:50.200] [t:140757] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:28:50.200] [t:140757] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:28:50.200] [t:140757] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:28:50.200] [t:140757] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:29:14.889] [t:140757] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:65372
+[2026-04-26 20:29:14.889] [t:140757] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:29:14.889] [t:140758] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:29:14.897] [t:140758] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:29:14.897] [t:140758] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967302
+[2026-04-26 20:29:14.897] [t:140758] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:29:14.897] [t:140758] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:29:14.897] [t:140760] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:29:14.897] [t:140760] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:29:14.897] [t:140760] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:29:14.897] [t:140757] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:29:14.897] [t:140758] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:31:00.581] [t:140758] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:31:00.581] [t:140758] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:31:00.581] [t:140758] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:31:00.581] [t:140758] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:31:00.581] [t:140758] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:33:10.260] [t:143031] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:33:10.260] [t:143031] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:33:10.260] [t:143031] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:33:10.260] [t:143031] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:33:10.261] [t:143031] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:33:10.261] [t:143031] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:33:10.261] [t:143031] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:33:10.261] [t:143031] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:33:10.262] [t:143031] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:33:10.262] [t:143031] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:33:10.262] [t:143031] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:33:10.262] [t:143035] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:33:10.262] [t:143031] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:33:10.262] [t:143031] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:33:10.262] [t:143031] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:33:10.262] [t:143031] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:33:10.262] [t:143031] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:33:10.262] [t:143031] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:33:10.262] [t:143031] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:33:10.262] [t:143031] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:33:10.262] [t:143031] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:33:10.263] [t:143034] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:33:10.263] [t:143036] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:33:10.263] [t:143037] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:33:10.264] [t:143034] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:33:10.264] [t:143034] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:33:16.971] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:58460
+[2026-04-26 20:33:16.971] [t:143034] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:33:16.971] [t:143034] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:33:16.979] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:33:16.979] [t:143034] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:33:16.979] [t:143034] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:33:16.979] [t:143034] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:33:16.979] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:33:16.979] [t:143037] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:33:29.657] [t:143034] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:33:29.657] [t:143034] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:33:29.657] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:33:29.657] [t:143034] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:33:29.657] [t:143034] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:33:41.701] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:58501
+[2026-04-26 20:33:41.701] [t:143034] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:33:41.701] [t:143035] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:33:41.708] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:33:41.708] [t:143035] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967302
+[2026-04-26 20:33:41.708] [t:143035] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:33:41.708] [t:143035] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:33:41.708] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:33:41.708] [t:143037] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:33:41.708] [t:143037] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:33:41.708] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:33:41.708] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:33:53.302] [t:143035] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:33:53.302] [t:143035] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:33:53.302] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:33:53.302] [t:143035] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:33:53.302] [t:143035] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:35:53.889] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:52223
+[2026-04-26 20:35:53.889] [t:143034] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:35:53.889] [t:143036] [debug] [actor_registry.h:135] Actor created. ID: 4294967303, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:35:53.896] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:35:53.896] [t:143036] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967303
+[2026-04-26 20:35:53.896] [t:143036] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:35:53.896] [t:143036] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:35:53.896] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:35:53.896] [t:143037] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:35:53.896] [t:143037] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:35:53.896] [t:143037] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:35:53.896] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:35:53.896] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:35:53.896] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:36:07.228] [t:143036] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:36:07.228] [t:143036] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:36:07.228] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:36:07.228] [t:143036] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:36:07.228] [t:143036] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:36:22.998] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:52724
+[2026-04-26 20:36:22.998] [t:143034] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:36:22.998] [t:143037] [debug] [actor_registry.h:135] Actor created. ID: 4294967304, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:36:23.007] [t:143037] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:36:23.007] [t:143037] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967304
+[2026-04-26 20:36:23.007] [t:143037] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:36:23.007] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:36:23.007] [t:143037] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:36:23.007] [t:143037] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:36:23.007] [t:143037] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:36:23.007] [t:143037] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:36:23.007] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:36:23.007] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:36:23.007] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:36:36.921] [t:143037] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:36:36.921] [t:143037] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:36:36.921] [t:143037] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:36:36.921] [t:143037] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:36:36.921] [t:143037] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:37:20.537] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:61444
+[2026-04-26 20:37:20.537] [t:143034] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:37:20.537] [t:143034] [debug] [actor_registry.h:135] Actor created. ID: 4294967305, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:37:20.544] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:37:20.545] [t:143034] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967305
+[2026-04-26 20:37:20.545] [t:143034] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:37:20.545] [t:143034] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:37:20.545] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:37:20.545] [t:143037] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:37:20.545] [t:143037] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:37:20.545] [t:143037] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:37:20.545] [t:143037] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:37:20.545] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:37:20.545] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:37:20.545] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:37:20.545] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:37:35.922] [t:143034] [error] [connection.cpp:118] Read error: AsyncRead failed: Connection reset by peer
+[2026-04-26 20:37:35.922] [t:143034] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:37:35.922] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:37:35.922] [t:143034] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:37:35.922] [t:143034] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:44:03.716] [t:143034] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:53151
+[2026-04-26 20:44:03.716] [t:143034] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:44:03.716] [t:143035] [debug] [actor_registry.h:135] Actor created. ID: 4294967306, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:44:03.724] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:44:03.724] [t:143035] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967306
+[2026-04-26 20:44:03.724] [t:143035] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:44:03.724] [t:143035] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:44:03.724] [t:143037] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:44:03.724] [t:143037] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:44:03.724] [t:143037] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:44:03.724] [t:143037] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:44:03.724] [t:143037] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.724] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.724] [t:143034] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.725] [t:143036] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.725] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.725] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 60
+[2026-04-26 20:44:03.735] [t:143035] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:44:12.350] [t:147349] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:44:12.350] [t:147349] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:44:12.350] [t:147349] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:44:12.350] [t:147349] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:44:12.350] [t:147351] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:44:12.351] [t:147353] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:44:12.351] [t:147349] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:44:12.351] [t:147349] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:44:12.351] [t:147349] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:44:12.351] [t:147349] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:44:12.351] [t:147349] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:44:12.351] [t:147349] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:44:12.351] [t:147349] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:44:12.351] [t:147349] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:44:12.351] [t:147349] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:44:12.351] [t:147349] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:44:12.351] [t:147349] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:44:12.352] [t:147354] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:44:12.352] [t:147352] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:44:12.355] [t:147351] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:44:12.355] [t:147351] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:44:25.087] [t:147351] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:50540
+[2026-04-26 20:44:25.087] [t:147351] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:44:25.087] [t:147351] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:44:25.095] [t:147351] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:44:25.095] [t:147351] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:44:25.095] [t:147351] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:44:25.095] [t:147351] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:44:25.095] [t:147354] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:44:25.095] [t:147354] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:44:25.103] [t:147351] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:47:25.473] [t:149532] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:47:25.473] [t:149532] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:47:25.473] [t:149532] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:47:25.473] [t:149532] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:47:25.474] [t:149537] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:47:25.475] [t:149536] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:47:25.475] [t:149535] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:47:25.476] [t:149538] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:47:25.482] [t:149532] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:47:25.482] [t:149532] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:47:25.482] [t:149532] [info] [game_app.cpp:35] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:47:25.483] [t:149532] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:47:25.483] [t:149532] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:47:25.483] [t:149532] [info] [game_app.cpp:52] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:47:25.484] [t:149532] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:47:25.492] [t:149532] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:47:25.492] [t:149532] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:47:25.492] [t:149532] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:47:25.492] [t:149532] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:47:25.493] [t:149532] [info] [game_app.cpp:68] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:47:25.493] [t:149532] [info] [game_app.cpp:80] [GameApp] Bootstrap complete.
+[2026-04-26 20:47:25.493] [t:149532] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:47:25.493] [t:149532] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:47:25.493] [t:149532] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:47:25.495] [t:149535] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:47:25.495] [t:149535] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:47:30.649] [t:149535] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:62626
+[2026-04-26 20:47:30.649] [t:149535] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:47:30.649] [t:149535] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:47:30.657] [t:149535] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:47:30.657] [t:149535] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:47:30.657] [t:149535] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:47:30.657] [t:149535] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:47:30.657] [t:149538] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:47:30.657] [t:149538] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:47:30.665] [t:149535] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:58:57.445] [t:154251] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 20:58:57.445] [t:154251] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 20:58:57.445] [t:154251] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 20:58:57.445] [t:154251] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 20:58:57.446] [t:154256] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 20:58:57.446] [t:154253] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 20:58:57.447] [t:154254] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 20:58:57.450] [t:154255] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 20:58:57.454] [t:154251] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 20:58:57.454] [t:154251] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 20:58:57.454] [t:154251] [info] [game_app.cpp:39] [GameApp] RoomManager bound to Worker 3
+[2026-04-26 20:58:57.454] [t:154251] [info] [game_app.cpp:41] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 20:58:57.455] [t:154251] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 20:58:57.455] [t:154251] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:58:57.455] [t:154251] [info] [game_app.cpp:58] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 20:58:57.455] [t:154251] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:58:57.464] [t:154251] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 20:58:57.464] [t:154251] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:58:57.465] [t:154251] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 20:58:57.465] [t:154251] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 20:58:57.465] [t:154251] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 20:58:57.465] [t:154251] [info] [game_app.cpp:86] [GameApp] Bootstrap complete.
+[2026-04-26 20:58:57.465] [t:154251] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 20:58:57.466] [t:154251] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:58:57.466] [t:154251] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 20:58:57.476] [t:154253] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 20:58:57.476] [t:154253] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 20:59:02.494] [t:154253] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:55794
+[2026-04-26 20:59:02.494] [t:154253] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 20:59:02.495] [t:154253] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:59:02.504] [t:154253] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:02.504] [t:154253] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 20:59:02.504] [t:154253] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:02.505] [t:154253] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:59:02.505] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:02.505] [t:154256] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:59:02.513] [t:154253] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:02.513] [t:154253] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:02.514] [t:154256] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967302
+[2026-04-26 20:59:02.514] [t:154256] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:59:02.514] [t:154256] [info] [room_manager.cpp:195] [Camp] Player 1 created camp '冒险者营地' -> SceneActor 4294967302
+[2026-04-26 20:59:02.514] [t:154253] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:02.515] [t:154253] [info] [handler_loader.cpp:168] [Camp][Create] Player 1 created camp '冒险者营地' (Scene 4294967302)
+[2026-04-26 20:59:02.515] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 11
+[2026-04-26 20:59:02.515] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:02.515] [t:154256] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:59:20.843] [t:154253] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:59:20.843] [t:154253] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:59:20.843] [t:154253] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:59:20.843] [t:154253] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:59:22.237] [t:154253] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:60622
+[2026-04-26 20:59:22.237] [t:154253] [debug] [worker.cpp:78] Worker 1 is being kicked!
+[2026-04-26 20:59:22.238] [t:154254] [debug] [actor_registry.h:135] Actor created. ID: 4294967303, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:59:22.238] [t:154254] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:22.238] [t:154254] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967303
+[2026-04-26 20:59:22.238] [t:154254] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:22.238] [t:154254] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:59:22.238] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:22.243] [t:154254] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:22.243] [t:154254] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:22.243] [t:154256] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967304
+[2026-04-26 20:59:22.243] [t:154256] [debug] [actor_registry.h:135] Actor created. ID: 4294967304, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:59:22.243] [t:154256] [info] [room_manager.cpp:195] [Camp] Player 1 created camp '冒险者营地' -> SceneActor 4294967304
+[2026-04-26 20:59:22.243] [t:154254] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:22.243] [t:154254] [info] [handler_loader.cpp:168] [Camp][Create] Player 1 created camp '冒险者营地' (Scene 4294967304)
+[2026-04-26 20:59:22.243] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 11
+[2026-04-26 20:59:22.243] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:22.243] [t:154256] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:59:22.987] [t:154254] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:59:22.987] [t:154254] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:59:22.987] [t:154254] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:59:22.987] [t:154254] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 20:59:23.816] [t:154253] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:60625
+[2026-04-26 20:59:23.817] [t:154253] [debug] [worker.cpp:78] Worker 2 is being kicked!
+[2026-04-26 20:59:23.817] [t:154255] [debug] [actor_registry.h:135] Actor created. ID: 4294967305, Type: N5aegis4core11PlayerActorE
+[2026-04-26 20:59:23.821] [t:154255] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:23.822] [t:154255] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967305
+[2026-04-26 20:59:23.822] [t:154255] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:23.822] [t:154255] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 20:59:23.822] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:23.827] [t:154255] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 20:59:23.827] [t:154255] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:23.827] [t:154256] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967306
+[2026-04-26 20:59:23.827] [t:154256] [debug] [actor_registry.h:135] Actor created. ID: 4294967306, Type: N5aegis4core10SceneActorE
+[2026-04-26 20:59:23.827] [t:154256] [info] [room_manager.cpp:195] [Camp] Player 1 created camp '冒险者营地' -> SceneActor 4294967306
+[2026-04-26 20:59:23.827] [t:154255] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 20:59:23.827] [t:154255] [info] [handler_loader.cpp:168] [Camp][Create] Player 1 created camp '冒险者营地' (Scene 4294967306)
+[2026-04-26 20:59:23.827] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 11
+[2026-04-26 20:59:23.827] [t:154256] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 20:59:23.827] [t:154256] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 20:59:26.427] [t:154255] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 20:59:26.427] [t:154255] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 20:59:26.427] [t:154255] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 20:59:26.427] [t:154255] [debug] [connection.cpp:25] Connection destroyed. FD: 13
+[2026-04-26 21:27:56.310] [t:165396] [info] [:] AegisLog initialized successfully via init_config. Path: logs/gate_server.log
+[2026-04-26 21:27:56.310] [t:165396] [info] [handler_loader.cpp:337] [System] Logic Handlers Loaded.
+[2026-04-26 21:27:56.311] [t:165396] [info] [gate_server.cpp:86] [Init] Starting Scheduler with 4 workers...
+[2026-04-26 21:27:56.311] [t:165396] [info] [scheduler.cpp:31] Scheduler (Thread-per-Core Mode) starting with 4 workers...
+[2026-04-26 21:27:56.312] [t:165401] [info] [worker.cpp:103] Worker 3 EventLoop started.
+[2026-04-26 21:27:56.312] [t:165399] [info] [worker.cpp:103] Worker 1 EventLoop started.
+[2026-04-26 21:27:56.312] [t:165400] [info] [worker.cpp:103] Worker 2 EventLoop started.
+[2026-04-26 21:27:56.319] [t:165398] [info] [worker.cpp:103] Worker 0 EventLoop started.
+[2026-04-26 21:27:56.319] [t:165396] [info] [actor_registry.h:168] ActorRegistry initialized. Max capacity: 65536
+[2026-04-26 21:27:56.320] [t:165396] [debug] [actor_registry.h:135] Actor created. ID: 4294967296, Type: N5aegis4core11RoomManagerE
+[2026-04-26 21:27:56.320] [t:165396] [info] [game_app.cpp:39] [GameApp] RoomManager bound to Worker 3
+[2026-04-26 21:27:56.320] [t:165396] [info] [game_app.cpp:41] [GameApp] RoomManager Created. ID: 4294967296
+[2026-04-26 21:27:56.321] [t:165396] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967297
+[2026-04-26 21:27:56.321] [t:165396] [debug] [actor_registry.h:135] Actor created. ID: 4294967297, Type: N5aegis4core10SceneActorE
+[2026-04-26 21:27:56.321] [t:165396] [info] [game_app.cpp:58] [GameApp] Main City Scene created. ID: 4294967297 (Worker 3)
+[2026-04-26 21:27:56.321] [t:165396] [debug] [actor_registry.h:135] Actor created. ID: 4294967298, Type: N5aegis4core8NpcActorE
+[2026-04-26 21:27:56.330] [t:165396] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967298 at (250, 250)
+[2026-04-26 21:27:56.330] [t:165396] [debug] [actor_registry.h:135] Actor created. ID: 4294967299, Type: N5aegis4core8NpcActorE
+[2026-04-26 21:27:56.330] [t:165396] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967299 at (255, 255)
+[2026-04-26 21:27:56.330] [t:165396] [debug] [actor_registry.h:135] Actor created. ID: 4294967300, Type: N5aegis4core8NpcActorE
+[2026-04-26 21:27:56.331] [t:165396] [info] [game_app.cpp:74] [GameApp] Spawned Test NPC 4294967300 at (260, 260)
+[2026-04-26 21:27:56.331] [t:165396] [info] [game_app.cpp:86] [GameApp] Bootstrap complete.
+[2026-04-26 21:27:56.331] [t:165396] [info] [gate_server.cpp:94] [Gate] Dispatching Acceptor to Worker 0...
+[2026-04-26 21:27:56.331] [t:165396] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 21:27:56.331] [t:165396] [info] [gate_server.cpp:100] [Gate] Main thread entering wait state.
+[2026-04-26 21:27:56.333] [t:165398] [info] [acceptor.cpp:76] Acceptor listening on 0.0.0.0:8888
+[2026-04-26 21:27:56.333] [t:165398] [info] [gate_server.cpp:174] [Acceptor] Start listening on port 8888 (Running on Worker 0)
+[2026-04-26 21:28:04.135] [t:165398] [info] [acceptor.cpp:95] Acceptor: New connection from 127.0.0.1:51627
+[2026-04-26 21:28:04.135] [t:165398] [debug] [worker.cpp:78] Worker 0 is being kicked!
+[2026-04-26 21:28:04.135] [t:165398] [debug] [actor_registry.h:135] Actor created. ID: 4294967301, Type: N5aegis4core11PlayerActorE
+[2026-04-26 21:28:04.143] [t:165398] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 21:28:04.143] [t:165398] [info] [handler_loader.cpp:51] [Logic] Login Request | UID: 1 -> ActorID: 4294967301
+[2026-04-26 21:28:04.143] [t:165398] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 21:28:04.143] [t:165398] [info] [handler_loader.cpp:93] [Login] Player 1 dispatched to Scene 4294967297 on Worker 3
+[2026-04-26 21:28:04.143] [t:165401] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 21:28:04.143] [t:165401] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 21:28:04.151] [t:165398] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 1
+[2026-04-26 21:28:04.152] [t:165398] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 21:28:04.152] [t:165401] [info] [scene_actor.cpp:25] [SceneActor] Created & Initialized Grid: 500x500 (Cell: 10) ID: 4294967302
+[2026-04-26 21:28:04.152] [t:165401] [debug] [actor_registry.h:135] Actor created. ID: 4294967302, Type: N5aegis4core10SceneActorE
+[2026-04-26 21:28:04.152] [t:165401] [info] [room_manager.cpp:195] [Camp] Player 1 created camp '冒险者营地' -> SceneActor 4294967302
+[2026-04-26 21:28:04.152] [t:165398] [debug] [worker.cpp:78] Worker 3 is being kicked!
+[2026-04-26 21:28:04.152] [t:165398] [info] [handler_loader.cpp:168] [Camp][Create] Player 1 created camp '冒险者营地' (Scene 4294967302)
+[2026-04-26 21:28:04.152] [t:165401] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 11
+[2026-04-26 21:28:04.153] [t:165401] [debug] [scene_actor.cpp:75] [Trace] 3. SceneActor Recv Msg. TypeID: 10
+[2026-04-26 21:28:04.153] [t:165401] [info] [scene_actor.cpp:105] [SceneActor] Scene woken up. Tick scheduling started.
+[2026-04-26 21:28:19.171] [t:165398] [info] [gate_server.cpp:164] [Gate] Connection Closed: 13
+[2026-04-26 21:28:19.171] [t:165398] [debug] [playerActor.h:235] [Trace] PlayerActor Recv Msg. TypeID: 3
+[2026-04-26 21:28:19.171] [t:165398] [info] [playerActor.h:294] [PlayerActor] Session Closed | ID: 1 | Reason: 0
+[2026-04-26 21:28:19.171] [t:165398] [debug] [connection.cpp:25] Connection destroyed. FD: 13

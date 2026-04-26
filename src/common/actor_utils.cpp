@@ -16,6 +16,14 @@ namespace aegis::core
             // 2. 获取该 Actor 归属的 Worker
             auto *target_worker = Scheduler::instance().get_worker(actor->worker_id());
 
+            if (!target_worker)
+            {
+                Log::instance().error("[Core] Attempt to dispatch msg to uninitialized Actor: ID {}", actor->id().raw);
+                // 记得清理 msg，防止内存泄漏
+                delete msg;
+                return;
+            }
+
             // 3. 调度决策
             if (Worker::get_current_id() == actor->worker_id())
             {

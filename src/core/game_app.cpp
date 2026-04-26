@@ -8,7 +8,7 @@
 #include "aegis/core/scene_actor.h"
 #include "aegis/core/npc_actor.h"
 #include "aegis/common/aegisLog.h"
-#include "aegis/core/scheduler.h"   // for worker pinning
+#include "aegis/core/scheduler.h" // for worker pinning
 #include "aegis/core/actor_registry.h"
 
 namespace aegis::core
@@ -32,6 +32,12 @@ namespace aegis::core
 
         // 1. 创建全局 RoomManager
         room_manager_id_ = registry.create_actor<RoomManager>();
+        auto *rm = registry.get(room_manager_id_);
+        if (rm)
+        {
+            rm->set_worker_id(worker_id);
+            Log::instance().info("[GameApp] RoomManager bound to Worker {}", worker_id);
+        }
         Log::instance().info("[GameApp] RoomManager Created. ID: {}", room_manager_id_.raw);
 
         // 2. 创建默认主城 Scene
@@ -50,7 +56,7 @@ namespace aegis::core
             scene->set_parent_id(room_manager_id_);
 
             Log::instance().info("[GameApp] Main City Scene created. ID: {} (Worker {})",
-                                  default_scene_id_.raw, worker_id);
+                                 default_scene_id_.raw, worker_id);
 
             // 4. Spawn initial NPCs in the main city
             auto *concrete_scene = static_cast<SceneActor *>(scene);
@@ -66,7 +72,7 @@ namespace aegis::core
                     npc->reset(npc_id, center_x + i * 5.0f, center_y + i * 5.0f);
                     concrete_scene->AddNpc(npc);
                     Log::instance().info("[GameApp] Spawned Test NPC {} at ({}, {})",
-                                          npc_id.raw, npc->GetX(), npc->GetY());
+                                         npc_id.raw, npc->GetX(), npc->GetY());
                 }
             }
         }
