@@ -2,6 +2,7 @@
 #include "aegis/core/actor.h"
 #include "aegis/core/actor_registry.h"
 #include "aegis/core/awaiter.h" // 假设存在
+#include "aegis/common/actor_utils.h"
 #include "aegis/common/aegisLog.h"
 #include "aegis/common/time_utils.h"
 #include <cstring>
@@ -269,17 +270,7 @@ namespace aegis::core
                 if (supervisor)
                 {
                     auto *msg = new ActorDiedMsg(my_id, death_reason);
-                    if (!supervisor->push(msg))
-                    {
-                        delete msg;
-                    }
-                    else
-                    {
-                        // 【重大细节】：如果父亲也在本 Worker，其实可以直接调度它；
-                        // 如果不在本 Worker，在 Actor::push 内部判断后，需要调用
-                        // target_worker->post_cross_core_task(supervisor)
-                        // 这一步之后在重构 Actor::push 逻辑时处理。
-                    }
+                    dispatch_msg(supervisor, msg);
                 }
             }
             actor->finalize();

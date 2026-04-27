@@ -1,6 +1,6 @@
 // npc_actor.cpp
-#include "aegis/core/npc_actor.h"
-#include "aegis/core/ai_nodes.h" // 引入节点注册
+#include "aegis/game/npc_actor.h"
+#include "aegis/game/ai_nodes.h" // 引入节点注册
 #include "aegis/common/aegisLog.h"
 
 namespace aegis::core

@@ -1,5 +1,5 @@
 // AOIGrid.cpp
-#include "aegis/core/aoi_grid.h"
+#include "aegis/game/aoi_grid.h"
 #include "aegis/common/aegisLog.h" // 根据实际路径调整
 #include <ranges>
 

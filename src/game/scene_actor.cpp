@@ -1,12 +1,12 @@
 // scene_actor.cpp
-#include "aegis/core/scene_actor.h"
+#include "aegis/game/scene_actor.h"
 #include "aegis/common/aegisLog.h"
 #include "cs_battle.pb.h"
 #include "ids.pb.h"
 #include "aegis/common/actor_utils.h"
 #include "aegis/net/packet_builder.h"
 #include "aegis/core/message/message_rpc.h"
-#include "aegis/core/room_manager.h"
+#include "aegis/game/room_manager.h"
 
 namespace aegis::core
 {

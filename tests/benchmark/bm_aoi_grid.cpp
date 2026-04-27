@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "aegis/core/aoi_grid.h"
+#include "aegis/game/aoi_grid.h"
 #include <random>
 
 using namespace aegis::core;

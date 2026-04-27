@@ -1,7 +1,7 @@
 // ai_nodes.cpp
-#include "aegis/core/ai_nodes.h"
-#include "aegis/core/npc_actor.h"
-#include "aegis/core/scene_actor.h"
+#include "aegis/game/ai_nodes.h"
+#include "aegis/game/npc_actor.h"
+#include "aegis/game/scene_actor.h"
 #include "aegis/common/aegisLog.h"
 
 namespace aegis::core

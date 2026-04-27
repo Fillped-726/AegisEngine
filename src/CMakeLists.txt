@@ -1,11 +1,13 @@
 # 收集源文件
 file(GLOB_RECURSE SRC_CORE "core/*.cpp")
+file(GLOB_RECURSE SRC_GAME "game/*.cpp")
 file(GLOB_RECURSE SRC_NET "net/*.cpp")
 file(GLOB_RECURSE SRC_COMMON "common/*.cpp")
 
 # 创建核心库 (AegisEngine)
 add_library(AegisEngine SHARED 
     ${SRC_CORE} 
+    ${SRC_GAME}
     ${SRC_NET}
     ${SRC_COMMON}
 )

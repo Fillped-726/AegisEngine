@@ -56,6 +56,28 @@ namespace aegis::core
         // 获取缓存的营地列表
         const std::unordered_map<uint64_t, CampMeta> &camp_metas() const { return camp_metas_; }
 
+        // 测试用：获取销毁中的场景集合
+        const std::unordered_set<uint64_t> &destroying_scenes() const { return destroying_scenes_; }
+
+        // 测试用：注册一个测试营地（供单元测试使用）
+        void TestRegisterCamp(uint64_t scene_actor_id, const std::string &name, int32_t players)
+        {
+            camp_scenes_[scene_actor_id] = name;
+            CampMeta meta;
+            meta.scene_actor_id = scene_actor_id;
+            meta.camp_name = name;
+            meta.current_players = players;
+            meta.max_players = 20;
+            camp_metas_[scene_actor_id] = meta;
+        }
+
+        // 测试用：直接触发人数上报处理（供单元测试使用）
+        void TestOnPlayerCount(uint64_t scene_actor_id, int32_t count)
+        {
+            CampPlayerCountMsg msg(scene_actor_id, count);
+            on_camp_player_count(msg);
+        }
+
     protected:
         void handle_message(ActorMessage *msg) override;
 

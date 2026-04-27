@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "aegis/core/scene_actor.h"
-#include "aegis/core/npc_actor.h"
-#include "aegis/core/playerActor.h"
+#include "aegis/game/scene_actor.h"
+#include "aegis/game/npc_actor.h"
+#include "aegis/game/playerActor.h"
 #include "aegis/core/actor_traits.h"
 
 using namespace aegis::core;

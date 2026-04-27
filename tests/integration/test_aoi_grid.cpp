@@ -5,7 +5,7 @@
 #include <string_view>
 
 // Include your implementation
-#include "aegis/core/aoi_grid.h"
+#include "aegis/game/aoi_grid.h"
 
 using namespace aegis::core;
 

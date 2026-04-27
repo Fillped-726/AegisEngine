@@ -11,7 +11,7 @@
 #include "aegis/core/task.h"
 #include "aegis/net/dispatcher.h"
 #include "aegis/common/scopeGuard.h"
-#include "aegis/core/rpc_awaiter.h"
+#include "aegis/game/rpc_awaiter.h"
 #include "cs_battle.pb.h"
 #include "common.pb.h"
 

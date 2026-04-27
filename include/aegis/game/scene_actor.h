@@ -10,11 +10,11 @@
 #include <memory>
 
 #include "aegis/core/actor_traits.h"
-#include "aegis/core/aoi_grid.h"
+#include "aegis/game/aoi_grid.h"
 #include "aegis/core/message/message.h"
-#include "aegis/core/playerActor.h"
-#include "aegis/core/npc_actor.h"
-#include "aegis/core/sync_manager.h"
+#include "aegis/game/playerActor.h"
+#include "aegis/game/npc_actor.h"
+#include "aegis/game/sync_manager.h"
 
 namespace aegis::core
 {

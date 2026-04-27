@@ -12,9 +12,9 @@
 #endif
 #include "aegis/core/scheduler.h"
 #include "aegis/core/actor_registry.h"
-#include "aegis/core/room_manager.h"
-#include "aegis/core/scene_actor.h"
-#include "aegis/core/playerActor.h"
+#include "aegis/game/room_manager.h"
+#include "aegis/game/scene_actor.h"
+#include "aegis/game/playerActor.h"
 #include "aegis/core/message.h"
 
 using namespace aegis::core;

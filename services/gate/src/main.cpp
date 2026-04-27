@@ -1,7 +1,7 @@
 #include <iostream>
 #include <csignal>
 #include "gate_server.h"
-#include "aegis/core/game_app.h"
+#include "aegis/game/game_app.h"
 
 int main()
 {

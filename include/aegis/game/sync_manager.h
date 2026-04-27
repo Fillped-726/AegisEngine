@@ -10,8 +10,8 @@
 #include <memory>
 #include <functional>
 
-#include "aegis/core/playerActor.h"
-#include "aegis/core/aoi_grid.h"
+#include "aegis/game/playerActor.h"
+#include "aegis/game/aoi_grid.h"
 // 包含你刚刚新增的 protobuf 定义
 #include "cs_battle.pb.h"
 

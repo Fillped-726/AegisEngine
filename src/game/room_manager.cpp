@@ -1,9 +1,10 @@
 // room_manager.cpp
 
-#include "aegis/core/room_manager.h"
+#include "aegis/game/room_manager.h"
 #include "aegis/common/aegisLog.h"
-#include "aegis/core/scene_actor.h"
+#include "aegis/game/scene_actor.h"
 #include "aegis/core/message/message.h"
+#include "aegis/common/actor_utils.h"
 
 namespace aegis::core
 {
@@ -301,7 +302,7 @@ namespace aegis::core
 
                 // 发送销毁指令
                 auto *destroy_msg = new ActorDestroyMsg();
-                scene->push(destroy_msg);
+                dispatch_msg(scene, destroy_msg);
             }
             return;
         }

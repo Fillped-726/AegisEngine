@@ -25,7 +25,7 @@
 #include "aegis/net/acceptor.h"
 
 // PlayerActor only — the gateway needs to create player sessions
-#include "aegis/core/playerActor.h"
+#include "aegis/game/playerActor.h"
 
 #include "aegis/common/tools.h"
 

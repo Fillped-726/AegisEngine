@@ -2,7 +2,7 @@
 
 // Core framework
 #include "aegis/net/dispatcher.h"
-#include "aegis/core/playerActor.h"
+#include "aegis/game/playerActor.h"
 #include "aegis/core/scheduler.h"
 #include "aegis/core/actor_registry.h"
 #include "aegis/common/aegisLog.h"
@@ -16,13 +16,13 @@
 #include "ids.pb.h"
 
 // GameApp — centralized business bootstrap
-#include "aegis/core/game_app.h"
+#include "aegis/game/game_app.h"
 
 // RoomManager — 营地缓存查询
-#include "aegis/core/room_manager.h"
+#include "aegis/game/room_manager.h"
 
 // RPC 协程支持
-#include "aegis/core/rpc_awaiter.h"
+#include "aegis/game/rpc_awaiter.h"
 
 using namespace aegis::cs::lobby;
 using namespace aegis::cs::battle;

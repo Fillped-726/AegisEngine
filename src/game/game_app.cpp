@@ -3,10 +3,10 @@
  * @brief Implementation of GameApp singleton — manages RoomManager,
  * default scene, and initial NPC spawning.
  */
-#include "aegis/core/game_app.h"
-#include "aegis/core/room_manager.h"
-#include "aegis/core/scene_actor.h"
-#include "aegis/core/npc_actor.h"
+#include "aegis/game/game_app.h"
+#include "aegis/game/room_manager.h"
+#include "aegis/game/scene_actor.h"
+#include "aegis/game/npc_actor.h"
 #include "aegis/common/aegisLog.h"
 #include "aegis/core/scheduler.h" // for worker pinning
 #include "aegis/core/actor_registry.h"
