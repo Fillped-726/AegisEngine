@@ -49,26 +49,35 @@ namespace aegis::net
             for (const auto &pkt : queue)
             {
                 // [CONSTRAINT: Hard limit on single-syscall iovec count]
-                if (count >= BATCH_LIMIT || iovecs_.size() + 2 > 1024)
+                if (count >= BATCH_LIMIT || iovecs_.size() + 3 > 1024)
                 {
                     break;
                 }
 
                 uint32_t body_len = static_cast<uint32_t>(pkt->size());
-                uint32_t net_len = htonl(body_len);
+                uint32_t net_content_len = htonl(body_len);
+                uint32_t net_magic = htonl(kAegisMagic);
 
-                // [STATE: Materialize Big-Endian header into heap to guarantee memory lifecycle across syscall]
-                header_cache_.push_back(net_len);
+                // [STATE: Materialize Magic + Length into header cache (2 uint32s)]
+                header_cache_.push_back(net_magic);
+                header_cache_.push_back(net_content_len);
 
-                struct iovec iov_h;
-                iov_h.iov_base = &header_cache_.back();
-                iov_h.iov_len = sizeof(uint32_t);
-                iovecs_.push_back(iov_h);
+                // iovec[0]: Magic (4B)
+                struct iovec iov_m;
+                iov_m.iov_base = &header_cache_.data()[header_cache_.size() - 2];
+                iov_m.iov_len = kFrameMagicSize;
+                iovecs_.push_back(iov_m);
+
+                // iovec[1]: Length (4B)
+                struct iovec iov_l;
+                iov_l.iov_base = &header_cache_.back();
+                iov_l.iov_len = kFrameLengthSize;
+                iovecs_.push_back(iov_l);
 
                 if (body_len > 0)
                 {
+                    // iovec[2]: Packet data (SeqID + MsgID + Body)
                     struct iovec iov_b;
-                    // [INTENT: Zero-copy payload mapping]
                     iov_b.iov_base = const_cast<char *>(pkt->data());
                     iov_b.iov_len = body_len;
                     iovecs_.push_back(iov_b);

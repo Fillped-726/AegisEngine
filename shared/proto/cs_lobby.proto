@@ -56,3 +56,26 @@ message S2C_JoinCampRes {
     string msg = 2;
     uint64 scene_actor_id = 3;
 }
+
+// ==========================================================
+// 营地列表查询 (联机大厅)
+// ==========================================================
+
+// 玩家查询可用营地列表
+message C2S_QueryCampListReq {
+    int32 page_index = 1;  // 分页，0=第一页，MVP 阶段填 0
+}
+
+// 单个营地信息
+message CampInfo {
+    uint64 scene_actor_id = 1;
+    string camp_name = 2;
+    int32 current_players = 3;
+    int32 max_players = 4;
+}
+
+// 营地列表响应
+message S2C_QueryCampListRes {
+    repeated CampInfo camps = 1;
+    int32 total_count = 2;   // 总营地数（用于前端显示）
+}

@@ -16,6 +16,8 @@ enum MsgID {
     C2S_JOIN_CAMP_REQ   = 1103;  // 玩家请求加入营地
     S2C_JOIN_CAMP_RES   = 1104;  // 加入结果
     S2C_CAMP_SNAPSHOT   = 1105;  // 营地快照补帧
+    C2S_QUERY_CAMP_LIST_REQ = 1106;  // 玩家查询营地列表
+    S2C_QUERY_CAMP_LIST_RES = 1107;  // 营地列表响应
     
     // 2000-2999: Battle / Gameplay
     CS_PING          = 2001; 

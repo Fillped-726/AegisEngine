@@ -12,7 +12,7 @@ namespace aegis::net
     static_assert(sizeof(Packet) >= 1024, "Packet SBO size is too small!");
 
     // [CONSTRAINT: Enforce strict ABI memory layout and padding alignment]
-    static_assert(sizeof(Packet) == 1056, "ABI Alert: Packet size is not 1056. Check padding/alignas!");
+    static_assert(sizeof(Packet) == 1072, "ABI Alert: Packet size is not 1056. Check padding/alignas!");
 
     // [STATE: Singleton pool definition; L2 capacity=100k, TLS L1 batch=128]
     using PacketPool = aegis::core::ObjectPool<Packet, 100000, 128>;

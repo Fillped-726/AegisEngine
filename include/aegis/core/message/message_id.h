@@ -27,6 +27,12 @@ namespace aegis::core
         MSG_TYPE_RPC_ASSIGN_CAMP = 52,  // 玩家请求分配/创建营地
 
         MSG_TYPE_FORWARD_PACKET = 60,
-        MSG_TYPE_REBIND_CONNECTION = 61
+        MSG_TYPE_REBIND_CONNECTION = 61,
+
+        // RPC 响应（协程模式）
+        MSG_TYPE_RPC_RESPONSE = 70,
+
+        // RoomManager <-> SceneActor 人数同步
+        MSG_TYPE_CAMP_PLAYER_COUNT = 71
     };
 }

@@ -11,6 +11,7 @@
 #include "aegis/core/task.h"
 #include "aegis/net/dispatcher.h"
 #include "aegis/common/scopeGuard.h"
+#include "aegis/core/rpc_awaiter.h"
 #include "cs_battle.pb.h"
 #include "common.pb.h"
 
@@ -21,13 +22,19 @@ namespace aegis::common
 
 namespace aegis::core
 {
+    using RpcId = uint64_t;
+    class RpcManager;
+}
+
+namespace aegis::core
+{
     /**
      * @brief Pooled player actor representing a connected game client.
-     * 
+     *
      * Has a shared_ptr<Connection> for network I/O, dirty flags for
      * incremental state sync, atomic coordinates for cross-thread reads,
      * and template send_packet/send_buffer methods for protobuf delivery.
-     * 
+     *
      * Messages dispatched via Dispatcher, coroutine handlers launched
      * as DetachedTask.
      */
@@ -178,15 +185,16 @@ namespace aegis::core
         }
 
         // [Public] 发送 Protobuf 消息
+        // seq_id: RPC 序列号，非 RPC 响应请传 0
         template <typename T>
-        void send_packet(uint32_t msg_id, const T &msg)
+        void send_packet(uint32_t msg_id, uint32_t seq_id, const T &msg)
         {
             if (conn_)
             {
 
                 auto pkt = net::PacketPool::instance().acquire();
 
-                pkt->pack_into(msg_id, msg);
+                pkt->pack_into(msg_id, seq_id, msg);
 
                 // 4. 发送
                 conn_->send(std::move(pkt));
@@ -195,7 +203,8 @@ namespace aegis::core
 
         // [Public] 发送预序列化 Buffer (高性能广播专用)
         // 必须是 public，因为 SceneActor 需要调用它
-        void send_buffer(uint32_t msg_id, const std::string &serialized_data)
+        // seq_id: 从原始请求包中提取的 SeqID，响应时回填；非 RPC 响应请传 0
+        void send_buffer(uint32_t msg_id, uint32_t seq_id, const std::string &serialized_data)
         {
             if (!conn_)
                 return;
@@ -204,15 +213,21 @@ namespace aegis::core
             size_t body_size = serialized_data.size();
             pkt->alloc(net::kPacketMsgHeader + body_size);
 
-            // 写头 (Big Endian)
-            uint32_t net_id = htonl(msg_id);
-            std::memcpy(pkt->mutable_data(), &net_id, net::kPacketMsgHeader);
+            // 写 SeqID (Big Endian)
+            uint32_t net_seq = htonl(seq_id);
+            std::memcpy(pkt->mutable_data(), &net_seq, net::kPacketSeqIdSize);
 
-            // 写体 (Zero Copy logic handled by packet pool, but here we copy from string)
+            // 写 MsgID (Big Endian)
+            uint32_t net_id = htonl(msg_id);
+            std::memcpy(pkt->mutable_data() + net::kPacketSeqIdSize, &net_id, net::kPacketMsgIdSize);
+
+            // 写体
             if (body_size > 0)
             {
                 std::memcpy(pkt->mutable_data() + net::kPacketMsgHeader, serialized_data.data(), body_size);
             }
+
+            pkt->set_seq_id(seq_id);
 
             conn_->send(std::move(pkt));
         }
@@ -268,8 +283,35 @@ namespace aegis::core
                 // 该接口内部会处理 PacketPool 申请、大端序转换及实际发送
                 if (fwd->shared_buf)
                 {
-                    this->send_buffer(fwd->msg_id, *(fwd->shared_buf));
+                    this->send_buffer(fwd->msg_id, fwd->seq_id, *(fwd->shared_buf));
                 }
+                break;
+            }
+
+            // RPC 响应处理（协程模式）
+            case MSG_TYPE_RPC_RESPONSE:
+            {
+                auto *rpc_res = static_cast<RpcResponseMsg *>(msg);
+                RpcId rpc_id = rpc_res->rpc_id;
+                void *result = rpc_res->result_storage;
+
+                // 将结果传递给 RpcManager，由它写入 awaiter 的 result_ 槽
+                auto handle = RpcManager::instance().consume(rpc_id, result);
+                if (handle)
+                {
+                    handle.resume();
+                }
+                else
+                {
+                    // 没有等待的协程，需要手动清理 result
+                    if (rpc_res->deleter)
+                        rpc_res->deleter();
+                    aegis::Log::instance().warn("[PlayerActor] No pending RPC for id: {}", rpc_id);
+                }
+
+                // 标记已处理，避免 finalize 重复释放
+                rpc_res->result_storage = nullptr;
+                rpc_res->deleter = nullptr;
                 break;
             }
 
@@ -292,6 +334,19 @@ namespace aegis::core
         void on_session_closed(int reason)
         {
             aegis::Log::instance().info("[PlayerActor] Session Closed | ID: {} | Reason: {}", playerId_, reason);
+
+            // 通知父场景移除自己（这样场景人数才会减）
+            ActorID scene_id = parent_id();
+            if (scene_id.is_valid())
+            {
+                auto *scene = ActorRegistry::instance().get(scene_id);
+                if (scene)
+                {
+                    auto *leave_msg = new SceneLeaveMsg(id_, playerId_);
+                    dispatch_msg(scene, leave_msg);
+                }
+            }
+
             conn_.reset();
         }
 

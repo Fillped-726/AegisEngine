@@ -74,6 +74,7 @@ namespace aegis::core
                 std::vector<uint64_t> enterIds;
                 std::vector<uint64_t> leaveIds;
 
+                uint32_t old_grid = mover->get_aoi_grid_index();
                 uint32_t new_grid = aoi.Move(mover->id().raw, mover->get_aoi_grid_index(),
                                              mover->GetX(), mover->GetY(),
                                              enterIds, leaveIds);
@@ -86,6 +87,10 @@ namespace aegis::core
                     {
                         onEnterLeave(mover, enterIds, leaveIds);
                     }
+                }
+                else if (old_grid != (uint32_t)-1)
+                {
+                    // 没有跨格但移动了后续阶段2会发batch
                 }
             }
 

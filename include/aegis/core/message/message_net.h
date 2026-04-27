@@ -19,10 +19,14 @@ namespace aegis::core
     struct ForwardPacketMsg : public BasicMessage<ForwardPacketMsg, MSG_TYPE_FORWARD_PACKET>
     {
         uint32_t msg_id;
+        uint32_t seq_id;
         std::shared_ptr<std::string> shared_buf;
 
         ForwardPacketMsg(uint32_t id, std::shared_ptr<std::string> buf)
-            : msg_id(id), shared_buf(std::move(buf)) {}
+            : msg_id(id), seq_id(0), shared_buf(std::move(buf)) {}
+
+        ForwardPacketMsg(uint32_t id, uint32_t seq, std::shared_ptr<std::string> buf)
+            : msg_id(id), seq_id(seq), shared_buf(std::move(buf)) {}
     };
 
     // [新增] 重新绑定网络连接消息 (顶号使用)

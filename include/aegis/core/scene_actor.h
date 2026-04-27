@@ -71,6 +71,9 @@ namespace aegis::core
         // 缓存复用 (在 Actor 模型下单线程访问，安全)
         std::vector<uint64_t> cachedEnterIds_;
         std::vector<uint64_t> cachedLeaveIds_;
+
+        // 人数上报计数器（每 60 Tick = 3s 上报一次）
+        uint32_t report_counter_ = 0;
     };
 
 } // namespace aegis::core

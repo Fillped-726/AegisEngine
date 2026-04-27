@@ -18,6 +18,12 @@
 // GameApp — centralized business bootstrap
 #include "aegis/core/game_app.h"
 
+// RoomManager — 营地缓存查询
+#include "aegis/core/room_manager.h"
+
+// RPC 协程支持
+#include "aegis/core/rpc_awaiter.h"
+
 using namespace aegis::cs::lobby;
 using namespace aegis::cs::battle;
 using namespace aegis::ids;
@@ -65,7 +71,7 @@ namespace aegis::gate
                 pos->set_x(spawnX);
                 pos->set_y(spawnY);
 
-                player->send_packet(ids::SC_LOGIN_RES, res);
+                player->send_packet(ids::SC_LOGIN_RES, 0, res);
 
                 // 4. 从 GameApp 获取默认主城 Scene
                 ActorID scene_id = GameApp::instance().default_scene_id();
@@ -118,25 +124,34 @@ namespace aegis::gate
                 camp_req.camp_name = req.camp_name();
                 camp_req.is_create = true;
 
-                // 2. 发送 RPC 给 RoomManager
+                // 2. 发起异步 RPC 调用（非阻塞！）
                 ActorID room_mgr_id = GameApp::instance().room_manager_id();
-                auto *room_mgr = ActorRegistry::instance().get(room_mgr_id);
+                auto *rpc_msg = new RPCAssignCampMsg(camp_req);
+                rpc_msg->set_rpc_meta(0, player->id());
 
-                if (!room_mgr)
+                // 使用 RpcCall 发送并等待
+                AssignCampRes camp_res;
+                try
                 {
-                    Log::instance().error("[Camp][Create] RoomManager not found!");
+                    camp_res = co_await RpcCall<AssignCampRes>(room_mgr_id, rpc_msg);
+                }
+                catch (const std::runtime_error &e)
+                {
+                    Log::instance().error("[Camp][Create] RPC failed: {}", e.what());
                     co_return;
                 }
 
-                auto *rpc_msg = new RPCAssignCampMsg(camp_req);
-                auto future = rpc_msg->promise.get_future();
-                dispatch_msg(room_mgr, rpc_msg);
+                // 验证 Actor 仍然有效
+                auto *current_player = static_cast<PlayerActor *>(
+                    ActorRegistry::instance().get(player->id()));
+                if (!current_player)
+                {
+                    Log::instance().warn("[Camp][Create] Player actor already destroyed");
+                    co_return;
+                }
+                player = current_player;
 
-                // 3. 等待 RoomManager 处理结果 (快速本地 RPC)
-                // 注意: 这会阻塞当前协程的线程，但 RoomManager 在其 Worker 上立即处理
-                AssignCampRes camp_res = future.get();
-
-                // 4. 构建回包
+                // 3. 构建回包
                 S2C_CreateCampRes res;
                 res.set_ret_code(camp_res.ret_code);
                 res.set_scene_actor_id(camp_res.scene_actor_id.raw);
@@ -146,7 +161,7 @@ namespace aegis::gate
                 {
                     res.set_msg("Camp created successfully");
 
-                    // 5. 让玩家离开当前场景（默认主城），进入新营地
+                    // 4. 让玩家离开当前场景
                     ActorID old_scene_id = player->parent_id();
                     auto *old_scene = ActorRegistry::instance().get(old_scene_id);
                     if (old_scene)
@@ -155,7 +170,7 @@ namespace aegis::gate
                         dispatch_msg(old_scene, leave_msg);
                     }
 
-                    // 6. 进入新营地
+                    // 5. 进入新营地
                     player->set_parent_id(camp_res.scene_actor_id);
                     auto *new_scene = ActorRegistry::instance().get(camp_res.scene_actor_id);
                     if (new_scene)
@@ -176,7 +191,7 @@ namespace aegis::gate
                                          player->get_player_id(), camp_res.err_msg);
                 }
 
-                player->send_packet(ids::S2C_CREATE_CAMP_RES, res);
+                player->send_packet(ids::S2C_CREATE_CAMP_RES, 0, res);
                 co_return;
             });
 
@@ -196,24 +211,33 @@ namespace aegis::gate
                 camp_req.is_create = false;
                 camp_req.target_scene_id = req.scene_actor_id();
 
-                // 2. 发送给 RoomManager
+                // 2. 发起异步 RPC
                 ActorID room_mgr_id = GameApp::instance().room_manager_id();
-                auto *room_mgr = ActorRegistry::instance().get(room_mgr_id);
+                auto *rpc_msg = new RPCAssignCampMsg(camp_req);
+                rpc_msg->set_rpc_meta(0, player->id());
 
-                if (!room_mgr)
+                AssignCampRes camp_res;
+                try
                 {
-                    Log::instance().error("[Camp][Join] RoomManager not found!");
+                    camp_res = co_await RpcCall<AssignCampRes>(room_mgr_id, rpc_msg);
+                }
+                catch (const std::runtime_error &e)
+                {
+                    Log::instance().error("[Camp][Join] RPC failed: {}", e.what());
                     co_return;
                 }
 
-                auto *rpc_msg = new RPCAssignCampMsg(camp_req);
-                auto future = rpc_msg->promise.get_future();
-                dispatch_msg(room_mgr, rpc_msg);
+                // 验证 Actor
+                auto *current_player = static_cast<PlayerActor *>(
+                    ActorRegistry::instance().get(player->id()));
+                if (!current_player)
+                {
+                    Log::instance().warn("[Camp][Join] Player actor already destroyed");
+                    co_return;
+                }
+                player = current_player;
 
-                // 3. 等待结果
-                AssignCampRes camp_res = future.get();
-
-                // 4. 构建回包
+                // 3. 构建回包
                 S2C_JoinCampRes res;
                 res.set_ret_code(camp_res.ret_code);
                 res.set_scene_actor_id(camp_res.scene_actor_id.raw);
@@ -222,7 +246,7 @@ namespace aegis::gate
                 {
                     res.set_msg("Joined camp successfully");
 
-                    // 5. 离开当前场景
+                    // 4. 离开当前场景
                     ActorID old_scene_id = player->parent_id();
                     auto *old_scene = ActorRegistry::instance().get(old_scene_id);
                     if (old_scene)
@@ -231,7 +255,7 @@ namespace aegis::gate
                         dispatch_msg(old_scene, leave_msg);
                     }
 
-                    // 6. 进入新营地
+                    // 5. 进入新营地
                     player->set_parent_id(camp_res.scene_actor_id);
                     auto *new_scene = ActorRegistry::instance().get(camp_res.scene_actor_id);
                     if (new_scene)
@@ -252,7 +276,7 @@ namespace aegis::gate
                                          player->get_player_id(), camp_res.err_msg);
                 }
 
-                player->send_packet(ids::S2C_JOIN_CAMP_RES, res);
+                player->send_packet(ids::S2C_JOIN_CAMP_RES, 0, res);
                 co_return;
             });
 
@@ -331,6 +355,56 @@ namespace aegis::gate
                     auto *msg = new SceneSkillCastMsg(player->id(), req.skill_id(), req.target_id(), tx, ty);
                     dispatch_msg(scene, msg);
                 }
+                co_return;
+            });
+    
+        // ==========================================================
+        // Handler 7: C2S_QueryCampListReq — 查询营地列表
+        // ==========================================================
+        d.register_handler<C2S_QueryCampListReq>(
+            ids::C2S_QUERY_CAMP_LIST_REQ,
+            [](aegis::core::Actor *actor, const C2S_QueryCampListReq & /*req*/) -> aegis::core::Task<void>
+            {
+                auto player = static_cast<aegis::core::PlayerActor *>(actor);
+
+                ActorID room_mgr_id = GameApp::instance().room_manager_id();
+                auto *room_mgr = ActorRegistry::instance().get(room_mgr_id);
+                if (!room_mgr)
+                {
+                    Log::instance().error("[QueryCamp] RoomManager not found!");
+                    co_return;
+                }
+
+                // 直接读 RoomManager 的缓存（O(1)）
+                auto *rm = static_cast<aegis::core::RoomManager *>(room_mgr);
+                const auto &metas = rm->camp_metas();
+
+                Log::instance().info("[QueryCamp] RoomManager has {} camps in metas",
+                                     metas.size());
+
+                S2C_QueryCampListRes res;
+                int limit = 50; // 最多返回 50 个
+                int count = 0;
+
+                for (const auto &[id, meta] : metas)
+                {
+                    if (count >= limit) break;
+
+                    auto *info = res.add_camps();
+                    info->set_scene_actor_id(meta.scene_actor_id);
+                    info->set_camp_name(meta.camp_name);
+                    info->set_current_players(meta.current_players);
+                    info->set_max_players(meta.max_players);
+                    count++;
+                }
+
+                res.set_total_count(static_cast<int>(metas.size()));
+
+                // 构造回包（此时 PlayerActor 所在的 Worker 已从挂起恢复）
+                Log::instance().info("[QueryCamp] Returning {} camps to player {}",
+                                     count, player->get_player_id());
+
+                player->send_packet(ids::S2C_QUERY_CAMP_LIST_RES, 0, res);
                 co_return;
             });
 

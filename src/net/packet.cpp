@@ -39,8 +39,8 @@ namespace aegis::net
             return 0;
 
         uint32_t net_id;
-        // 此时 data_ 指向栈或者堆，对调用者透明
-        std::memcpy(&net_id, data_, 4);
+        // MsgID 在 data_ + kPacketSeqIdSize 偏移处
+        std::memcpy(&net_id, data_ + kPacketSeqIdSize, kPacketMsgIdSize);
 
         if constexpr (std::endian::native == std::endian::big)
         {
@@ -50,6 +50,29 @@ namespace aegis::net
         {
             return __builtin_bswap32(net_id);
         }
+    }
+
+    uint32_t Packet::seq_id() const
+    {
+        if (size_ < kPacketMsgHeader)
+            return 0;
+
+        uint32_t net_seq;
+        std::memcpy(&net_seq, data_, kPacketSeqIdSize);
+
+        if constexpr (std::endian::native == std::endian::big)
+        {
+            return net_seq;
+        }
+        else
+        {
+            return __builtin_bswap32(net_seq);
+        }
+    }
+
+    void Packet::set_seq_id(uint32_t seq_id)
+    {
+        seq_id_ = seq_id;
     }
 
     const char *Packet::data() const
@@ -84,6 +107,7 @@ namespace aegis::net
     void Packet::reset()
     {
         size_ = 0; // 逻辑清空
+        seq_id_ = 0;
 
         if (heap_buf_ && capacity_ > kMaxRetainSize)
         {
@@ -124,6 +148,7 @@ namespace aegis::net
     {
         alloc(other.size_); // 确保空间足够
         std::memcpy(data_, other.data_, other.size_);
+        seq_id_ = other.seq_id_;
     }
 
     void Packet::move_from(Packet &&other)
@@ -133,6 +158,7 @@ namespace aegis::net
 
         size_ = other.size_;
         capacity_ = other.capacity_;
+        seq_id_ = other.seq_id_;
 
         if (other.heap_buf_)
         {

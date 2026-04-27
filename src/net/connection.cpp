@@ -58,8 +58,8 @@ namespace aegis::net
         try
         {
             auto packet = net::PacketPool::instance().acquire();
-            // 1. Read Header
-            while (rx_len_ < K_HEADER_SIZE)
+            // 1. Read Frame Header: [Magic(4B)][Length(4B)]
+            while (rx_len_ < net::kFrameHeaderSize)
             {
                 if (rx_len_ == rx_buffer_.size())
                     rx_buffer_.resize(rx_buffer_.size() * 2);
@@ -70,11 +70,24 @@ namespace aegis::net
                 rx_len_ += n;
             }
 
-            // 2. Parse Length
+            // 2. Verify Magic
+            uint32_t net_magic;
+            std::memcpy(&net_magic, rx_buffer_.data(), net::kFrameMagicSize);
+            uint32_t magic = ntohl(net_magic);
+            if (magic != net::kAegisMagic)
+            {
+                aegis::Log::instance().error("Invalid magic: 0x{:08X}, expected 0x{:08X}", magic, net::kAegisMagic);
+                // 跳过 1 字节尝试滑动恢复
+                std::memmove(rx_buffer_.data(), rx_buffer_.data() + 1, rx_len_ - 1);
+                rx_len_--;
+                co_return nullptr;
+            }
+
+            // 3. Parse Length
             uint32_t net_len;
-            std::memcpy(&net_len, rx_buffer_.data(), K_HEADER_SIZE);
+            std::memcpy(&net_len, rx_buffer_.data() + net::kFrameMagicSize, net::kFrameLengthSize);
             uint32_t body_len = ntohl(net_len);
-            uint32_t total_len = K_HEADER_SIZE + body_len;
+            uint32_t total_len = net::kFrameHeaderSize + body_len;
 
             if (total_len > K_MAX_PACKET_SIZE)
             {
@@ -82,7 +95,7 @@ namespace aegis::net
                 co_return nullptr;
             }
 
-            // 3. Read Body
+            // 4. Read Body (SeqID + MsgID + Protobuf Body)
             ensure_rx_capacity(total_len);
             while (rx_len_ < total_len)
             {
@@ -92,14 +105,14 @@ namespace aegis::net
                 rx_len_ += n;
             }
 
-            // 4. Extract Data
+            // 5. Extract Data (skip frame header, copy SeqID+MsgID+Body)
             packet->alloc(body_len);
             if (body_len > 0)
             {
-                std::memcpy(packet->mutable_data(), rx_buffer_.data() + K_HEADER_SIZE, body_len);
+                std::memcpy(packet->mutable_data(), rx_buffer_.data() + net::kFrameHeaderSize, body_len);
             }
 
-            // 5. Handle Stash (Move remaining data to front)
+            // 6. Handle Stash
             size_t remaining = rx_len_ - total_len;
             if (remaining > 0)
             {
@@ -107,8 +120,6 @@ namespace aegis::net
             }
             rx_len_ = remaining;
 
-            // [New] 尝试收缩缓冲区
-            // 放在包处理完毕、数据移到最前端之后是最佳时机
             try_shrink_rx_buffer();
 
             co_return packet;

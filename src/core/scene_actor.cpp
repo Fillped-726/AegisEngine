@@ -5,6 +5,8 @@
 #include "ids.pb.h"
 #include "aegis/common/actor_utils.h"
 #include "aegis/net/packet_builder.h"
+#include "aegis/core/message/message_rpc.h"
+#include "aegis/core/room_manager.h"
 
 namespace aegis::core
 {
@@ -113,14 +115,22 @@ namespace aegis::core
         auto *player = static_cast<PlayerActor *>(base_actor);
         actors_[actor_id.raw] = player;
 
+        Log::instance().info("[SceneActor] ENTER: ActorID={}, Pos=({:.2f}, {:.2f})",
+                             actor_id.raw, msg->x, msg->y);
+
         uint32_t grid_index = aoi_.Add(actor_id.raw, msg->x, msg->y);
         player->set_aoi_grid_index(grid_index);
 
         std::vector<uint64_t> neighbor_ids;
         aoi_.GetViewEntityIds(grid_index, neighbor_ids);
+        Log::instance().info("[SceneActor] ENTER grid_idx={}, neighbors_count={}",
+                             grid_index, neighbor_ids.size());
 
         if (neighbor_ids.empty())
+        {
+            Log::instance().info("[SceneActor] ENTER: no neighbors found. Actor {} at ({:.2f}, {:.2f})", actor_id.raw, msg->x, msg->y);
             return;
+        }
 
         // 1. 构建发给邻居的包："我来了"
         auto shared_data_to_others = net::PacketBuilder::BuildEnterView({actor_id.raw, msg->x, msg->y});
@@ -139,6 +149,8 @@ namespace aegis::core
             {
                 PlayerActor *neighbor = it->second;
                 neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY()});
+                Log::instance().info("[SceneActor] ENTER notify neighbor: Player({}) about Actor({}): pos=({:.2f}, {:.2f})",
+                                     neighbor->id().raw, actor_id.raw, msg->x, msg->y);
 
                 // 通知邻居
                 auto *forward_msg = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_others);
@@ -148,12 +160,16 @@ namespace aegis::core
             {
                 NpcActor *neighbor = nit->second;
                 neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY(), 1}); // 1: NPC
+                Log::instance().info("[SceneActor] ENTER notify self about NPC({}): pos=({:.2f}, {:.2f})",
+                                     neighbor->id().raw, neighbor->GetX(), neighbor->GetY());
             }
         }
 
         // 3. 通知"我"周围有谁
         if (!neighbors_info.empty())
         {
+            Log::instance().info("[SceneActor] ENTER send self neighbors: {} entities for Actor({})",
+                                 neighbors_info.size(), actor_id.raw);
             auto shared_data_to_me = net::PacketBuilder::BuildEnterView(neighbors_info);
             auto *self_forward = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_me);
             dispatch_msg(player, self_forward);
@@ -306,6 +322,20 @@ namespace aegis::core
         // 重新注册下一次 Tick (50ms)
         schedule_timer(50, [this]()
                        { OnTick(); });
+
+        // 每 60 Tick (~3 秒) 上报一次人数给 RoomManager
+        report_counter_++;
+        if (report_counter_ >= 60)
+        {
+            report_counter_ = 0;
+            auto *parent = ActorRegistry::instance().get(parent_id());
+            if (parent)
+            {
+                int32_t count = static_cast<int32_t>(actors_.size());
+                auto *count_msg = new CampPlayerCountMsg(id_.raw, count);
+                dispatch_msg(parent, count_msg);
+            }
+        }
     }
 
     // ==========================================
@@ -317,6 +347,9 @@ namespace aegis::core
     {
         if (!mover)
             return;
+
+        Log::instance().info("[SceneActor] AOI_ENTER_LEAVE: mover={}, enters={}, leaves={}",
+                             mover->id().raw, enter_ids.size(), leave_ids.size());
 
         // --- 处理跨网格新进入视野 ---
         if (!enter_ids.empty())
@@ -331,12 +364,25 @@ namespace aegis::core
                 if (auto *neighbor = GetPlayer(neighbor_id))
                 {
                     new_neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY()});
+                    Log::instance().info("[SceneActor] AOI enter: notify Player({}) about mover({}) at ({:.2f}, {:.2f})",
+                                         neighbor_id, mover->id().raw, mover->GetX(), mover->GetY());
                     SendSharedBuffer(neighbor_id, ids::SC_ENTER_VIEW, shared_data_to_others);
+                }
+                else
+                {
+                    Log::instance().info("[SceneActor] AOI enter skip non-player: {}", neighbor_id);
                 }
             }
 
             if (!new_neighbors_info.empty())
             {
+                Log::instance().info("[SceneActor] AOI enter: notify mover({}) about {} new neighbors",
+                                     mover->id().raw, new_neighbors_info.size());
+                for (auto &info : new_neighbors_info)
+                {
+                    Log::instance().info("[SceneActor]   -> neighbor({}): pos=({:.2f}, {:.2f})",
+                                         info.uid, info.x, info.y);
+                }
                 auto shared_data_to_me = net::PacketBuilder::BuildEnterView(new_neighbors_info);
                 SendSharedBuffer(mover->id().raw, ids::SC_ENTER_VIEW, shared_data_to_me);
             }
@@ -355,12 +401,20 @@ namespace aegis::core
                 if (auto *neighbor = GetPlayer(neighbor_id))
                 {
                     leave_neighbors_uids.push_back(neighbor->id().raw);
+                    Log::instance().info("[SceneActor] AOI leave: notify Player({}) about mover({}) leaving",
+                                         neighbor_id, mover->id().raw);
                     SendSharedBuffer(neighbor_id, ids::SC_LEAVE_VIEW, shared_data_to_others);
+                }
+                else
+                {
+                    Log::instance().info("[SceneActor] AOI leave skip non-player: {}", neighbor_id);
                 }
             }
 
             if (!leave_neighbors_uids.empty())
             {
+                Log::instance().info("[SceneActor] AOI leave: notify mover({}) about {} leaving entities",
+                                     mover->id().raw, leave_neighbors_uids.size());
                 auto shared_data_to_me = net::PacketBuilder::BuildLeaveView(leave_neighbors_uids);
                 SendSharedBuffer(mover->id().raw, ids::SC_LEAVE_VIEW, shared_data_to_me);
             }

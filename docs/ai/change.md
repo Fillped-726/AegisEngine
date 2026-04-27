@@ -146,3 +146,216 @@ Structure: [Length: 4B][MsgID: 4B][Body: Protobuf]。
 [Rule-Net-01]: 所有主线程 IO 必须具备 Total-Non-Blocking 特性，严禁硬编码读取长度。
 
 [Rule-Actor-04]: 任何 Actor 在进入 Registry 后、处理第一条消息前，必须具备有效的 Worker 绑定。
+
+ ─  ⚕ Hermes  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                                                                                                                     
+     第一阶段完成总结                                                                                                                                                                                
+     已改动的文件                                                                                                                                                                                    
+                                                                                                                                                                                                     
+     服务端：                                                                                                                                                                                                                                                                                                                                                                              
+     | 文件 | 改动内容 |                                                                                                                                                                             
+     |------|---------|                                                                                                                                                                              
+     | include/aegis/net/packet.h | 加 kAegisMagic、kFrameMagicSize/LengthSize/HeaderSize、kPacketSeqIdSize/MsgIdSize；pack_into 加 seq_id 参数写 [SeqID][MsgID][Body]；新增                         
+     seq_id()、set_seq_id()；新增 seq_id_ 字段 |                                                                                                                                                     
+     | src/net/packet.cpp | msg_id() 从 data_ + kPacketSeqIdSize 读取；新增 seq_id() 实现；set_seq_id()；copy_from/move_from/reset 同步 seq_id |                                                     
+     | include/aegis/net/outbox_batcher.h | prepare_batch 加 Magic + Length 帧头（2 个 iovec）代替原来的单独 Length |                                                                                
+     | src/net/connection.cpp | read_packet 读 kFrameHeaderSize=8B，校验 Magic，滑动恢复 |                                                                                                           
+     | include/aegis/core/sequence_id.h | 新增：SequenceIDGen，格式 (worker_id << 24) \| counter |                                                                                                   
+     | include/aegis/core/playerActor.h | send_packet 加 seq_id 参数；send_buffer 加 seq_id 参数，写 [SeqID][MsgID][Body] |                                                                          
+     | include/aegis/core/message/message_net.h | ForwardPacketMsg 加 seq_id 字段和对应构造函数 |                                                                                                    
+     | services/gate/src/logic/handler_loader.cpp | 三处 send_packet 调用加 0 作为 seq_id 占位 |                                                                                                     
+                                                                                                                                                                                                     
+     客户端：                                                                                                                                                                                        
+                                                                                                                                                                                                     
+     | 文件 | 改动内容 |                                                                                                                                                                             
+     |------|---------|                                                                                                                                                                              
+     | Foundation/Protocol/AegisProtocol.cs | 新常量（Magic、Frame/Content header）；Pack 改 (msgId, seqId, body)；新增 ReadMagic/ReadSeqId/IsValidMagic |                                           
+     | Network/AegisClient.cs | SendMessage 传 seqId=0；TryDispatchPackets 加 Magic 校验 + 滑动恢复；解析 [FrameHeader][SeqID][MsgID][Body] |                                                        
+     核心设计决策                                                                                                                                                                                    
+                                                                                                                                                                                                     
+     - [Magic(4)][Length(4)] 是帧层，由 OutboxBatcher / read_packet 处理                                                                                                                             
+     - [SeqID(4)][MsgID(4)][Body] 是包层，由 Packet / Dispatcher 处理                                                                                                                                
+     - Magic 不匹配时服务端/客户端都会滑动 1 字节恢复，防止粘包/脏数据                                                                                                                               
+     - SeqID 高位 8bit=worker_id，低位 24bit=自增计数器
+
+     ─  ⚕ Hermes  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                                                                                                                     
+     第二阶段完成总结                                                                                                                                                                                
+     改动的所有文件                                                                                                                                                                                  
+                                                                                                                                                                                                     
+     新增文件：                                                                                                                                                                                      
+     - include/aegis/core/sequence_id.h — per-worker 原子 SeqID 生成器，格式 (worker_id << 24) | counter                                                                                             
+     - include/aegis/core/rpc_awaiter.h — RpcAwaiter(awaitable)、RpcManager(per-worker 挂起表)、RpcCall<>() 便捷函数                                                                                 
+                                                                                                                                                                                                     
+     修改文件：                                                                                                                                                                                      
+                                                                                                                                                                                                     
+     | 文件 | 改动 |                                                                                                                                                                                 
+     |------|------|                                                                                                                                                                                 
+     | packet.h | 新常量 kAegisMagic, kFrameMagicSize/LengthSize/HeaderSize, kPacketSeqIdSize/MsgIdSize；pack_into 加 seq_id 参数；新增 seq_id()/set_seq_id()；新增 seq_id_ 字段 |                   
+     | packet.cpp | msg_id() 偏移调整；新增 seq_id()/set_seq_id()；copy_from/move_from/reset 同步 seq_id |                                                                                           
+     | outbox_batcher.h | prepare_batch 写 [Magic][Length] 帧头代替原来的单 Length |                                                                                                                 
+     | connection.cpp | read_packet 读 8B 帧头 + Magic 校验 + 滑动恢复 |                                                                                                                             
+     | connection.h | K_HEADER_SIZE 保留，但已不再使用（由 kFrameHeaderSize 替代） |                                                                                                                 
+     | playerActor.h | send_packet/send_buffer 加 seq_id 参数；新增 MSG_TYPE_RPC_RESPONSE 处理分支 |                                                                                                 
+     | message/message_net.h | ForwardPacketMsg 加 seq_id 字段 |                                                                                                                                     
+     | message/message_rpc.h | 加 RpcId、RpcResponseMsg、RpcReplyMode；Reply() 支持协程模式投递 RpcResponseMsg |                                                                                     
+     | message/message_id.h | 新增 MSG_TYPE_RPC_RESPONSE = 70 |                                                                                                                                      
+     | handler_loader.cpp | 创建/加入营地 handler 去掉 future.get() 阻塞，改为 co_await RpcCall<>() |                                                                                                
+     架构变化示意                                                                                                                                                                                    
+                                                                                                                                                                                                     
+     Before (阻塞):                                                                                                                                                                                  
+       PlayerActor → RPCAssignCampMsg → RoomManager                                                                                                                                                  
+                                         ↓                                                                                                                                                           
+                                      处理                                                                                                                                                           
+                                         ↓                                                                                                                                                           
+                                      msg.Reply(res) → promise.set_value(res)                                                                                                                        
+                                                         ↓                                                                                                                                           
+                                         future.get() ←──┘  ← 阻塞线程！                                                                                                                             
+                                                                                                                                                                                                     
+     After (非阻塞):                                                                                                                                                                                 
+       PlayerActor → RPCAssignCampMsg → RoomManager                                                                                                                                                  
+          ↓ (挂起)                        ↓                                                                                                                                                          
+          ↓                             处理                                                                                                                                                         
+          ↓                               ↓                                                                                                                                                          
+          ↓                      msg.Reply(res) [协程模式]                                                                                                                                           
+          ↓                               ↓                                                                                                                                                          
+          ↓                      RpcResponseMsg → dispatch_msg → PlayerActor                                                                                                                         
+          ↓                                                          ↓                                                                                                                               
+          ↓                                          RpcManager.consume(rpc_id)                                                                                                                      
+          ↓                                                          ↓                                                                                                                               
+          └─────────────────────────────────────────── handle.resume() ← 不阻塞！                                                                                                                    
+                                                         ↓                                                                                                                                           
+                                               await_resume() → 返回结果                                                                                                                             
+                                                                                                                                                                                                     
+     需要你手动操作                                                                                                                                                                                  
+                                                                                                                                                                                                     
+     1. 编译服务端 — 进 services/gate/ 目录重新 make/cmake --build                                                                                                                                   
+     2. 编译客户端 — 在 Godot 里 Build → Build                                                                                                                                                       
+     3. 启动测试 — 服务端 ./gate_server → Godot 运行客户端 → 点"开始游戏
+     
+     "      
+      ─  ⚕ Hermes  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                                                                                                    
+     gate 也只链接了 AegisEngine、AegisProto、jemalloc，没有 gRPC。好。                                                                                                             
+     修复总结                                                                                                                                                                       
+                                                                                                                                                                                    
+     三个问题都处理了：                                                                                                                                                             
+     A. RpcResponseMsg 继承修复                                                                                                                                                     
+     message_rpc.h 中 RpcResponseMsg 改为继承 BasicMessage<RpcResponseMsg, MSG_TYPE_RPC_RESPONSE>，finalize() 不再是 override，通过 g_message_finalizers 注册表正确调用。           
+     B. gRPC 残留清理                                                                                                                                                               
+     - ss_bridge.proto：删除 service BattleControl { ... }、option go_package、import "common.proto"                                                                                
+     - shared/CMakeLists.txt：删除 find_package(gRPC)、gRPC protobuf 生成步骤、gRPC::grpc++ 链接                                                                                    
+     C. 客户端不改                                                                                                                                                                  
+     ss_bridge.proto 内容变动不影响客户端（客户端不引用它）。                                                                                                                       
+                                                                                                                                                                                    
+     你现在可以重新编译服务端试试？记得先清理旧的 build 目录（rm -rf out/build/* 或只清 shared 部分），因为 gRPC 的 pb 文件要去掉。
+
+     整体总结：
+     ─  ⚕ Hermes  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                                                                                                    
+     Changelog — 2026-04-27                                                                                                                                                         
+     Overview                                                                                                                                                                       
+                                                                                                                                                                                    
+     本次重构和新增的主要目标：改造 AegisEngine 服务端与 Godot 客户端的 wire protocol、实现服务端内部 RPC 异步化、废弃 gRPC                                                         
+     残留、新增营地列表查询和加入功能、修复房间生命周期问题。                                                                                                                       
+     Wire Protocol 变更                                                                                                                                                             
+                                                                                                                                                                                    
+     新协议格式（服务端 & 客户端同步更新）：                                                                                                                                        
+                                                                                                                                                                                    
+     [4B Magic: 0x41454753 "AEGS"][4B Length: BigEndian][4B SeqID: BigEndian][4B MsgID: BigEndian][Protobuf Body]                                                                   
+                                                                                                                                                                                    
+     - Magic：新增 4 字节魔数，用于包完整性校验，不匹配时滑动 1 字节恢复                                                                                                            
+     - Length：SeqID(4) + MsgID(4) + Body 长度                                                                                                                                      
+     - SeqID：新增 4 字节序列号，用于 RPC 请求-响应配对                                                                                                                             
+     - 帧头（Magic + Length）由 OutboxBatcher / read_packet 处理                                                                                                                    
+     - 包内容（SeqID + MsgID + Body）由 Packet / Dispatcher 处理                                                                                                                    
+     服务端改动                                                                                                                                                                     
+     协议层                                                                                                                                                                         
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | include/aegis/net/packet.h | 新增常量 kAegisMagic、kFrameMagicSize/LengthSize/HeaderSize、kPacketSeqIdSize/MsgIdSize；pack_into 加 seq_id 参数；新增                         
+     seq_id()、set_seq_id()、seq_id_ 字段 |                                                                                                                                         
+     | src/net/packet.cpp | msg_id() 偏移调整；新增 seq_id()/set_seq_id()；copy_from/move_from/reset 同步 seq_id |                                                                  
+     | include/aegis/net/outbox_batcher.h | prepare_batch 写 [Magic][Length] 帧头（2 个 iovec）代替原来的单 Length |                                                                
+     | src/net/connection.cpp | read_packet 读 8B 帧头 → 校验 Magic → 滑动恢复 |                                                                                                    
+     RPC 异步化（替换 blocking future.get()）                                                                                                                                       
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | include/aegis/core/rpc_awaiter.h | 新增 RpcAwaiter<ResT> awaitable + RpcManager(per-worker 挂起表) + RpcCall<>() |                                                           
+     | include/aegis/core/message/message_rpc.h | 新增 RpcId、RpcResponseMsg、RpcReplyMode；Reply() 新增协程模式（投递 RpcResponseMsg 到请求方）；RpcMessage 加                     
+     requester_id_、set_rpc_meta()、set_rpc_id() |                                                                                                                                  
+     | include/aegis/core/message/message_id.h | 新增 MSG_TYPE_RPC_RESPONSE = 70、MSG_TYPE_CAMP_PLAYER_COUNT = 71 |                                                                 
+     | include/aegis/core/playerActor.h | send_packet/send_buffer 加 seq_id 参数；新增 MSG_TYPE_RPC_RESPONSE 处理分支；on_session_closed 通知父场景移除自己 |                       
+     | include/aegis/core/message/message_net.h | ForwardPacketMsg 加 seq_id 字段 |                                                                                                 
+     | services/gate/src/logic/handler_loader.cpp | 创建/加入营地 handler 去掉 future.get() 阻塞，改为 co_await RpcCall<>() |                                                       
+     gRPC 清理                                                                                                                                                                      
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | shared/proto/ss_bridge.proto | 删除 service BattleControl、option go_package、import "common.proto" |                                                                        
+     | shared/CMakeLists.txt | 删除 find_package(gRPC)、gRPC protobuf 生成步骤、gRPC::grpc++ 链接 |                                                                                 
+     营地列表查询 & 加入功能                                                                                                                                                        
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | shared/proto/cs_lobby.proto | 新增 C2S_QueryCampListReq、CampInfo、S2C_QueryCampListRes |                                                                                    
+     | shared/proto/ids.proto | 新增 C2S_QUERY_CAMP_LIST_REQ = 1106、S2C_QUERY_CAMP_LIST_RES = 1107 |                                                                               
+     | include/aegis/core/room_manager.h | 新增 CampMeta 结构体、CampPlayerCountMsg 消息类、camp_metas_ 缓存、on_camp_player_count() |                                              
+     | src/core/room_manager.cpp | on_assign_camp 创建营地时写入 camp_metas_；加入营地时校验满员（ret_code=4）；on_camp_player_count 人数 0 时销毁 SceneActor |                     
+     | services/gate/src/logic/handler_loader.cpp | 新增 Handler 7: C2S_QueryCampListReq → 读 RoomManager 缓存 → 返回列表 |                                                         
+     房间生命周期                                                                                                                                                                   
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | src/core/scene_actor.cpp | OnTick 每 60 Tick (~3s) 发 CampPlayerCountMsg 上报人数给 RoomManager |                                                                            
+     | include/aegis/core/scene_actor.h | 加 report_counter_ 字段 |                                                                                                                 
+     | include/aegis/core/playerActor.h | on_session_closed 发 SceneLeaveMsg 给父场景，断连时自动减人 |                                                                             
+     新增文件                                                                                                                                                                       
+                                                                                                                                                                                    
+     | 文件 | 说明 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | include/aegis/core/sequence_id.h | per-worker 原子 SeqID 生成器，格式 (worker_id << 24) \| counter |                                                                         
+     | include/aegis/core/rpc_awaiter.h | RPC 协程 awaitable + per-worker 挂起表 |                                                                                                  
+     客户端改动                                                                                                                                                                     
+     协议层同步                                                                                                                                                                     
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | Foundation/Protocol/AegisProtocol.cs | 新增 Magic/Frame header/Content header 常量；Pack 改 (msgId, seqId, body)；新增 ReadMagic/ReadSeqId/IsValidMagic |                    
+     | Network/AegisClient.cs | SendMessage 传 seqId=0；TryDispatchPackets 加 Magic 校验 + 滑动恢复；解析 [FrameHeader][SeqID][MsgID][Body] |                                       
+     Proto 同步                                                                                                                                                                     
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | Proto/CsLobby.cs | 尾部追加 CampInfo、C2S_QueryCampListReq、S2C_QueryCampListRes 的完整 IMessage<> 实现 |                                                                    
+     | Proto/Ids.cs | 新增 C2SQueryCampListReq = 1106、S2CQueryCampListRes = 1107 |                                                                                                 
+     GameManager                                                                                                                                                                    
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | src/core/GameManager.cs | 新增 SendQueryCampList()、OnCampListReceived 事件、HandleQueryCampListRes()；OnClientConnected 不再自动登录（由 UI 控制）|                         
+     MainMenu 改造                                                                                                                                                                  
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | src/ui/MainMenu.cs | 欢迎界面改 "创建营地" + "加入营地" 双按钮；新增创建营地对话框（名称输入 + 保存/取消）；新增加入营地面板（营地列表 + 防抖刷新 +                          
+     加载/错误状态）；_Ready 时自动 TCP 连接但不登录；登录由"创建"或"加入"触发 |                                                                                                    
+     其他                                                                                                                                                                           
+                                                                                                                                                                                    
+     | 文件 | 改动 |                                                                                                                                                                
+     |------|------|                                                                                                                                                                
+     | src/entities/CampPlayer.cs | 修复 Initialize 空引用（改为延迟初始化 + ApplyPendingInit）|                                                                                    
+     | src/ui/CampScene.cs | OnMoveTick 加位置去重（变化 > 1 单位才发 SendMove），消除无移动时的疯狂同步 |                                                                          
+     | project.godot | 移除 Main 的 AutoLoad |                                                                                                                                      
+     已知问题（待后续处理）                                                                                                                                                         
+                                                                                                                                                                                    
+     1. 移动同步 — 远程玩家位置只在进入视野时同步一次，不会持续更新（缺少 Lerp 插值和同步管理器 Tick 广播）                                                                         
+     2. 多人操作面板 — 营地内暂无 UI 显示在线玩家列表/操作                                                                                                                          
+     测试验证要点                                                                                                                                                                   
+                                                                                                                                                                                    
+     1. 双客户端联机：A 创建营地 → B 查询列表 → B 加入 → 两人同场景                                                                                                                 
+     2. 离开场景：A 点退出 → B 还在场景 → A 场景 3 秒后销毁                                                                                                                         
+     3. 营地列表刷新：防抖 3 秒、满员营地不显示"加入"按钮                                                                                                                           
+     4. 协议兼容性：旧客户端无法连新服务端（Magic 校验失败）                                                                                                                      
