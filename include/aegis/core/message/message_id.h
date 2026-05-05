@@ -33,6 +33,11 @@ namespace aegis::core
         MSG_TYPE_RPC_RESPONSE = 70,
 
         // RoomManager <-> SceneActor 人数同步
-        MSG_TYPE_CAMP_PLAYER_COUNT = 71
+        MSG_TYPE_CAMP_PLAYER_COUNT = 71,
+
+        // Dungeon (副本) RPCs
+        MSG_TYPE_RPC_CREATE_DUNGEON = 80,
+        MSG_TYPE_RPC_JOIN_DUNGEON = 81,
+        MSG_TYPE_RPC_LEAVE_DUNGEON = 82,
     };
 }

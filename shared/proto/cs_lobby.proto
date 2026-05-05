@@ -15,7 +15,7 @@ message LoginRes {
     int32 ret_code = 1; 
     string msg = 2;
     uint64 entity_id = 3;       
-    aegis.common.PBVector3 pos = 4; 
+    aegis.common.PBVector3 pos = 4;
 }
 
 // 用于异地登录踢人

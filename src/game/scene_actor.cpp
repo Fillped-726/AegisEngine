@@ -13,9 +13,9 @@ namespace aegis::core
     using namespace aegis::cs::battle;
     using namespace aegis::common;
 
-    SceneActor::SceneActor(ActorID self_id, float width, float height, float cellSize)
+    SceneActor::SceneActor(ActorID self_id, float minX, float minY, float maxX, float maxY, float cellSize)
         : PooledActor(),
-          aoi_(width, height, cellSize)
+          aoi_(minX, minY, maxX, maxY, cellSize)
     {
 
         base_reset(self_id, ActorID(0));
@@ -24,18 +24,17 @@ namespace aegis::core
         cachedEnterIds_.reserve(50);
         cachedLeaveIds_.reserve(50);
 
-        Log::instance().info("[SceneActor] Created & Initialized Grid: {}x{} (Cell: {}) ID: {}",
-                             width, height, cellSize, self_id.raw);
+        Log::instance().info("[SceneActor] Created & Initialized Grid: [{}, {}] x [{}, {}] (Cell: {}) ID: {}",
+                             minX, maxX, minY, maxY, cellSize, self_id.raw);
     }
 
-    void SceneActor::reset(ActorID self_id, float width, float height, float cellSize)
+    void SceneActor::reset(ActorID self_id, float minX, float minY, float maxX, float maxY, float cellSize)
     {
         // 1. 重置 Actor 基类 (ID 和 父节点)
         base_reset(self_id, ActorID(0));
 
         // 2. 重置 AOI 网格
-        // 这里会根据尺寸决定是否重分配内存，通常是零分配
-        aoi_.reset(width, height, cellSize);
+        aoi_.reset(minX, minY, maxX, maxY, cellSize);
 
         // 3. 清理玩家映射表
         actors_.clear();
@@ -126,17 +125,14 @@ namespace aegis::core
         Log::instance().info("[SceneActor] ENTER grid_idx={}, neighbors_count={}",
                              grid_index, neighbor_ids.size());
 
-        if (neighbor_ids.empty())
-        {
-            Log::instance().info("[SceneActor] ENTER: no neighbors found. Actor {} at ({:.2f}, {:.2f})", actor_id.raw, msg->x, msg->y);
-            return;
-        }
-
         // 1. 构建发给邻居的包："我来了"
-        auto shared_data_to_others = net::PacketBuilder::BuildEnterView({actor_id.raw, msg->x, msg->y});
+        auto shared_data_to_others = net::PacketBuilder::BuildEnterView(
+            {actor_id.raw, msg->x, msg->y, player->GetDir(), player->GetSpeed(), player->IsMoving()});
 
         // 2. 收集邻居信息，准备发给"我"
         std::vector<net::EntityViewInfo> neighbors_info;
+        // 这里使用 actors_ 中现有的所有玩家，因为 AOI 的 9 宫格可能因 cellSize 较大
+        // 已经包含了所有同场景玩家。但我们仍用 neighbor_ids 做精确控制。
         neighbors_info.reserve(neighbor_ids.size());
 
         for (uint64_t neighbor_raw_id : neighbor_ids)
@@ -148,11 +144,12 @@ namespace aegis::core
             if (it != actors_.end())
             {
                 PlayerActor *neighbor = it->second;
-                neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY()});
+                neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY(),
+                                          neighbor->GetDir(), neighbor->GetSpeed(), neighbor->IsMoving()});
                 Log::instance().info("[SceneActor] ENTER notify neighbor: Player({}) about Actor({}): pos=({:.2f}, {:.2f})",
                                      neighbor->id().raw, actor_id.raw, msg->x, msg->y);
 
-                // 通知邻居
+                // 通知邻居：有人进入
                 auto *forward_msg = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_others);
                 dispatch_msg(neighbor, forward_msg);
             }
@@ -165,7 +162,11 @@ namespace aegis::core
             }
         }
 
-        // 3. 通知"我"周围有谁
+        // 3. 通知"我"周围有谁 —— 只要有其他实体就发，不再检查 neighbors_info.empty()
+        //    即使 neighbors_info 为空，说明周围没人，那也得发一个空包？不，不发即可。
+        //    但关键是：之前 if (neighbor_ids.empty()) return; 会在只有自己一个人时
+        //    跳过邻居通知，导致给自己发 CreateCampRes 后没有 EnterView，客户端只能靠自己创建本地玩家。
+        //    但如果场景里有其他人，neighbors_info 一定非空，因为 neighbor_ids 包含那些人的 id。
         if (!neighbors_info.empty())
         {
             Log::instance().info("[SceneActor] ENTER send self neighbors: {} entities for Actor({})",
@@ -173,6 +174,11 @@ namespace aegis::core
             auto shared_data_to_me = net::PacketBuilder::BuildEnterView(neighbors_info);
             auto *self_forward = new ForwardPacketMsg(ids::SC_ENTER_VIEW, shared_data_to_me);
             dispatch_msg(player, self_forward);
+        }
+        else
+        {
+            Log::instance().info("[SceneActor] ENTER: Actor {} enters scene alone, no neighbors to notify.",
+                                 actor_id.raw);
         }
     }
 
@@ -354,7 +360,8 @@ namespace aegis::core
         // --- 处理跨网格新进入视野 ---
         if (!enter_ids.empty())
         {
-            auto shared_data_to_others = net::PacketBuilder::BuildEnterView({mover->id().raw, mover->GetX(), mover->GetY()});
+            auto shared_data_to_others = net::PacketBuilder::BuildEnterView(
+                {mover->id().raw, mover->GetX(), mover->GetY(), mover->GetDir(), mover->GetSpeed(), mover->IsMoving()});
 
             std::vector<net::EntityViewInfo> new_neighbors_info;
             new_neighbors_info.reserve(enter_ids.size());
@@ -363,7 +370,8 @@ namespace aegis::core
             {
                 if (auto *neighbor = GetPlayer(neighbor_id))
                 {
-                    new_neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY()});
+                    new_neighbors_info.push_back({neighbor->id().raw, neighbor->GetX(), neighbor->GetY(),
+                                                  neighbor->GetDir(), neighbor->GetSpeed(), neighbor->IsMoving()});
                     Log::instance().info("[SceneActor] AOI enter: notify Player({}) about mover({}) at ({:.2f}, {:.2f})",
                                          neighbor_id, mover->id().raw, mover->GetX(), mover->GetY());
                     SendSharedBuffer(neighbor_id, ids::SC_ENTER_VIEW, shared_data_to_others);
@@ -491,15 +499,23 @@ namespace aegis::core
         }
 
         // ==========================================
-        // 2. 获取攻击目标 (根据现有逻辑，目标是 Player)
+        // 2. 获取攻击目标（支持玩家和 NPC）
         // ==========================================
-        auto *target = GetPlayer(msg->target_uid);
-        if (!target)
+        auto *player_target = GetPlayer(msg->target_uid);
+        NpcActor *npc_target = nullptr;
+        if (!player_target)
+        {
+            auto it = npcs_.find(msg->target_uid);
+            if (it != npcs_.end())
+                npc_target = it->second;
+        }
+
+        if (!player_target && !npc_target)
         {
             Log::instance().warn("[Combat] Failed: Target not found! TargetID: {}", msg->target_uid);
             return;
         }
-        if (target->IsDead())
+        if ((player_target && player_target->IsDead()) || (npc_target && npc_target->IsDead()))
         {
             Log::instance().warn("[Combat] Failed: Target is already dead!");
             return;
@@ -512,7 +528,7 @@ namespace aegis::core
         int32_t skill_damage = 0;
         if (msg->skill_id == 1) // 假设技能 1 是普通攻击 (近战)
         {
-            skill_range = 2.0f;
+            skill_range = 200.0f;
             skill_damage = 10;
         }
         else
@@ -524,8 +540,10 @@ namespace aegis::core
         // ==========================================
         // 4. 核心机制：20% 容差系数的宽泛距离校验
         // ==========================================
-        float dx = caster_x - target->GetX();
-        float dy = caster_y - target->GetY();
+        float target_x = player_target ? player_target->GetX() : npc_target->GetX();
+        float target_y = player_target ? player_target->GetY() : npc_target->GetY();
+        float dx = caster_x - target_x;
+        float dy = caster_y - target_y;
         float dist_sq = dx * dx + dy * dy;
 
         // 宽容半径：原距离的 1.2 倍
@@ -538,17 +556,28 @@ namespace aegis::core
         if (dist_sq <= tolerance_range * tolerance_range)
         {
             // 4.1 命中！执行真实扣血
-            target->TakeDamage(skill_damage);
+            int32_t actual_damage = skill_damage;
+            int32_t target_hp_after = 0;
+            if (player_target)
+            {
+                player_target->TakeDamage(actual_damage);
+                target_hp_after = player_target->GetHp();
+            }
+            else if (npc_target)
+            {
+                npc_target->TakeDamage(actual_damage);
+                target_hp_after = npc_target->GetHp();
+            }
 
-            Log::instance().info("[Combat] HIT! Target: {}, Dmg: {}, Remain HP: {}", msg->target_uid, skill_damage, target->GetHp());
+            Log::instance().info("[Combat] HIT! Target: {}, Dmg: {}, Remain HP: {}", msg->target_uid, actual_damage, target_hp_after);
 
             // 4.2 构建 SCDamageNtf 广播包
             aegis::cs::battle::SCDamageNtf ntf;
             ntf.set_attacker_id(msg->actor_id.raw);
-            ntf.set_target_id(target->id().raw);
+            ntf.set_target_id(msg->target_uid);
             ntf.set_skill_id(msg->skill_id);
-            ntf.set_damage(skill_damage);
-            ntf.set_current_hp(target->GetHp());
+            ntf.set_damage(actual_damage);
+            ntf.set_current_hp(target_hp_after);
             ntf.set_is_crit(false); // MVP 测试默认不暴击
 
             auto shared_buf = std::make_shared<std::string>(ntf.SerializeAsString());

@@ -1,7 +1,6 @@
 # AegisEngine 文档导航
 
 > C++20 协程 + io_uring Actor 模型游戏服务端框架
-> 最后更新: 2026-04-27
 
 ---
 
@@ -9,6 +8,7 @@
 
 | 文档 | 适合谁 | 内容 |
 |------|--------|------|
+| [**ARCHITECTURE.md**](ARCHITECTURE.md) | **面试官/新读者** | 架构全貌、核心设计、基准数据 |
 | [**01-core-framework.md**](01-core-framework.md) | 所有开发者 | Actor 模型、协程、Scheduler/Worker、定时器、序列号 |
 | [**02-network-layer.md**](02-network-layer.md) | 网络/通信开发者 | Socket/Connection/Packet/Dispatcher/Acceptor/OutboxBatcher |
 | [**03-message-system.md**](03-message-system.md) | 全栈 | 完整消息类型体系、type_id 清单、消息生命周期 |
@@ -17,80 +17,54 @@
 | [**06-protobuf.md**](06-protobuf.md) | 全栈 | 全部 proto 文件、MsgID 枚举、CS 协议对照 |
 | [**07-build-deploy.md**](07-build-deploy.md) | 部署运维 | CMake/vcpkg/依赖项/启动流程 |
 | [**08-design-notes.md**](08-design-notes.md) | 复习与面试 | 关键设计决策与技术选型理由 |
-| [**ai/ARCHITECTURE.md**](ai/ARCHITECTURE.md) | AI Agent | 精简架构速览 |
-| [**ai/CLASS_REFERENCE.md**](ai/CLASS_REFERENCE.md) | AI Agent | 类继承与方法签名 |
-| [**ai/DATA_FLOWS.md**](ai/DATA_FLOWS.md) | AI Agent | 核心数据流 |
-| [**ai/QUICK_START.md**](ai/QUICK_START.md) | AI Agent | 项目第一入口 |
+| [**changelog/**](changelog/) | 所有开发者 | 版本更新日志（按日期归档） |
 | [**interview/HIGHLIGHTS.md**](interview/HIGHLIGHTS.md) | 面试者 | 10 个可聊亮点 |
-| [**interview/INTERVIEW_PREP.md**](interview/INTERVIEW_PREP.md) | 面试者 | 面试问答深度解析 |
 
----
+## 技术栈
 
-## 架构全景
+| 层级 | 技术 |
+|------|------|
+| 语言 | C++20 (服务端) / C# (Godot 客户端) |
+| 网络 | io_uring (Linux 5.1+) |
+| 并发 | Actor 模型 + 无锁 MPSC 队列 + Thread-per-Core |
+| 协程 | 自研 C++20 coroutine (Task/DetachedTask/MoveOnlyTask) |
+| 序列化 | Protocol Buffers |
+| 构建 | CMake + vcpkg |
+| 客户端 | Godot 4.6.2 Mono (C#) |
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Application Layer (services/gate)                 │
-│  GateServer · PlayerActor · NpcActor · SceneActor · RoomManager     │
-│  GameApp · handler_loader · 营地创建/加入/查询                      │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │ ActorMessage (Intrusive MPSC queue)
-┌──────────────────────────┴──────────────────────────────────────────┐
-│                    Framework Layer (include/aegis/core/)             │
-│  Actor base · ActorRegistry (ActorID 64-bit) · Task<T> · DetachedTask│
-│  Scheduler · Worker (io_uring + coroutine) · mailbox drain          │
-│  HierarchicalTimeWheel · SequenceIDGen · RpcManager (coroutine RPC) │
-│  Message types: Net/RPC/Scene/Lifecycle                             │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │ co_await / io_uring SQE/CQE
-┌──────────────────────────┴──────────────────────────────────────────┐
-│                    Network / I/O Layer (include/aegis/net/)          │
-│  Socket (RAII) · Acceptor · Connection (shared_ptr)                 │
-│  Packet (SBO 1024B) · PacketPool (ObjectPool)                       │
-│  OutboxBatcher (writev batch) · Dispatcher (msg_id → handler)       │
-│  PacketBuilder (AOI enter/leave serialization)                      │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │ io_uring syscalls
-┌──────────────────────────┴──────────────────────────────────────────┐
-│                    Infrastructure (include/aegis/common/)            │
-│  ObjectPool<T,N,M> (TLS+Batch) · IntrusiveList · SpinLock           │
-│  WorkStealingQueue · ScopeGuard · UniqueFd · Log (spdlog wrapper)   │
-│  TimeUtils · ActorUtils                                             │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-## 目录结构
+## 项目结构
 
 ```
-AegisEngine/
-├── include/aegis/          # 所有头文件 (Public API)
-│   ├── common/             # 基础设施：ObjectPool / IntrusiveList / Log / SpinLock
-│   ├── core/               # 框架核心：Actor / Task / Scheduler / Worker / 消息系统
-│   └── game/               # 游戏业务：PlayerActor / SceneActor / NpcActor / AOI
-│   └── net/                # 网络层：Socket / Connection / Packet / Dispatcher
-│
-├── src/                    # 实现文件
-│   ├── common/             # 通用工具实现
-│   ├── core/               # 框架核心实现
-│   ├── game/               # 游戏逻辑实现
-│   └── net/                # 网络层实现
-│
-├── services/               # 可执行服务
-│   ├── gate/               # GateServer — TCP 网关
-│   └── logic/              # LogicServer (预留)
-│
-├── shared/                 # 跨服务共享
-│   └── proto/              # Protobuf 定义
-│
-├── tests/                  # 测试
-│   ├── unit/               # 单元测试 (GTest)
-│   ├── integration/        # 集成测试
-│   └── benchmark/          # 性能基准 (Google Benchmark)
-│
-├── docs/                   # 文档 (你正在看的地方)
-├── cmake/                  # CMake 模块
-├── vcpkg_installed/        # vcpkg 声明的依赖
-└── CMakeLists.txt          # 顶层构建文件
+include/aegis/
+├── core/       ← 框架核心（Actor/Task/Scheduler/消息基类/时间轮）
+├── game/       ← 游戏业务（PlayerActor/SceneActor/NpcActor/AOI/RoomManager）
+├── net/        ← 网络层（Socket/Connection/Packet/Dispatcher/Acceptor）
+└── common/     ← 基础工具（ObjectPool/IntrusiveList/SpinLock/UniqueFd）
+
+src/             ← 对应实现
+services/gate/   ← 网关服务（GateServer + handler_loader）
+shared/proto/    ← Protobuf 定义文件
+tests/           ← 单元测试 + 集成测试 + 基准测试
+docs/            ← 文档
 ```
 
-> 💡 **给 AI Agent 的提示**: 先看 [`ai/QUICK_START.md`](ai/QUICK_START.md) 获取项目鸟瞰和 AI 阅读指南，然后按需深入到各模块文档。
+## 数据流
+
+```
+[TCP 数据到达]
+    │
+    ▼ io_uring CQ
+Connection::read_packet() 协程恢复
+    │
+    ▼ 拆包 → PooledPacket
+GateServer::dispatch_to_actor()
+    │
+    ▼ Actor::push() — MPSC 无锁入队
+Worker drain → Actor::process_batch()
+    │
+    ▼ handle_message()
+PlayerActor → Dispatcher::dispatch()
+    │
+    ▼ 业务 handler (协程)
+handler(actor, protobuf)
+```

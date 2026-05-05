@@ -178,7 +178,14 @@ namespace aegis::core
         }
         else
         {
-            io_uring_submit(&ring_);
+            int ret = io_uring_submit(&ring_);
+            if (ret < 0)
+            {
+                // 提交失败（如 SQ 环满），回退到忙等一小段时间后重试
+                aegis::Log::instance().warn("io_uring_submit failed: {}, retrying", -ret);
+                // 尝试消费已有 CQE 腾出空间
+                io_uring_submit_and_wait(&ring_, 1);
+            }
         }
 
         // 消费 CQE (这一段与原 Env 基本一致)

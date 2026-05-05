@@ -5,7 +5,7 @@
 using namespace aegis::core;
 
 // 模拟 1000x1000 的地图，30x30 的格子大小
-static AOIGrid g_grid(1000.0f, 1000.0f, 30.0f);
+static AOIGrid g_grid(0.0f, 0.0f, 1000.0f, 1000.0f, 30.0f);
 
 // ==========================================
 // 场景 A：高频插入与删除 (Add/Remove)

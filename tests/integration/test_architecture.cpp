@@ -86,7 +86,7 @@ TEST_F(ArchitectureTest, SupervisionChain)
     ActorID mgr_id = ActorRegistry::instance().create_actor<RoomManager>();
 
     // 2. 建 Scene
-    ActorID scene_id = ActorRegistry::instance().create_actor<SceneActor>(500.f, 500.f, 10.f);
+    ActorID scene_id = ActorRegistry::instance().create_actor<SceneActor>(-1000.f, -1000.f, 1000.f, 1000.f, 256.f);
     ASSERT_TRUE(scene_id.is_valid());
 
     // 3. 手动绑定父子关系 (模拟 RoomManager::on_create_room 的逻辑)

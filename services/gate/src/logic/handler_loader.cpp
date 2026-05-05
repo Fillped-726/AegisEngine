@@ -13,6 +13,7 @@
 // Protocol Buffers
 #include "cs_lobby.pb.h"
 #include "cs_battle.pb.h"
+#include "cs_dungeon.pb.h"
 #include "ids.pb.h"
 
 // GameApp — centralized business bootstrap
@@ -51,10 +52,8 @@ namespace aegis::gate
 
                 uint64_t uid = req.uid();
 
-                // 1. 设置 PlayerActor 的业务 ID
-                player->set_player_id(uid);
-
-                Log::instance().info("[Logic] Login Request | UID: {} -> ActorID: {}", uid, player->id().raw);
+                // uid 字段已弃用，统一使用 ActorID 标识玩家
+                Log::instance().info("[Logic] Login Request | ActorID: {} (client uid: {})", player->id().raw, uid);
 
                 // 2. 出生点计算
                 float spawnX = 0.0f;
@@ -119,7 +118,7 @@ namespace aegis::gate
 
                 // 1. 构建内部 RPC 请求 -> RoomManager
                 AssignCampReq camp_req;
-                camp_req.player_uid = player->get_player_id();
+                camp_req.player_uid = player->id().raw;
                 camp_req.player_actor_id = player->id();
                 camp_req.camp_name = req.camp_name();
                 camp_req.is_create = true;
@@ -166,7 +165,7 @@ namespace aegis::gate
                     auto *old_scene = ActorRegistry::instance().get(old_scene_id);
                     if (old_scene)
                     {
-                        auto *leave_msg = new SceneLeaveMsg(player->id(), player->get_player_id());
+                        auto *leave_msg = new SceneLeaveMsg(player->id(), player->id().raw);
                         dispatch_msg(old_scene, leave_msg);
                     }
 
@@ -176,19 +175,19 @@ namespace aegis::gate
                     if (new_scene)
                     {
                         auto *enter_msg = new SceneEnterMsg(
-                            player->id(), player->get_player_id(), player->GetX(), player->GetY());
+                            player->id(), player->id().raw, player->GetX(), player->GetY());
                         dispatch_msg(new_scene, enter_msg);
                     }
 
                     Log::instance().info("[Camp][Create] Player {} created camp '{}' (Scene {})",
-                                         player->get_player_id(), camp_res.camp_name,
+                                         player->id().raw, camp_res.camp_name,
                                          camp_res.scene_actor_id.raw);
                 }
                 else
                 {
                     res.set_msg(camp_res.err_msg.empty() ? "Camp creation failed" : camp_res.err_msg);
                     Log::instance().warn("[Camp][Create] Failed for player {}: {}",
-                                         player->get_player_id(), camp_res.err_msg);
+                                         player->id().raw, camp_res.err_msg);
                 }
 
                 player->send_packet(ids::S2C_CREATE_CAMP_RES, 0, res);
@@ -206,7 +205,7 @@ namespace aegis::gate
 
                 // 1. 构建内部 RPC
                 AssignCampReq camp_req;
-                camp_req.player_uid = player->get_player_id();
+                camp_req.player_uid = player->id().raw;
                 camp_req.player_actor_id = player->id();
                 camp_req.is_create = false;
                 camp_req.target_scene_id = req.scene_actor_id();
@@ -251,7 +250,7 @@ namespace aegis::gate
                     auto *old_scene = ActorRegistry::instance().get(old_scene_id);
                     if (old_scene)
                     {
-                        auto *leave_msg = new SceneLeaveMsg(player->id(), player->get_player_id());
+                        auto *leave_msg = new SceneLeaveMsg(player->id(), player->id().raw);
                         dispatch_msg(old_scene, leave_msg);
                     }
 
@@ -261,19 +260,19 @@ namespace aegis::gate
                     if (new_scene)
                     {
                         auto *enter_msg = new SceneEnterMsg(
-                            player->id(), player->get_player_id(), player->GetX(), player->GetY());
+                            player->id(), player->id().raw, player->GetX(), player->GetY());
                         dispatch_msg(new_scene, enter_msg);
                     }
 
                     Log::instance().info("[Camp][Join] Player {} joined camp '{}' (Scene {})",
-                                         player->get_player_id(), camp_res.camp_name,
+                                         player->id().raw, camp_res.camp_name,
                                          camp_res.scene_actor_id.raw);
                 }
                 else
                 {
                     res.set_msg(camp_res.err_msg.empty() ? "Camp not found" : camp_res.err_msg);
                     Log::instance().warn("[Camp][Join] Failed for player {}: {}",
-                                         player->get_player_id(), camp_res.err_msg);
+                                         player->id().raw, camp_res.err_msg);
                 }
 
                 player->send_packet(ids::S2C_JOIN_CAMP_RES, 0, res);
@@ -289,6 +288,14 @@ namespace aegis::gate
             {
                 auto player = static_cast<aegis::core::PlayerActor *>(actor);
 
+                // [RECV] 移动请求日志
+                Log::instance().info("[RECV][MoveReq] Player:{}, Pos:({:.2f},{:.2f})→({:.2f},{:.2f}), Speed:{:.2f}, Moving:{}, Scene:{}",
+                                     player->id().raw,
+                                     player->GetX(), player->GetY(),
+                                     req.target_pos().x(), req.target_pos().y(),
+                                     req.speed(), req.is_moving(),
+                                     player->parent_id().raw);
+
                 // 1. 获取父亲 (场景)
                 ActorID scene_id = player->parent_id();
                 auto *scene = ActorRegistry::instance().get(scene_id);
@@ -297,20 +304,25 @@ namespace aegis::gate
                 {
                     float newX = req.target_pos().x();
                     float newY = req.target_pos().y();
+                    float speed = req.speed();
+                    bool is_moving = req.is_moving();
+                    float dir_angle = req.direction();
 
                     float oldX = player->GetX();
                     float oldY = player->GetY();
-                    unsigned direction = 0;
+                    uint8_t dirty_flags = 0;
                     if (newX != oldX || newY != oldY)
                     {
-                        direction |= PlayerActor::DIRTY_POS;
+                        dirty_flags |= PlayerActor::DIRTY_POS;
                     }
 
-                    // 2. 更新玩家自身数据 (乐观更新)
-                    player->SetPos(newX, newY);
+                    // 2. 更新移动状态（速度 / 移动标识 / 方向）
+                    // 注意：不在这里调 SetPos！Actor 模型的铁律——空间状态变更只能
+                    // 在 Actor 自己的线程上下文（SceneActor::OnHandleMove）中执行。
+                    player->SetMoveState(speed, is_moving, dir_angle);
 
                     // 3. 转发给 SceneActor
-                    auto *msg = new SceneMoveMsg(player->id(), player->get_player_id(), player->get_aoi_grid_index(), newX, newY, direction);
+                    auto *msg = new SceneMoveMsg(player->id(), player->id().raw, player->get_aoi_grid_index(), newX, newY, dirty_flags);
                     dispatch_msg(scene, msg);
                 }
                 else
@@ -357,7 +369,7 @@ namespace aegis::gate
                 }
                 co_return;
             });
-    
+
         // ==========================================================
         // Handler 7: C2S_QueryCampListReq — 查询营地列表
         // ==========================================================
@@ -388,7 +400,8 @@ namespace aegis::gate
 
                 for (const auto &[id, meta] : metas)
                 {
-                    if (count >= limit) break;
+                    if (count >= limit)
+                        break;
 
                     auto *info = res.add_camps();
                     info->set_scene_actor_id(meta.scene_actor_id);
@@ -402,12 +415,91 @@ namespace aegis::gate
 
                 // 构造回包（此时 PlayerActor 所在的 Worker 已从挂起恢复）
                 Log::instance().info("[QueryCamp] Returning {} camps to player {}",
-                                     count, player->get_player_id());
+                                     count, player->id().raw);
 
                 player->send_packet(ids::S2C_QUERY_CAMP_LIST_RES, 0, res);
                 co_return;
             });
 
         Log::instance().info("[System] Logic Handlers Loaded.");
+
+        // ==========================================================
+        // Handler 8: C2S_CreateDungeonReq — 房主创建副本
+        // ==========================================================
+        d.register_handler<aegis::cs::dungeon::C2S_CreateDungeonReq>(
+            ids::C2S_CREATE_DUNGEON_REQ,
+            [](aegis::core::Actor *actor, const aegis::cs::dungeon::C2S_CreateDungeonReq &req) -> aegis::core::Task<void>
+            {
+                auto player = static_cast<aegis::core::PlayerActor *>(actor);
+
+                // 1. 构建 RPC 请求 -> RoomManager
+                CreateDungeonReq dungeon_req;
+                dungeon_req.player_uid = player->id().raw;
+                dungeon_req.player_actor_id = player->id();
+                dungeon_req.map_id = req.map_id();
+
+                // 2. 发起 RPC 调用
+                ActorID room_mgr_id = GameApp::instance().room_manager_id();
+                auto *rpc_msg = new RPCCreateDungeonMsg(dungeon_req);
+                rpc_msg->set_rpc_meta(0, player->id());
+
+                CreateDungeonRes dungeon_res;
+                try
+                {
+                    dungeon_res = co_await RpcCall<CreateDungeonRes>(room_mgr_id, rpc_msg);
+                }
+                catch (const std::runtime_error &e)
+                {
+                    Log::instance().error("[Dungeon][Create] RPC failed: {}", e.what());
+                    co_return;
+                }
+
+                // 3. 验证 player 仍然存活
+                auto *current_player = static_cast<PlayerActor *>(
+                    ActorRegistry::instance().get(player->id()));
+                if (!current_player)
+                {
+                    co_return;
+                }
+                player = current_player;
+
+                // 4. 构建回包
+                aegis::cs::dungeon::S2C_CreateDungeonRes res;
+                res.set_ret_code(dungeon_res.ret_code);
+                res.set_msg(dungeon_res.err_msg);
+                res.set_dungeon_scene_id(dungeon_res.dungeon_scene_id.raw);
+
+                if (dungeon_res.ret_code == 0 && dungeon_res.dungeon_scene_id.is_valid())
+                {
+                    // 5. 让玩家离开当前场景
+                    ActorID old_scene_id = player->parent_id();
+                    auto *old_scene = ActorRegistry::instance().get(old_scene_id);
+                    if (old_scene)
+                    {
+                        auto *leave_msg = new SceneLeaveMsg(player->id(), player->id().raw);
+                        dispatch_msg(old_scene, leave_msg);
+                    }
+
+                    // 6. 进入副本场景
+                    player->set_parent_id(dungeon_res.dungeon_scene_id);
+                    auto *new_scene = ActorRegistry::instance().get(dungeon_res.dungeon_scene_id);
+                    if (new_scene)
+                    {
+                        auto *enter_msg = new SceneEnterMsg(
+                            player->id(), player->id().raw, player->GetX(), player->GetY());
+                        dispatch_msg(new_scene, enter_msg);
+                    }
+
+                    Log::instance().info("[Dungeon][Create] Player {} created dungeon (Scene {})",
+                                         player->id().raw, dungeon_res.dungeon_scene_id.raw);
+                }
+                else
+                {
+                    res.set_msg(dungeon_res.err_msg.empty() ? "Dungeon creation failed" : dungeon_res.err_msg);
+                }
+
+                player->send_packet(ids::S2C_CREATE_DUNGEON_RES, 0, res);
+                co_return;
+            });
     }
 }

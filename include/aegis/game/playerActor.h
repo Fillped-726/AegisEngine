@@ -22,12 +22,6 @@ namespace aegis::common
 
 namespace aegis::core
 {
-    using RpcId = uint64_t;
-    class RpcManager;
-}
-
-namespace aegis::core
-{
     /**
      * @brief Pooled player actor representing a connected game client.
      *
@@ -47,6 +41,7 @@ namespace aegis::core
             DIRTY_POS = 1 << 0,
             DIRTY_HP = 1 << 1,
             DIRTY_STATE = 1 << 2,
+            DIRTY_MOVING = 1 << 3, // 移动状态变化（speed/is_moving 变更）
             // ... 可扩展其他属性
         };
         [[nodiscard]] aegis::common::PlayerState GetState() const
@@ -102,7 +97,7 @@ namespace aegis::core
 
         virtual ~PlayerActor()
         {
-            aegis::Log::instance().debug("PlayerActor Destroyed | ID: {}", playerId_);
+            aegis::Log::instance().debug("PlayerActor Destroyed | ActorID: {}", id_.raw);
         }
 
         void reset(ActorID id, std::shared_ptr<net::Connection> conn)
@@ -119,7 +114,7 @@ namespace aegis::core
             fd_ = conn_ ? conn_->fd() : -1;
 
             // 4. 重置逻辑数据
-            playerId_ = 0;
+            // playerId_ 已移除，统一使用 id_.raw (ActorID)
 
             // 5. 重置坐标 (Atomic)
             // 使用 memory_order_relaxed 即可，因为此时 Actor 还没对其他线程可见
@@ -128,13 +123,14 @@ namespace aegis::core
             state_ = aegis::common::PlayerState::IDLE;
             hp_ = max_hp_;
             aoi_grid_index = -1;
+            speed_ = 0.0f;
+            is_moving_ = false;
+            direction_ = 0.0f;
         }
 
         // ========================================================================
         // AOI / Scene Interface
         // ========================================================================
-
-        [[nodiscard]] uint64_t GetID() const { return playerId_; }
 
         // [Thread-Safety Warning] 这些 Getter 可能会被 SceneActor 线程调用
         // 在 x64 上读取对齐的 float 通常是原子的，但在严格内存模型下存在风险
@@ -178,7 +174,7 @@ namespace aegis::core
 
             // 静态数据或低频变动数据（Name, Skin），并发读取风险较低
             // 生产环境中这些字符串应该用 std::string_view 或加锁
-            out_proto->set_name("Player_" + std::to_string(playerId_));
+            out_proto->set_name("Player_" + std::to_string(id_.raw));
             out_proto->set_hp(hp_);
             out_proto->set_skin_id(1);
             out_proto->set_state(GetState());
@@ -232,11 +228,27 @@ namespace aegis::core
             conn_->send(std::move(pkt));
         }
 
-        void set_player_id(uint64_t pid) { playerId_ = pid; }
-        [[nodiscard]] uint64_t get_player_id() const { return playerId_; }
+        // player_id 已移除，统一使用 id().raw (ActorID)
 
         uint32_t get_aoi_grid_index() const { return aoi_grid_index; }
         void set_aoi_grid_index(uint32_t index) { aoi_grid_index = index; }
+
+        // [新增] 设置移动状态并标记脏
+        void SetMoveState(float speed, bool is_moving, float direction = 0.0f)
+        {
+            // 如果状态有变化才标记脏，减少不必要的同步
+            if (speed_ != speed || is_moving_ != is_moving || direction_ != direction)
+            {
+                speed_ = speed;
+                is_moving_ = is_moving;
+                direction_ = direction;
+                MarkDirty(DIRTY_MOVING);
+            }
+        }
+
+        [[nodiscard]] float GetSpeed() const { return speed_; }
+        [[nodiscard]] bool IsMoving() const { return is_moving_; }
+        [[nodiscard]] float GetDir() const { return direction_; }
 
     protected:
         void handle_message(core::ActorMessage *msg)
@@ -333,7 +345,7 @@ namespace aegis::core
 
         void on_session_closed(int reason)
         {
-            aegis::Log::instance().info("[PlayerActor] Session Closed | ID: {} | Reason: {}", playerId_, reason);
+            aegis::Log::instance().info("[PlayerActor] Session Closed | ActorID: {} | Reason: {}", id_.raw, reason);
 
             // 通知父场景移除自己（这样场景人数才会减）
             ActorID scene_id = parent_id();
@@ -342,7 +354,7 @@ namespace aegis::core
                 auto *scene = ActorRegistry::instance().get(scene_id);
                 if (scene)
                 {
-                    auto *leave_msg = new SceneLeaveMsg(id_, playerId_);
+                    auto *leave_msg = new SceneLeaveMsg(id_, id_.raw);
                     dispatch_msg(scene, leave_msg);
                 }
             }
@@ -354,10 +366,14 @@ namespace aegis::core
         std::shared_ptr<net::Connection> conn_;
         int fd_ = -1;
 
-        uint64_t playerId_ = 0;
         uint8_t dirty_mask_ = DIRTY_NONE;
 
         uint32_t aoi_grid_index = -1;
+
+        // [新增] 移动状态（用于广播插值）
+        float speed_ = 0.0f;           // 当前速度值
+        bool is_moving_ = false;       // 是否正在移动
+        float direction_ = 0.0f;       // 当前朝向角 (弧度, atan2)
 
         common::SpinLock lock_;
 

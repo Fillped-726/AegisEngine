@@ -1,0 +1,31 @@
+syntax = "proto3";
+package aegis.cs.dungeon;
+
+import "common.proto";
+
+option go_package = "github.com/Fillped-726/AegisEngine/shared/pb/cs_dungeon";
+
+// [CS] 创建副本（房主）
+message C2S_CreateDungeonReq {
+  uint32 map_id = 1;  // 副本地图ID（默认1）
+}
+
+// [SC] 创建副本结果
+message S2C_CreateDungeonRes {
+  int32 ret_code = 1;
+  string msg = 2;
+  uint64 dungeon_scene_id = 3;  // 副本场景ActorID
+}
+
+// [CS] 加入已有副本
+message C2S_JoinDungeonReq {
+  uint64 dungeon_scene_id = 1;  // 要加入的副本场景ID
+}
+
+// [SC] 副本结算
+message S2C_DungeonCompleteNtf {
+  int32 result = 1;        // 0=胜利, 1=失败
+  int32 monsters_killed = 2;
+  int32 experience_gained = 3;
+  repeated aegis.common.PBItemInfo drops = 4;  // 掉落物品（暂空）
+}

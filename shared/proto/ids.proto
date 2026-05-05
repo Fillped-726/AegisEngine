@@ -35,4 +35,10 @@ enum MsgID {
     // 3000-3999: Server-to-Server
     SS_CREATE_ROOM_REQ    = 3001;
     SS_TERMINATE_ROOM_REQ = 3002;
+    
+    // 1200-1299: Dungeon (副本)
+    C2S_CREATE_DUNGEON_REQ = 1201;  // 房主创建副本
+    S2C_CREATE_DUNGEON_RES = 1202;  // 创建结果（返回副本场景ID）
+    C2S_JOIN_DUNGEON_REQ   = 1203;  // 加入已有副本（复用 C2S_JOIN_CAMP_REQ 思路）
+    S2C_DUNGEON_COMPLETE   = 1204;  // 副本结算
 }

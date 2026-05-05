@@ -40,8 +40,10 @@ namespace aegis::core
         }
         Log::instance().info("[GameApp] RoomManager Created. ID: {}", room_manager_id_.raw);
 
-        // 2. 创建默认主城 Scene
-        default_scene_id_ = registry.create_actor<SceneActor>(map_width, map_height, cell_size);
+        // 2. 创建默认主城 Scene（支持负坐标范围）
+        float halfW = map_width * 0.5f;
+        float halfH = map_height * 0.5f;
+        default_scene_id_ = registry.create_actor<SceneActor>(-halfW, -halfH, halfW, halfH, cell_size);
         if (!default_scene_id_.is_valid())
         {
             Log::instance().critical("[GameApp] Failed to create Main City Scene!");
@@ -58,23 +60,8 @@ namespace aegis::core
             Log::instance().info("[GameApp] Main City Scene created. ID: {} (Worker {})",
                                  default_scene_id_.raw, worker_id);
 
-            // 4. Spawn initial NPCs in the main city
-            auto *concrete_scene = static_cast<SceneActor *>(scene);
-            float center_x = map_width * 0.5f;
-            float center_y = map_height * 0.5f;
-
-            for (int i = 0; i < 3; ++i)
-            {
-                auto npc_id = registry.create_actor<NpcActor>();
-                if (npc_id.is_valid())
-                {
-                    auto *npc = static_cast<NpcActor *>(registry.get(npc_id));
-                    npc->reset(npc_id, center_x + i * 5.0f, center_y + i * 5.0f);
-                    concrete_scene->AddNpc(npc);
-                    Log::instance().info("[GameApp] Spawned Test NPC {} at ({}, {})",
-                                         npc_id.raw, npc->GetX(), npc->GetY());
-                }
-            }
+            // NPC spawning disabled: test NPCs removed.
+            // Monsters will be spawned by a proper wave system later.
         }
         else
         {

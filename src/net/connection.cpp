@@ -25,6 +25,26 @@ namespace aegis::net
         aegis::Log::instance().debug("Connection destroyed. FD: {}", socket_.native_handle());
     }
 
+    void Connection::close()
+    {
+        if (closed_.exchange(true, std::memory_order_relaxed))
+            return; // 防止重复关闭
+
+        // 1. 清理接收缓冲区
+        rx_buffer_.clear();
+        rx_len_ = 0;
+
+        // 2. 清理发送队列
+        outbox_.buffer.clear();
+
+        // 3. 优雅关闭套接字
+        is_flushing_ = false;
+        ::shutdown(socket_.native_handle(), SHUT_WR);
+        socket_.close();
+
+        aegis::Log::instance().debug("Connection closed. FD: {}", socket_.native_handle());
+    }
+
     void Connection::ensure_rx_capacity(size_t required_size)
     {
         if (rx_buffer_.size() < required_size)
@@ -66,7 +86,10 @@ namespace aegis::net
 
                 int n = co_await socket_.recv(rx_buffer_.data() + rx_len_, rx_buffer_.size() - rx_len_);
                 if (n <= 0)
+                {
+                    close();
                     co_return nullptr;
+                }
                 rx_len_ += n;
             }
 
@@ -76,10 +99,8 @@ namespace aegis::net
             uint32_t magic = ntohl(net_magic);
             if (magic != net::kAegisMagic)
             {
-                aegis::Log::instance().error("Invalid magic: 0x{:08X}, expected 0x{:08X}", magic, net::kAegisMagic);
-                // 跳过 1 字节尝试滑动恢复
-                std::memmove(rx_buffer_.data(), rx_buffer_.data() + 1, rx_len_ - 1);
-                rx_len_--;
+                aegis::Log::instance().error("Invalid magic: 0x{:08X}, expected 0x{:08X}, closing connection", magic, net::kAegisMagic);
+                close();
                 co_return nullptr;
             }
 
@@ -101,7 +122,10 @@ namespace aegis::net
             {
                 int n = co_await socket_.recv(rx_buffer_.data() + rx_len_, rx_buffer_.size() - rx_len_);
                 if (n <= 0)
+                {
+                    close();
                     co_return nullptr;
+                }
                 rx_len_ += n;
             }
 
@@ -137,6 +161,12 @@ namespace aegis::net
         if (!packet)
             return;
 
+        // 背压：如果发送队列超过限制，直接丢弃最老的包
+        if (outbox_.buffer.size() >= K_OUTBOX_LIMIT)
+        {
+            outbox_.buffer.erase(outbox_.buffer.begin());
+        }
+
         outbox_.buffer.push_back(std::move(packet));
 
         bool expected = false;
@@ -165,6 +195,12 @@ namespace aegis::net
 
         while (true)
         {
+            if (self->closed_.load(std::memory_order_relaxed))
+            {
+                self->is_flushing_ = false;
+                co_return;
+            }
+
             // 【极速无锁化】干掉所有的 lock_guard
             if (self->outbox_.buffer.empty())
             {

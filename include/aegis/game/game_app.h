@@ -40,14 +40,16 @@ namespace aegis::core
          * @brief Bootstrap all game logic singletons and entities.
          * Must be called once after Scheduler is ready, before GateServer::run().
          *
-         * @param map_width   Width of the main city scene (default: 500.0f)
-         * @param map_height  Height of the main city scene (default: 500.0f)
-         * @param cell_size   AOI grid cell size (default: 10.0f)
+         * Internally converts to [-halfW, halfW] x [-halfH, halfH] range.
+         *
+         * @param map_width   Width of the main city scene (default: 2000.0f)
+         * @param map_height  Height of the main city scene (default: 2000.0f)
+         * @param cell_size   AOI grid cell size (default: 256.0f)
          * @param worker_id   Target worker for the main city scene tick (default: 3)
          */
-        void init(float map_width = 500.0f,
-                  float map_height = 500.0f,
-                  float cell_size = 10.0f,
+        void init(float map_width = 2000.0f,
+                  float map_height = 2000.0f,
+                  float cell_size = 256.0f,
                   int worker_id = 3);
 
         /**

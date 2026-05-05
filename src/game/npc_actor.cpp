@@ -60,4 +60,17 @@ namespace aegis::core
         // 驱动行为树运行一遍
         tree_.tickExactlyOnce();
     }
+
+    void NpcActor::TakeDamage(int32_t damage)
+    {
+        if (is_dead_ || damage <= 0)
+            return;
+
+        hp_ -= damage;
+        if (hp_ <= 0)
+        {
+            hp_ = 0;
+            is_dead_ = true;
+        }
+    }
 }

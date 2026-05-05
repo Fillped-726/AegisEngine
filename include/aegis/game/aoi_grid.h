@@ -1,6 +1,7 @@
 /**
  * @file aoi_grid.h
  * @brief Grid-based Area of Interest (AOI) management with 9-cell neighbor traversal.
+ *        Supports negative coordinates via offsetX/offsetY.
  */
 #pragma once
 
@@ -31,23 +32,29 @@ namespace aegis::core
     /**
      * @brief Grid-based Area of Interest (AOI) spatial partitioning.
      * 
-     * Entities are mapped to grid cells by coordinate. 9-cell neighbor
-     * traversal via ForEachNeighborIndex template. Supports Add/Move/Remove
-     * with enter/leave change detection vectors.
+     * Supports arbitrary map ranges: [minX, maxX] x [minY, maxY].
+     * Internally maps world coordinates to non-negative grid indices
+     * via offsetX/offsetY.
      */
     class AOIGrid
     {
     public:
-        AOIGrid(float width, float height, float cellSize);
+        /**
+         * @param minX  地图最小 X 坐标（例如 -1000）
+         * @param minY  地图最小 Y 坐标（例如 -1000）
+         * @param maxX  地图最大 X 坐标（例如 1000）
+         * @param maxY  地图最大 Y 坐标（例如 1000）
+         * @param cellSize  网格大小（例如 256）
+         */
+        AOIGrid(float minX, float minY, float maxX, float maxY, float cellSize);
         ~AOIGrid() = default;
 
-        // 禁止拷贝，允许移动
         AOIGrid(const AOIGrid &) = delete;
         AOIGrid &operator=(const AOIGrid &) = delete;
         AOIGrid(AOIGrid &&) = default;
         AOIGrid &operator=(AOIGrid &&) = default;
 
-        void reset(float width, float height, float cellSize);
+        void reset(float minX, float minY, float maxX, float maxY, float cellSize);
 
         uint32_t Add(EntityId id, float x, float y);
         bool RemoveByGridIndex(EntityId id, uint32_t gridIndex);
@@ -64,31 +71,35 @@ namespace aegis::core
 
     private:
         /**
-         * @brief 核心映射算法：坐标 -> 数组索引
-         * @note 这是热点代码路径，不做边界检查，由调用者保证
+         * @brief 核心映射算法：世界坐标 -> 网格数组索引
+         * 偏移 offsetX/offsetY 后确保值非负。
+         * 超出地图范围的坐标统一返回 invalid (uint32_t)-1。
          */
         [[nodiscard]] inline uint32_t getIndexUnsafe(float x, float y) const
         {
-            float clampedX = std::clamp(x, 0.0f, width_ - 0.001f);
-            float clampedY = std::clamp(y, 0.0f, height_ - 0.001f);
-            uint32_t col = static_cast<uint32_t>(clampedX * invCellSize_);
-            uint32_t row = static_cast<uint32_t>(clampedY * invCellSize_);
+            float tx = x + offsetX_;
+            float ty = y + offsetY_;
+            if (tx < 0.0f || ty < 0.0f || tx >= width_ || ty >= height_)
+                return (uint32_t)-1;
+            uint32_t col = static_cast<uint32_t>(tx * invCellSize_);
+            uint32_t row = static_cast<uint32_t>(ty * invCellSize_);
+            if (col >= colCount_ || row >= rowCount_)
+                return (uint32_t)-1;
             return row * colCount_ + col;
         }
 
         [[nodiscard]] inline bool isValidPos(float x, float y) const
         {
-            constexpr float kEpsilon = 0.1f;
-            return x >= -kEpsilon && x <= width_ + kEpsilon &&
-                   y >= -kEpsilon && y <= height_ + kEpsilon;
+            float tx = x + offsetX_;
+            float ty = y + offsetY_;
+            return tx >= 0.0f && ty >= 0.0f && tx < width_ && ty < height_;
         }
 
         void init_internal();
 
-    public: // 将模板放在 private 下方或 public 中皆可，这里归类为核心遍历器
+    public:
         /**
          * @brief 核心原语：9宫格遍历器
-         * @note 模板函数必须在头文件中实现
          */
         template <typename Func>
         inline void ForEachNeighborIndex(uint32_t centerGridIndex, Func &&visitor) const
@@ -117,14 +128,19 @@ namespace aegis::core
         template <typename Func>
         inline void ForEachNeighborIndex(float x, float y, Func &&visitor) const
         {
-            if (!isValidPos(x, y)) [[unlikely]]
+            uint32_t idx = getIndexUnsafe(x, y);
+            if (idx == (uint32_t)-1) [[unlikely]]
                 return;
-            ForEachNeighborIndex(getIndexUnsafe(x, y), std::forward<Func>(visitor));
+            ForEachNeighborIndex(idx, std::forward<Func>(visitor));
         }
 
     private:
-        float width_;
-        float height_;
+        float minX_;
+        float minY_;
+        float width_;       // maxX - minX
+        float height_;      // maxY - minY
+        float offsetX_;     // -minX
+        float offsetY_;     // -minY
         float cellSize_;
         float invCellSize_;
 

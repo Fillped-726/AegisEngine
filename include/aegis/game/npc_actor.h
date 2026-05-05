@@ -55,13 +55,23 @@ namespace aegis::core
         uint32_t get_aoi_grid_index() const { return aoi_grid_index_; }
         void set_aoi_grid_index(uint32_t index) { aoi_grid_index_ = index; }
 
+        // ── 战斗相关 ──
+        void TakeDamage(int32_t damage);
+        bool IsDead() const { return is_dead_; }
+        int32_t GetHp() const { return hp_; }
+        static constexpr int32_t DefaultMaxHp = 50;
+
     private:
         float x_ = 0.0f;
         float y_ = 0.0f;
         uint32_t aoi_grid_index_ = 0;
 
         // AI 行为树相关
-        BT::Tree tree_;             // 修正为 v4 正确写法
-        bool is_ai_active_ = false; // 用于后续的 AOI 唤醒/休眠标记
+        BT::Tree tree_;
+        bool is_ai_active_ = false;
+
+        // ── 战斗状态 ──
+        int32_t hp_ = DefaultMaxHp;
+        bool is_dead_ = false;
     };
 }

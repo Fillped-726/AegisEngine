@@ -1,6 +1,6 @@
 // AOIGrid.cpp
 #include "aegis/game/aoi_grid.h"
-#include "aegis/common/aegisLog.h" // 根据实际路径调整
+#include "aegis/common/aegisLog.h"
 #include <ranges>
 
 namespace aegis::core
@@ -24,20 +24,28 @@ namespace aegis::core
     // AOIGrid 实现
     // ---------------------------------------------------------
 
-    AOIGrid::AOIGrid(float width, float height, float cellSize)
-        : width_(width), height_(height), cellSize_(cellSize)
+    AOIGrid::AOIGrid(float minX, float minY, float maxX, float maxY, float cellSize)
+        : minX_(minX), minY_(minY),
+          width_(maxX - minX), height_(maxY - minY),
+          offsetX_(-minX), offsetY_(-minY),
+          cellSize_(cellSize)
     {
         init_internal();
     }
 
-    void AOIGrid::reset(float width, float height, float cellSize)
+    void AOIGrid::reset(float minX, float minY, float maxX, float maxY, float cellSize)
     {
-        bool dimChanged = (width_ != width) || (height_ != height) || (cellSize_ != cellSize);
+        minX_ = minX;
+        minY_ = minY;
+        width_ = maxX - minX;
+        height_ = maxY - minY;
+        offsetX_ = -minX;
+        offsetY_ = -minY;
+
+        bool dimChanged = (cellSize_ != cellSize);
 
         if (dimChanged)
         {
-            width_ = width;
-            height_ = height;
             cellSize_ = cellSize;
             init_internal();
         }
@@ -56,6 +64,8 @@ namespace aegis::core
         }
 
         uint32_t index = getIndexUnsafe(x, y);
+        if (index == (uint32_t)-1) [[unlikely]]
+            return (uint32_t)-1;
         cells_[index].entities.push_back(id);
         return index;
     }
@@ -97,6 +107,8 @@ namespace aegis::core
             return Add(id, newX, newY);
 
         uint32_t newIndex = getIndexUnsafe(newX, newY);
+        if (newIndex == (uint32_t)-1) [[unlikely]]
+            return (uint32_t)-1;
 
         if (oldIndex == newIndex)
         {
@@ -136,10 +148,9 @@ namespace aegis::core
     {
         out_result.clear();
 
-        if (!isValidPos(newX, newY)) [[unlikely]]
-            return;
-
         uint32_t gridIndex = getIndexUnsafe(newX, newY);
+        if (gridIndex == (uint32_t)-1) [[unlikely]]
+            return;
 
         ForEachNeighborIndex(gridIndex, [&](uint32_t neighborIdx)
                              {

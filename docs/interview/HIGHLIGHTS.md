@@ -4,7 +4,7 @@
 
 ---
 
-## 12 个可聊亮点
+## 13 个可聊亮点
 
 | # | 亮点 | 一句话说明 | 涉及文件 |
 |---|------|------------|----------|
@@ -20,6 +20,7 @@
 | 10 | **CRTP Actor 策略** | SimpleActor vs PooledActor 编译期选择，零虚函数开销 | actor_traits.h |
 | 11 | **RPC 协程化** | `co_await RpcCall<ResT>()` 替代阻塞 `future.get()`，不阻塞 Worker 线程 | rpc_awaiter.h |
 | 12 | **Module C 营地系统** | 动态营地创建/加入/查询，RoomManager 缓存 + 人数自动上报 | room_manager.h, game_app.h |
+| **13** | **优雅关闭 + 背压** | Connection 防重复关闭 + 发送队列上限 + io_uring SQ 溢出回退 | connection.h, worker.cpp |
 
 ---
 

@@ -10,15 +10,19 @@ message CSMoveReq {
   aegis.common.PBVector3 target_pos = 1;
   float direction = 2;
   int64 timestamp = 3;
+  float speed = 4;          // 当前速度（Velocity.Length），0 = 静止
+  bool is_moving = 5;       // 是否在移动，用于服务器脏标记优化
 }
 
 // [SC] 移动通知
-
+// [SC] 移动批量通知
 message SCMoveNtfBatch {
   message MoveInfo {
     uint64 entity_id = 1;
     aegis.common.PBVector3 pos = 2;
     float direction = 3;
+    float speed = 4;          // 速度，0 = 静止；客户端用于插值
+    bool is_moving = 5;       // 是否移动状态
   }
   repeated MoveInfo moves = 1; // 一次下发视野内所有移动的玩家
 }

@@ -19,7 +19,7 @@ protected:
         rm_ = static_cast<RoomManager *>(ActorRegistry::instance().get(rm_id_));
         ASSERT_NE(rm_, nullptr);
 
-        scene_id_ = ActorRegistry::instance().create_actor<SceneActor>(500.0f, 500.0f, 10.0f);
+        scene_id_ = ActorRegistry::instance().create_actor<SceneActor>(-1000.0f, -1000.0f, 1000.0f, 1000.0f, 256.0f);
         ASSERT_TRUE(scene_id_.is_valid());
         auto *scene = static_cast<SceneActor *>(ActorRegistry::instance().get(scene_id_));
         ASSERT_NE(scene, nullptr);

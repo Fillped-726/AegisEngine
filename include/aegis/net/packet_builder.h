@@ -17,7 +17,10 @@ namespace aegis::net
         uint64_t uid;
         float x;
         float y;
-        uint32_t entity_type; // 0: Player, 1: NPC, 2: Monster, 3: boss
+        float direction = 0.0f;    // 朝向角（弧度）
+        float speed = 0.0f;        // 当前速度
+        bool is_moving = false;    // 是否正在移动
+        uint32_t entity_type = 0;  // 0: Player, 1: NPC, 2: Monster, 3: boss
     };
 
     // [INTENT: Stateless factory for Protobuf serialization; yields immutable shared network buffers for broadcast]

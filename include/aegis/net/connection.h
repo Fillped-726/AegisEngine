@@ -53,6 +53,9 @@ namespace aegis::net
         // [INTENT: Coroutine suspension point yielding assembled protocol framing]
         core::Task<PooledPacket> read_packet();
 
+        // [INTENT: Gracefully close connection]
+        void close();
+
         // [STATE_MUTATION: Enqueue payload to egress buffer]
         void send(PooledPacket packet);
 
@@ -75,6 +78,12 @@ namespace aegis::net
 
         // [STATE: Active egress IO loop guard; assumes single-thread context]
         bool is_flushing_{false};
+
+        // [STATE: Egress backpressure limit]
+        static constexpr size_t K_OUTBOX_LIMIT = 1024;
+
+        // [STATE: Connection lifecycle guard]
+        std::atomic<bool> closed_{false};
 
         // [STATE: Raw IO handle]
         Socket socket_;

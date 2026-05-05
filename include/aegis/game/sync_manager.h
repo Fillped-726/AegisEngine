@@ -12,6 +12,7 @@
 
 #include "aegis/game/playerActor.h"
 #include "aegis/game/aoi_grid.h"
+#include "aegis/common/aegisLog.h"
 // 包含你刚刚新增的 protobuf 定义
 #include "cs_battle.pb.h"
 
@@ -38,7 +39,7 @@ namespace aegis::core
 
         void AddDirtyPlayer(PlayerActor *player)
         {
-            if (dirty_set_.insert(player->get_player_id()).second)
+            if (dirty_set_.insert(player->id().raw).second)
             {
                 dirty_players_.push_back(player);
             }
@@ -46,7 +47,7 @@ namespace aegis::core
 
         void RemoveDirtyPlayer(PlayerActor *player)
         {
-            dirty_set_.erase(player->get_player_id());
+            dirty_set_.erase(player->id().raw);
             // 简单移除，实际项目中可使用侵入式链表做到 O(1) 移除
             std::erase(dirty_players_, player);
         }
@@ -62,6 +63,10 @@ namespace aegis::core
         {
             if (dirty_players_.empty())
                 return;
+
+            // [SYNC] 开始 Tick，有多少脏玩家
+            aegis::Log::instance().debug("[SYNC][TickStart] {} dirty players (dirty_count={})",
+                dirty_players_.size(), dirty_set_.size());
 
             // ==========================================
             // 阶段 1：计算视野变更 (Enter / Leave)
@@ -82,6 +87,12 @@ namespace aegis::core
                 if (new_grid != (uint32_t)-1)
                 {
                     mover->set_aoi_grid_index(new_grid);
+                    // [SYNC] AOI 跨格
+                    if (old_grid != new_grid)
+                    {
+                        aegis::Log::instance().debug("[SYNC][AOI] Player {} grid: {}→{}, enters={}, leaves={}",
+                            mover->id().raw, old_grid, new_grid, enterIds.size(), leaveIds.size());
+                    }
                     // 只有真跨格了，才回调给 SceneActor 处理视野包
                     if (!enterIds.empty() || !leaveIds.empty())
                     {
@@ -109,6 +120,11 @@ namespace aegis::core
                 std::vector<uint64_t> neighbors;
                 aoi.GetViewEntityIds(mover->get_aoi_grid_index(), neighbors);
 
+                // [SYNC] 该脏玩家的观众列表
+                aegis::Log::instance().debug("[SYNC][Phase2] Mover {} at ({:.2f},{:.2f}) grid={}, neighbors={}",
+                    mover->id().raw, mover->GetX(), mover->GetY(),
+                    mover->get_aoi_grid_index(), neighbors.size());
+
                 for (uint64_t neighborActorId : neighbors)
                 {
                     if (neighborActorId == mover->id().raw)
@@ -116,24 +132,38 @@ namespace aegis::core
 
                     // 将 mover 的移动信息塞入 receiver 的专属 batch 中
                     auto *move_info = receiver_batches[neighborActorId].add_moves();
-                    move_info->set_entity_id(mover->get_player_id());
+                    move_info->set_entity_id(mover->id().raw); // 使用 ActorID，与 EnterView 一致
                     move_info->mutable_pos()->set_x(mover->GetX());
                     move_info->mutable_pos()->set_y(mover->GetY());
+                    move_info->set_direction(mover->GetDir()); // 使用 mover 的实际朝向，修复鬼畜转头
+                    move_info->set_speed(mover->GetSpeed());
+                    move_info->set_is_moving(mover->IsMoving());
                 }
             }
 
             // ==========================================
             // 阶段 3：执行批量发送
             // ==========================================
+            int total_targets = 0;
+            int total_moves = 0;
             for (const auto &[receiverActorId, batch] : receiver_batches)
             {
                 if (batch.moves_size() > 0)
                 {
+                    total_targets++;
+                    total_moves += batch.moves_size();
+                    // [SYNC] 每个接收者的广播信息
+                    aegis::Log::instance().debug("[SYNC][Phase3] SendBatch to receiver={}, moves_in_batch={}",
+                        receiverActorId, batch.moves_size());
+
                     // 整个 Tick 中，对某个玩家的所有移动更新只序列化一次！
                     auto shared_buf = std::make_shared<std::string>(batch.SerializeAsString());
                     onSendBatch(receiverActorId, shared_buf);
                 }
             }
+            // [SYNC] Tick 汇总
+            aegis::Log::instance().debug("[SYNC][TickEnd] Broadcast: {} targets, {} moves total",
+                total_targets, total_moves);
 
             // ==========================================
             // 阶段 4：清理标记

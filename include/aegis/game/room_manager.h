@@ -1,11 +1,12 @@
 /**
  * @file room_manager.h
- * @brief Room manager for room lifecycle and camp assignment (Module C).
+ * @brief Room manager for room lifecycle, camp assignment, and dungeon management.
  *
  * Extends RPC handlers with on_assign_camp() — receives AssignCampReq
  * from PlayerActor, creates a new SceneActor camp or returns an existing one.
  *
- * Now also maintains camp_metas_ cache for listing camps to clients.
+ * Now also maintains camp_metas_ cache for listing camps to clients,
+ * and dungeon_scene_id_ for single-instance dungeon management.
  */
 #pragma once
 
@@ -45,6 +46,8 @@ namespace aegis::core
 
     /**
      * @brief Room lifecycle and camp assignment manager.
+     *
+     * Also manages a single dungeon instance (房主建房模式).
      */
     class RoomManager : public SimpleActor<RoomManager>
     {
@@ -88,6 +91,11 @@ namespace aegis::core
         void on_assign_camp(const RPCAssignCampMsg &msg);
         void on_camp_player_count(const CampPlayerCountMsg &msg);
 
+        // ── 副本管理 ──
+        void on_create_dungeon(const RPCCreateDungeonMsg &msg);
+        void on_join_dungeon(const RPCJoinDungeonMsg &msg);
+        void on_leave_dungeon(const RPCLeaveDungeonMsg &msg);
+
     private:
         std::unordered_map<uint32_t, uint32_t> room_id_to_actor_;
         std::unordered_map<uint32_t, uint32_t> actor_to_room_id_;
@@ -99,5 +107,10 @@ namespace aegis::core
         std::unordered_map<uint64_t, std::string> camp_scenes_;
 
         std::unordered_set<uint64_t> destroying_scenes_;
+
+        // ── 副本（单实例房主建房模式） ──
+        uint64_t dungeon_scene_id_ = 0;           // 当前副本实例（0=无）
+        uint64_t dungeon_owner_id_ = 0;           // 房主的 player_uid
+        std::unordered_set<uint64_t> dungeon_players_; // 副本内所有玩家
     };
 }

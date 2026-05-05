@@ -13,7 +13,7 @@ protected:
     {
         // 1. 初始化场景 (100x100 的地图，格子大小 10)
         // 假设视野是九宫格，那么视野距离大约是 10 左右
-        scene_id_ = ActorRegistry::instance().create_actor<SceneActor>(100.0f, 100.0f, 10.0f);
+        scene_id_ = ActorRegistry::instance().create_actor<SceneActor>(-1000.0f, -1000.0f, 1000.0f, 1000.0f, 256.0f);
         scene_ = static_cast<SceneActor *>(ActorRegistry::instance().get(scene_id_));
     }
 
@@ -32,37 +32,34 @@ protected:
 // ===================================================================
 TEST_F(SceneAiTest, NpcDynamicSleepTriggeredByAoi)
 {
-    // 1. 创建并放置 NPC 在地图中心 (50, 50)
+    // 1. 创建并放置 NPC 在地图 (500, 500) 处
     ActorID npc_id = ActorRegistry::instance().create_actor<NpcActor>();
     NpcActor *npc = static_cast<NpcActor *>(ActorRegistry::instance().get(npc_id));
-    npc->reset(npc_id, 50.0f, 50.0f);
+    npc->reset(npc_id, 500.0f, 500.0f);
     scene_->AddNpc(npc);
 
     // 2. 初始 Tick，周围没有任何玩家
     scene_->OnTick();
     EXPECT_FALSE(npc->IsAiActive()) << "Error: NPC should be sleeping when no player is in AOI";
 
-    // 3. 创建玩家，并放置在距离极远的 (10, 10) 处
-    // 传入 nullptr 满足 PlayerActor 需要 std::shared_ptr<Connection> 的构造要求
+    // 3. 创建玩家，并放置在距离极远的 (-500, -500) 处
+    // 此时 NPC(500,500) 和 Player(-500,-500) 相距 1000，
+    // cellSize=256 时 9 宫格覆盖 768 范围，所以应该在 AOI 之外
     ActorID player_id = ActorRegistry::instance().create_actor<PlayerActor>(nullptr);
 
-    // 模拟玩家进入场景 (严格按照业务带参构造)
-    SceneEnterMsg enter_msg(player_id, player_id.raw, 10.0f, 10.0f);
+    SceneEnterMsg enter_msg(player_id, player_id.raw, -500.0f, -500.0f);
     scene_->handle_message(&enter_msg);
 
-    // 触发 Tick 处理场景消息和 AI 探查
     scene_->OnTick();
     EXPECT_FALSE(npc->IsAiActive()) << "Error: NPC should still be sleeping, player is too far (out of AOI)";
 
-    // 4. 模拟玩家移动到 NPC 附近 (45, 45) -> 此时一定进入了 50,50 的九宫格视野
-    // 参数: ActorID, uid, aoi_grid_index (这里测试给个0即可), newX, newY, direction
-    SceneMoveMsg move_msg(player_id, player_id.raw, 0, 45.0f, 45.0f, 0);
+    // 4. 模拟玩家移动到 NPC 附近 (450, 450) -> 距离 < 768，进入 9 宫格
+    SceneMoveMsg move_msg(player_id, player_id.raw, 0, 450.0f, 450.0f, 0);
     scene_->handle_message(&move_msg);
 
     PlayerActor *player = static_cast<PlayerActor *>(ActorRegistry::instance().get(player_id));
     player->MarkDirty(PlayerActor::DIRTY_POS);
 
-    // 触发 Tick，SceneActor 处理 Move 并更新 AOI 后，探查 AI
     scene_->OnTick();
     EXPECT_TRUE(npc->IsAiActive()) << "Success: NPC woke up because player entered AOI!";
 
@@ -76,15 +73,15 @@ TEST_F(SceneAiTest, NpcDynamicSleepTriggeredByAoi)
 // ===================================================================
 TEST_F(SceneAiTest, NpcBehaviorMoveTowardsPlayer)
 {
-    // 1. 创建 NPC 在 (50, 50)
+    // 1. 创建 NPC 在 (100, 100)
     ActorID npc_id = ActorRegistry::instance().create_actor<NpcActor>();
     NpcActor *npc = static_cast<NpcActor *>(ActorRegistry::instance().get(npc_id));
-    npc->reset(npc_id, 50.0f, 50.0f);
+    npc->reset(npc_id, 100.0f, 100.0f);
     scene_->AddNpc(npc);
 
-    // 2. 创建玩家，直接降落到视野内 (55, 50)，距离为 5
+    // 2. 创建玩家，直接降落到视野内 (105, 100)，距离为 5
     ActorID player_id = ActorRegistry::instance().create_actor<PlayerActor>(nullptr);
-    SceneEnterMsg enter_msg(player_id, player_id.raw, 55.0f, 50.0f);
+    SceneEnterMsg enter_msg(player_id, player_id.raw, 105.0f, 100.0f);
     scene_->handle_message(&enter_msg);
 
     // 记录初始坐标

@@ -31,7 +31,7 @@ namespace aegis::core
     class SceneActor : public PooledActor<SceneActor, 128, 32>
     {
     public:
-        SceneActor(ActorID self_id, float width, float height, float cellSize);
+        SceneActor(ActorID self_id, float minX, float minY, float maxX, float maxY, float cellSize);
         ~SceneActor() = default;
 
         void handle_message(ActorMessage *msg) override;
@@ -41,6 +41,9 @@ namespace aegis::core
         void RemoveNpc(uint64_t raw_id);
         const AOIGrid &GetAoi() const { return aoi_; }
         PlayerActor *GetPlayer(uint64_t actorId) const;
+
+        // [测试支持] 暴露 SyncManager 引用给单元测试
+        SyncManager &GetSyncManager() { return sync_mgr_; }
 
     private:
         // 内部处理逻辑 (串行执行，无需加锁)
@@ -58,7 +61,7 @@ namespace aegis::core
 
         void SendSharedBuffer(uint64_t targetId, uint32_t msgId, std::shared_ptr<std::string> sharedBuf);
 
-        void reset(ActorID self_id, float width, float height, float cellSize);
+        void reset(ActorID self_id, float minX, float minY, float maxX, float maxY, float cellSize);
 
     private:
         bool is_ticking_ = false; // 场景是否已开始 Tick 驱动

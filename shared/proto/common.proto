@@ -27,4 +27,13 @@ message PBPlayerInfo {
   int32 hp = 6;
   PlayerState state = 7;
   uint32 entity_type = 8;// 0: Player, 1: NPC, 2: Monster, 3: Boss
+  float speed = 9;         // 当前速度值，客户端用于初始插值
+  bool is_moving = 10;     // 是否正在移动
+}
+
+// 物品信息（掉落、背包用）
+message PBItemInfo {
+  uint32 item_id = 1;
+  string item_name = 2;
+  uint32 count = 3;
 }
